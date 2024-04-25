@@ -141,6 +141,6 @@ public class Game
             input.lockCursor ^= true;
 
         if(input.KeyDown(Keys.Escape))
-            window.Close();
+            Environment.Exit(0);
     }
 }

@@ -1,5 +1,6 @@
 ﻿#define DONT_CLEAR
 #undef DONT_CLEAR
+#define FIX_FISHEYE
 
 using System;
 using System.Collections.Generic;
@@ -106,18 +107,24 @@ public unsafe class Renderer
             GetIntersectionData(camera.pos, hit, rayAngle, out Side side, out float interTime, out float dist);
             Tile tile = map[hit.x, hit.y];
 
-            if(dist > camera.maxDist || dist == 0f || GetDepthBufFloat(x) < dist/camera.maxDist)
+            if(dist > camera.maxDist || dist == 0f || dist/camera.maxDist is float dist01 && GetDepthBufFloat(x) < dist01)
                 continue;
 
-            SetDepthBuf(x, dist/camera.maxDist);
+            SetDepthBuf(x, dist01);
+
+#if FIX_FISHEYE
             float fisheyeDist = dist * MathF.Cos(baseAngle);
+#else
+            float fisheyeDist = dist;
+#endif
+
             float height = MathF.Max(0f, virtualRes.y / fisheyeDist / 2f);
             float max = 2f * height;
+            float brightness = MathF.Min(1f, (int)side/5f + .5f) * GetDistanceFog(dist);
 
-            for(int y = virtualCenter.y - (int)height, i = 0; y < virtualCenter.y + height; y++, i++)
-                if(y >= 0 && y < virtualRes.y)
-                    //SetPixel24(data, x, y, map.textures[(int)tile].GetUv24(Utils.Clamp(interTime, 0f, 1f), i/max) * MathF.Min(1f, ((int)side/5f + .5f)) * GetDistanceFog(dist));
-                    SetPixel24(data, x, y, Color32.white / MathF.Max(1f, dist));
+            int biggestY = Math.Min(virtualRes.y-1, (int)MathF.Ceiling(virtualCenter.y + height));
+            for(int y = Math.Max(virtualCenter.y - (int)height, 0), i = y - virtualCenter.y + (int)height; y < biggestY; y++, i++)
+                SetPixel24(data, x, y, map.textures[(int)tile].GetUv24(interTime, i/max) * brightness);
         }
 
         bitmap.UnlockBits(data);
