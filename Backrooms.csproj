@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseWindowsForms>true</UseWindowsForms>
+    <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
+    <AssemblyName>backrooms-game</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace></RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\oli.ico" />
+    <None Remove="Resources\Textures\oli.jpg" />
+    <None Remove="Resources\Textures\pillar.png" />
+    <None Remove="Resources\wall.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\oli.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Textures\oli.jpg" />
+    <EmbeddedResource Include="Resources\Textures\pillar.png" />
+    <EmbeddedResource Include="Resources\Textures\wall.png" />
+  </ItemGroup>
+
+</Project>
