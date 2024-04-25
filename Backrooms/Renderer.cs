@@ -86,10 +86,10 @@ public unsafe class Renderer
             Vec2f size = virtualRes.y / dist * spr.size;
             float relDot = Vec2f.Dot(Vec2f.FromAngle(camera.angle + MathF.PI/2f).normalized, relPos);
 
-            Console.WriteLine(relDot);
             if(Vec2f.Dot(camera.forward.normalized, relPos) >= 0f && size.x > 0f && size.y > 0f)
             {
-                int locX = (int)(relDot * MathF.Cos(relPos.toAngle - camera.angle) * virtualRes.x + virtualCenter.x - size.x/2f);
+                // idk why the /1.5f nearly fixes the sprite moving too much with the camera angle, but somehow it does
+                int locX = (int)(relDot/1.5f * virtualRes.x + virtualCenter.x - size.x/2f);
                 int locY = (int)(virtualCenter.y - size.y/2f);
                 Vec2i sizeI = size.Round();
 
@@ -100,7 +100,7 @@ public unsafe class Renderer
 
         for(int x = 0; x < virtualRes.x; x++)
         {
-            float baseAngle = Utils.NormAngle(camera.fov * (x / (virtualRes.x-1f) - .5f));
+            float baseAngle = camera.fov * (x / (virtualRes.x-1f) - .5f);
             float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
 
             if(!Raycast(map, camera.pos, Vec2f.FromAngle(rayAngle), out Vec2i hit) || (camera.pos - (Vec2f)hit).length > camera.maxDist)
