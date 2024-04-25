@@ -5,7 +5,7 @@ namespace Backrooms;
 
 public class Map(Tile[,] tiles) : IEnumerable
 {
-    public LockedBitmap[] textures;
+    public LockedBitmap[] textures = [];
 
     private Tile[,] tiles = tiles;
     private Vec2i _size = new(tiles?.GetLength(0) ?? 0, tiles?.GetLength(1) ?? 0);
@@ -64,14 +64,59 @@ public class Map(Tile[,] tiles) : IEnumerable
     {
         Vec2i idx = Round(pt);
 
-        if(idx.x < 0 || idx.x >= _size.x || idx.y < 0 || idx.y >= _size.y || tiles[idx.x, idx.y] == Tile.Empty)
+        if(idx.x < 0 || idx.x >= _size.x || idx.y < 0 || idx.y >= _size.y)
         {
             type = Tile.Empty;
             return false;
         } 
 
         type = tiles[idx.x, idx.y];
-        return true;
+        return type != Tile.Empty;
+    }
+    public bool Intersects(Vec2f pt, float radius, out Tile type)
+    {
+        Vec2i tile = pt.Floor();
+        Vec2f sub = pt % 1f;
+
+        Vec2i offset = new(sub.x switch {
+            _ when sub.x < radius => -1,
+            _ when 1f - sub.x < radius => 1,
+            _ => 0
+        }, sub.y switch {
+            _ when sub.y < radius => -1,
+            _ when 1f - sub.y < radius => 1,
+            _ => 0
+        });
+
+        if(offset == Vec2i.zero) // Not edging
+        {
+            type = this[tile];
+            return type != Tile.Empty;
+        }
+
+        if(offset.x == 0 || offset.y == 0) // Edging on one side
+        {
+            type = this[tile + offset];
+            return type != Tile.Empty;
+        }
+
+        Tile collA = this[tile.x + offset.x, tile.y], 
+             collB = this[tile.x, offset.y + tile.y], 
+             collC = this[tile + offset];
+
+        type = collA != Tile.Empty ? collA : collB != Tile.Empty ? collB : collC != Tile.Empty ? collC : Tile.Empty;
+        return type != Tile.Empty;
+    }
+
+    public Vec2f ResolveIntersectionIfNecessery(Vec2f oldPt, Vec2f newPt, float radius, out bool didCollide)
+    {
+        if(!(didCollide = Intersects(newPt, radius, out _)))
+            return newPt;
+
+        Vec2f potPt;
+        return !Intersects(potPt = new(newPt.x, oldPt.y), radius, out _) ||
+               !Intersects(potPt = new(oldPt.x, newPt.y), radius, out _)
+               ? potPt : oldPt;
     }
 
     public bool InBounds(Vec2f loc)

@@ -134,9 +134,11 @@ public class Game
     private void Tick(float dt)
     {
         #region Input
+        Vec2f prevCamPos = camera.pos;
         camera.pos += playerSpeed * dt * (
             (input.KeyHelt(Keys.A) ? 1f : input.KeyHelt(Keys.D) ? -1f : 0f) * camera.right +
             (input.KeyHelt(Keys.S) ? -1f : input.KeyHelt(Keys.W) ? 1f : 0f) * camera.forward);
+        camera.pos = map.ResolveIntersectionIfNecessery(prevCamPos, camera.pos, .25f, out _);
         camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity * dt;
 
         if(!map.InBounds(camera.pos))
@@ -156,8 +158,14 @@ public class Game
         #endregion
 
         Vec2f olafToPlayer = camera.pos - olafScholz.pos;
+        Vec2f oldOlaf = olafScholz.pos;
         if(camera.pos != olafScholz.pos)
             olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
+        olafScholz.pos = map.ResolveIntersectionIfNecessery(oldOlaf, olafScholz.pos, olafScholz.size.x/2f, out bool olafCollided);
+        if(olafCollided)
+        {
+            // igw machen idk
+        }
         olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);
     }
 }
