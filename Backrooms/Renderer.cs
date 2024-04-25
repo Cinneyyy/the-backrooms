@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Backrooms;
 
@@ -20,7 +21,7 @@ public unsafe class Renderer
     public Map map;
     public Window window;
     public List<SpriteRenderer> sprites = [];
-    public byte[] depthBuf;
+    public float[] depthBuf;
 
 #if DONT_CLEAR
     private Bitmap lastBmp = new(1, 1);
@@ -39,7 +40,7 @@ public unsafe class Renderer
         float virtRatio = (float)virtualRes.x / virtualRes.y;
         outputRes = new((int)(virtRatio * physicalRes.y), physicalRes.y);
         outputLocation = new((physicalRes.x - outputRes.x) / 2, 0);
-        depthBuf = new byte[virtualRes.x];
+        depthBuf = new float[virtualRes.x];
     }
 
 
@@ -54,7 +55,7 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtualRes.x, virtualRes.y);
 #endif
         //Graphics.FromImage(bitmap).Clear(Color.FromArgb(0x95/4, 0x8e/4, 0x3b/4));
-        Array.Fill<byte>(depthBuf, 0xff);
+        Array.Fill(depthBuf, 1f);
         BitmapData data = bitmap.LockBits(new(0, 0, virtualRes.x, virtualRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
         //for(int x = 0; x < virtualRes.x; x++)
@@ -93,41 +94,21 @@ public unsafe class Renderer
                 int locY = (int)(virtualCenter.y - size.y/2f);
                 Vec2i sizeI = size.Round();
 
-                FillDepthBufUnchecked(locX, sizeI.x, dist/camera.maxDist);
-                DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
+                if(spr.hasTransparency)
+                {
+                    int xMin = Math.Max(0, locX), xMax = Math.Min(virtualRes.x-1, locX+sizeI.x);
+                    for(int x = xMin; x < xMax; x++) // Draw wall behind transparent image
+                        DrawWallSegment(data, in x);
+                    DrawBitmapCutout24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
+                }
+                else DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
+
+                FillDepthBuf(locX, sizeI.x, dist/camera.maxDist);
             }
         }
 
         for(int x = 0; x < virtualRes.x; x++)
-        {
-            float baseAngle = camera.fov * (x / (virtualRes.x-1f) - .5f);
-            float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
-
-            if(!Raycast(map, camera.pos, Vec2f.FromAngle(rayAngle), out Vec2i hit) || (camera.pos - (Vec2f)hit).length > camera.maxDist)
-                continue;
-
-            GetIntersectionData(camera.pos, hit, rayAngle, out Side side, out float interTime, out float dist);
-            Tile tile = map[hit.x, hit.y];
-
-            if(dist > camera.maxDist || dist == 0f || dist/camera.maxDist is float dist01 && GetDepthBufFloat(x) < dist01)
-                continue;
-
-            SetDepthBuf(x, dist01);
-
-#if FIX_FISHEYE
-            float fisheyeDist = dist * MathF.Cos(baseAngle);
-#else
-            float fisheyeDist = dist;
-#endif
-
-            float height = MathF.Max(0f, virtualRes.y / fisheyeDist / 2f);
-            float max = 2f * height;
-            float brightness = MathF.Min(1f, (int)side/5f + .5f) * GetDistanceFog(dist);
-
-            int biggestY = Math.Min(virtualRes.y-1, (int)MathF.Ceiling(virtualCenter.y + height));
-            for(int y = Math.Max(virtualCenter.y - (int)height, 0), i = y - virtualCenter.y + (int)height; y < biggestY; y++, i++)
-                SetPixel24(data, x, y, map.textures[(int)tile].GetUv24(interTime, i/max) * brightness);
-        }
+            DrawWallSegment(data, in x);
 
         bitmap.UnlockBits(data);
 #if DONT_CLEAR
@@ -137,27 +118,52 @@ public unsafe class Renderer
     }
 
 
+    private void DrawWallSegment(BitmapData data, in int x)
+    {
+        float baseAngle = camera.fov * (x / (virtualRes.x-1f) - .5f);
+        float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
+
+        if(!Raycast(map, camera.pos, Vec2f.FromAngle(rayAngle), out Vec2i hit) || (camera.pos - (Vec2f)hit).length > camera.maxDist)
+            return;
+
+        GetIntersectionData(camera.pos, hit, rayAngle, out Side side, out float interTime, out float dist);
+        Tile tile = map[hit.x, hit.y];
+
+        if(dist > camera.maxDist || dist == 0f || dist/camera.maxDist is float dist01 && GetDepthBuf(x) < dist01)
+            return;
+
+        SetDepthBuf(x, dist01);
+
+#if FIX_FISHEYE
+        float fisheyeDist = dist * MathF.Cos(baseAngle);
+#else
+            float fisheyeDist = dist;
+#endif
+
+        float height = MathF.Max(0f, virtualRes.y / fisheyeDist / 2f);
+        float max = 2f * height;
+        float brightness = MathF.Min(1f, (int)side/5f + .5f) * GetDistanceFog(dist);
+
+        int biggestY = Math.Min(virtualRes.y-1, (int)MathF.Ceiling(virtualCenter.y + height));
+        for(int y = Math.Max(virtualCenter.y - (int)height, 0), i = y - virtualCenter.y + (int)height; y < biggestY; y++, i++)
+            SetPixel24(data, x, y, map.textures[(int)tile].GetUv24(interTime, i/max) * brightness);
+    }
+
     private float GetDistanceFog(float dist)
         => MathF.Max(0f, MathF.Pow(.8f - dist / camera.maxDist, 1.5f));
 
-    private void SetDepthBuf(int x, byte depth)
-        => depthBuf[x] = depth;
     private void SetDepthBuf(int x, float depth)
-        => SetDepthBuf(x, (byte)(depth*255));
+        => depthBuf[x] = depth;
 
-    private byte GetDepthBuf(int x)
+    private float GetDepthBuf(int x)
         => depthBuf[x];
-    private float GetDepthBufFloat(int x)
-        => GetDepthBuf(x) / 255f;
 
-    private void FillDepthBufUnchecked(int x, int w, byte depth)
+    private void FillDepthBuf(int x, int w, float depth)
     {
         int fx = Math.Min(virtualRes.x, x+w);
         for(int i = Math.Max(0, x); i < fx; i++)
             depthBuf[i] = depth;
     }
-    private void FillDepthBufUnchecked(int x, int w, float depth)
-        => FillDepthBufUnchecked(x, w, (byte)(depth*255));
 
     private unsafe void SetPixel24(BitmapData data, int x, int y, Color32 col)
     {
@@ -167,8 +173,10 @@ public unsafe class Renderer
         *ptr = col.r;
     }
 
-    private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMulR, float colMulG, float colMulB)
+    private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, in float colMulR, in float colMulG, in float colMulB)
     {
+        Assert(dstImage.PixelFormat == PixelFormat.Format24bppRgb && srcImage.PixelFormat == PixelFormat.Format24bppRgb, "Both input of DrawBitmap24 must have PixelFormat.Format24BppRgb");
+
         byte* dstPtr = (byte*)dstImage.Scan0 + dstImage.Stride * ly + 3 * lx;
         byte* srcPtr = (byte*)srcImage.Scan0;
 
@@ -195,8 +203,43 @@ public unsafe class Renderer
             }
     }
     private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMul = 1f)
-        => DrawBitmap24(dstImage, srcImage, lx, ly, sx, sy, colMul, colMul, colMul);
+        => DrawBitmap24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
 
+    private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, in float colMulR, in float colMulG, in float colMulB)
+    {
+        Assert(dstImage.PixelFormat == PixelFormat.Format24bppRgb && srcImage.PixelFormat == PixelFormat.Format32bppArgb, "Inputs of DrawBitmapCutout24 must have PixelFormat.Format24BppRgb and PixelFormat.Format32BppRgb respectively");
+
+        byte* dstPtr = (byte*)dstImage.Scan0 + dstImage.Stride * ly + 3 * lx;
+        byte* srcPtr = (byte*)srcImage.Scan0;
+
+        int dw = dstImage.Width, dh = dstImage.Height;
+        int sw = srcImage.Width, sh = srcImage.Height;
+
+        for(int y = 0; y < sy; y++)
+            if(y + ly is int dstY && dstY >= 0 && dstY < dh)
+            {
+                dstPtr = (byte*)dstImage.Scan0 + dstImage.Stride * dstY + 3 * lx;
+
+                for(int x = 0; x < sx; x++)
+                {
+                    if(x + lx is int dstX && dstX >= 0 && dstX < dw)
+                    {
+                        byte* uvPtr = srcPtr + ((int)((float)y/sy * (sh-1)) * srcImage.Stride) + ((int)((float)x/sx * (sw-1)) * 4);
+
+                        if(*(uvPtr+3) > 0x7f)
+                        {
+                            *dstPtr = (byte)(*uvPtr * colMulB);
+                            *(dstPtr+1) = (byte)(*(uvPtr+1) * colMulG);
+                            *(dstPtr+2) = (byte)(*(uvPtr+2) * colMulR);
+                        }
+                    }
+
+                    dstPtr += 3;
+                }
+            }
+    }
+    private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMul = 1f)
+        => DrawBitmapCutout24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
 
     private static bool Raycast(Map map, Vec2f from, Vec2f dir, out Vec2i hitLoc)
     {

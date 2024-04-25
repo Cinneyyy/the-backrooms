@@ -21,6 +21,8 @@ public class Game
         { 1, 1, 1, 1, 1, 1, 1, 1 },
     });
     public float playerSpeed = 2f, sensitivity = 1f;
+    public SpriteRenderer olafScholz;
+    public float olafSpeed = .75f;
 
     private readonly RoomGenerator generator = new();
     private readonly Timer fpsTimer = new();
@@ -35,7 +37,7 @@ public class Game
         camera.pos = (Vec2f)map.size/2f;
         camera.angle = 270f * Utils.Deg2Rad;
         renderer.map = map;
-        renderer.sprites.Add(new(camera.pos, Vec2f.one, Resources.sprites["oli"]));
+        renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), true, Resources.sprites["oli"]));
         window.tick += Tick;
 
         map.textures = [
@@ -123,6 +125,7 @@ public class Game
 
     private void Tick(float dt)
     {
+        #region Input
         camera.pos += playerSpeed * dt * (
             (input.KeyHelt(Keys.A) ? 1f : input.KeyHelt(Keys.D) ? -1f : 0f) * camera.right +
             (input.KeyHelt(Keys.S) ? -1f : input.KeyHelt(Keys.W) ? 1f : 0f) * camera.forward);
@@ -142,5 +145,9 @@ public class Game
 
         if(input.KeyDown(Keys.Escape))
             Environment.Exit(0);
+        #endregion
+
+        if(camera.pos != olafScholz.pos)
+            olafScholz.pos += (camera.pos - olafScholz.pos).normalized * olafSpeed * dt;
     }
 }
