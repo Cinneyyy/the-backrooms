@@ -1,47 +1,67 @@
-﻿using System.Windows.Media;
-using System.Media;
-using System.Runtime.InteropServices;
-using System;
+﻿using System;
+using NAudio.Wave;
 
 namespace Backrooms;
 
-public partial class AudioSource(string audioName)
+public class AudioSource : IDisposable
 {
-    public bool playing;
     public bool loop;
-    public float volume;
 
-    // [potential] todo: give each AudioSource a unique SoundPlayer, instead of the same one, such that multiple instances of the same sound can be played and managed at once
-    private readonly SoundPlayer soundPlayer = Resources.audios[audioName];
+    private readonly WaveStream stream;
+    private readonly WaveOutEvent device;
+
+
+    public float volume
+    {
+        get => device.Volume;
+        set => device.Volume = Utils.Clamp(value, 0f, 1f);
+    }
+    public PlaybackState state => device.PlaybackState;
+    public float time
+    {
+        get => (float)stream.CurrentTime.TotalSeconds;
+        set => stream.CurrentTime = TimeSpan.FromSeconds(value);
+    }
+    public float time01
+    {
+        get => time / (float)stream.TotalTime.TotalSeconds;
+        set => stream.CurrentTime = TimeSpan.FromSeconds(value * stream.TotalTime.TotalSeconds);
+    }
+
+
+    public AudioSource(WaveStream stream)
+    {
+        this.stream = stream;
+        device = new();
+        device.Init(stream);
+        device.PlaybackStopped += (_, _) => {
+            if(loop && state == PlaybackState.Stopped)
+            {
+                time = 0f;
+                Play();
+            }
+        };
+        volume = 1f;
+    }
+
+
+    void IDisposable.Dispose()
+    {
+        stream.Dispose();
+        device.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
 
     public void Play()
-    {
-        SetWaveOutVolume(volume);
-        if(loop) soundPlayer.PlayLooping();
-        else soundPlayer.Play();
-    }
+        => device.Play();
+
+    public void Pause()
+        => device.Pause();
 
     public void Stop()
     {
+        device.Stop();
+        time = 0f;
     }
-
-
-    public static void SetWaveOutVolume(float volume)
-    {
-        uint vol = (uint)(volume * 10_000f);
-        _ = waveOutSetVolume(nint.Zero, (vol & 0xffff) | (vol << 0xf));
-    }
-    public static float GetWaveOutVolume()
-    {
-        _ = waveOutGetVolume(nint.Zero, out uint dwVolume);
-        return (dwVolume & 0xffff) / 10_000f;
-    }
-
-
-    [LibraryImport("winmm.dll")]
-    private static partial int waveOutSetVolume(IntPtr hwo, uint dwVolume);
-
-    [LibraryImport("winmm.dll")]
-    private static partial int waveOutGetVolume(IntPtr hwo, out uint dwVolume);
 }

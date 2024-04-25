@@ -2,8 +2,9 @@
 using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
-using System.Media;
 using System.Reflection;
+using NAudio.CoreAudioApi;
+using NAudio.Wave;
 
 namespace Backrooms;
 
@@ -21,7 +22,8 @@ public static class Resources
 
     public static readonly Dictionary<string, Image> sprites = [];
     public static readonly Dictionary<string, Icon> icons = [];
-    public static readonly Dictionary<string, SoundPlayer> audios = [];
+    public static readonly Dictionary<string, WaveStream> audios = [];
+    public static readonly bool finishedInit;
 
     private static readonly StringDictionary manifests = [];
     private static readonly Assembly assembly = Assembly.GetExecutingAssembly();
@@ -31,11 +33,12 @@ public static class Resources
     {
         foreach(string manifest in assembly.GetManifestResourceNames())
         {
-            ResType type = Path.GetExtension(manifest) switch {
+            string ext = Path.GetExtension(manifest).ToLower();
+            ResType type = ext switch {
                 ".png" or ".jpg" or ".jpeg" => ResType.Image,
                 ".ttf" or ".otf" => ResType.Font,
                 ".ico" => ResType.Icon,
-                ".mp3" or ".wav" or ".ogg" => ResType.Audio,
+                ".mp3" or ".wav" or ".aiff" => ResType.Audio,
                 _ => ResType.Unknown
             };
 
@@ -45,18 +48,25 @@ public static class Resources
             string name = manifest.Split('.')[^2];
             manifests.Add(name, manifest);
 
-            using Stream stream = assembly.GetManifestResourceStream(manifest);
+            Stream stream = assembly.GetManifestResourceStream(manifest);
             switch(type)
             {
                 case ResType.Image: sprites.Add(name, Image.FromStream(stream)); break;
                 case ResType.Icon: icons.Add(name, new(stream)); break;
-                case ResType.Audio: 
-                    audios.Add(name, new(stream)); 
-                    audios[name].Load();
-                    break;
+                case ResType.Audio: audios.Add(name, ext switch {
+                    ".mp3" => new Mp3FileReader(stream),
+                    ".wav" => new WaveFileReader(stream),
+                    ".aiff" => new AiffFileReader(stream),
+                    _ => throw new()
+                }); break;
                 default: break;
             }
+
+            if(type is ResType.Image or ResType.Icon)
+                stream.Dispose();
         }
+
+        finishedInit = true;
     }
 
 

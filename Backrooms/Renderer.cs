@@ -137,7 +137,7 @@ public unsafe class Renderer
 #if FIX_FISHEYE
         float fisheyeDist = dist * MathF.Cos(baseAngle);
 #else
-            float fisheyeDist = dist;
+        float fisheyeDist = dist;
 #endif
 
         float height = MathF.Max(0f, virtualRes.y / fisheyeDist / 2f);

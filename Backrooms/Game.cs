@@ -22,6 +22,7 @@ public class Game
     });
     public float playerSpeed = 2f, sensitivity = 1f;
     public SpriteRenderer olafScholz;
+    public AudioSource olafScholzAudio;
     public float olafSpeed = .75f;
 
     private readonly RoomGenerator generator = new();
@@ -33,22 +34,29 @@ public class Game
         this.window = window;
         renderer = window.renderer;
         input = window.input;
+
         camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length);
         camera.pos = (Vec2f)map.size/2f;
         camera.angle = 270f * Utils.Deg2Rad;
-        renderer.map = map;
-        renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), true, Resources.sprites["oli"]));
+
         window.tick += Tick;
 
+        fpsTimer.Tick += (_, _) => Out(1f / window.deltaTime);
+        fpsTimer.Interval = 1000;
+        fpsTimer.Start();
+
+        renderer.map = map;
         map.textures = [
             null,
             new LockedBitmap(Resources.sprites["wall"], PixelFormat.Format24bppRgb),
             new LockedBitmap(Resources.sprites["pillar"], PixelFormat.Format24bppRgb)
         ];
 
-        fpsTimer.Tick += (_, _) => Console.WriteLine(1f / window.deltaTime);
-        fpsTimer.Interval = 1000;
-        fpsTimer.Start();
+        renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), true, Resources.sprites["oli"]));
+        olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {
+            loop = true
+        };
+        olafScholzAudio.Play();
     }
 
 
@@ -147,7 +155,9 @@ public class Game
             Environment.Exit(0);
         #endregion
 
+        Vec2f olafToPlayer = camera.pos - olafScholz.pos;
         if(camera.pos != olafScholz.pos)
-            olafScholz.pos += (camera.pos - olafScholz.pos).normalized * olafSpeed * dt;
+            olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
+        olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);
     }
 }
