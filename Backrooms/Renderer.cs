@@ -117,8 +117,7 @@ public unsafe class Renderer
             for(int y = virtualCenter.y - (int)height, i = 0; y < virtualCenter.y + height; y++, i++)
                 if(y >= 0 && y < virtualRes.y)
                     //SetPixel24(data, x, y, map.textures[(int)tile].GetUv24(Utils.Clamp(interTime, 0f, 1f), i/max) * MathF.Min(1f, ((int)side/5f + .5f)) * GetDistanceFog(dist));
-                    SetPixel24(data, x, y, map.textures[(byte)tile].GetUv24(Utils.Clamp(interTime, 0f, 1f), i/max) * MathF.Min(1f, ((int)side/4f + .5f)) / (dist / camera.maxDist));
-                    //SetPixel(data, x, y, Color32.white / MathF.Max(1f, dist));
+                    SetPixel24(data, x, y, Color32.white / MathF.Max(1f, dist));
         }
 
         bitmap.UnlockBits(data);
