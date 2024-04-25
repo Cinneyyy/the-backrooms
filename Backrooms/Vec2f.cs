@@ -36,6 +36,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
         y = this.y;
     }
 
+    public void Normalize() => this = normalized;
+
     public readonly Vec2i Round() => new((int)x, (int)y);
     public readonly Vec2i Ceil() => new((int)MathF.Ceiling(x), (int)MathF.Ceiling(y));
     public readonly Vec2i Floor() => new((int)MathF.Floor(x), (int)MathF.Floor(y));

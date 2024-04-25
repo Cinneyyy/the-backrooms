@@ -82,17 +82,19 @@ public unsafe class Renderer
             if(dist == 0f)
                 continue;
 
+            relPos.Normalize();
             Vec2f size = virtualRes.y / dist * spr.size;
-            float relDir = Vec2f.Dot(Vec2f.FromAngle(camera.angle + MathF.PI/2f).normalized, relPos.normalized);
+            float relDot = Vec2f.Dot(Vec2f.FromAngle(camera.angle + MathF.PI/2f).normalized, relPos);
 
-            if(Vec2f.Dot(camera.forward.normalized, relPos.normalized) >= 0f && relDir >= -1f && size.x > 0 && size.y > 0)
+            Console.WriteLine(relDot);
+            if(Vec2f.Dot(camera.forward.normalized, relPos) >= 0f && size.x > 0f && size.y > 0f)
             {
-                int locX = (int)(relDir * virtualRes.x + virtualCenter.x - size.x/2f);
+                int locX = (int)(relDot * MathF.Cos(relPos.toAngle - camera.angle) * virtualRes.x + virtualCenter.x - size.x/2f);
                 int locY = (int)(virtualCenter.y - size.y/2f);
                 Vec2i sizeI = size.Round();
+
                 FillDepthBufUnchecked(locX, sizeI.x, dist/camera.maxDist);
-                float fog = GetDistanceFog(dist);
-                DrawBitmap24(data, spr.lockedImage.GetBitmapData(), (int)(relDir * virtualRes.x + virtualCenter.x - size.x/2f), (int)(virtualCenter.y - size.y/2f), (int)size.x, (int)size.y, fog);
+                DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
             }
         }
 

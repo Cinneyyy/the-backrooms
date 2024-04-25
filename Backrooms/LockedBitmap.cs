@@ -8,7 +8,9 @@ public unsafe class LockedBitmap : IDisposable
 {
     private readonly Bitmap bitmap;
     private readonly PixelFormat pixelFormat;
-    private BitmapData data;
+
+
+    public BitmapData data { get; private set; }
 
 
     public LockedBitmap(Image src, PixelFormat pixelFormat, bool preLock = true)
@@ -76,7 +78,4 @@ public unsafe class LockedBitmap : IDisposable
         => GetPixel24((int)(u * bitmap.Width), (int)(v * bitmap.Height));
     public Color32 GetUv32(float u, float v)
         => GetPixel32((int)(u * bitmap.Width), (int)(v * bitmap.Height));
-
-    public BitmapData GetBitmapData()
-        => data;
 }
