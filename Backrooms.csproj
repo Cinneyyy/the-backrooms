@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Audio\scholz_speech_1.mp3" />
     <None Remove="Resources\oli.ico" />
     <None Remove="Resources\Textures\oli.png" />
     <None Remove="Resources\Textures\pillar.png" />
@@ -20,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\Audio\scholz_speech_1.mp3" />
     <EmbeddedResource Include="Resources\oli.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
