@@ -20,7 +20,7 @@ public static class Globals
             Out(assertionFailedMsg, color);
     }
 
-    public static void OutIf(object msg, bool condition, ConsoleColor color = ConsoleColor.Gray)
+    public static void OutIf(bool condition, object msg, ConsoleColor color = ConsoleColor.Gray)
     {
         if(condition)
             Out(msg, color);

@@ -62,7 +62,7 @@ public static class Resources
                 default: break;
             }
 
-            if(type is ResType.Image or ResType.Icon)
+            if(type != ResType.Audio)
                 stream.Dispose();
         }
 

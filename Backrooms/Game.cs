@@ -137,7 +137,7 @@ public class Game
         Vec2f prevCamPos = camera.pos;
         camera.pos += playerSpeed * dt * (
             (input.KeyHelt(Keys.A) ? 1f : input.KeyHelt(Keys.D) ? -1f : 0f) * camera.right +
-            (input.KeyHelt(Keys.S) ? -1f : input.KeyHelt(Keys.W) ? 1f : 0f) * camera.forward);
+            (input.KeyHelt(Keys.S) ? -1f : input.KeyHelt(Keys.W) ? 1f : 0f) * camera.forward).normalized;
         camera.pos = map.ResolveIntersectionIfNecessery(prevCamPos, camera.pos, .25f, out _);
         camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity * dt;
 

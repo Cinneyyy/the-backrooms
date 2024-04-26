@@ -20,7 +20,7 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
 
     public readonly float sqrLength => x*x + y*y;
     public readonly float length => MathF.Sqrt(sqrLength);
-    public readonly Vec2f normalized => this / length;
+    public readonly Vec2f normalized => sqrLength == 0f ? zero : this / length;
     public readonly float toAngle => Utils.NormAngle(MathF.Atan2(y, x));
 
 
