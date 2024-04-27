@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Backrooms;
 
@@ -42,4 +43,21 @@ public static class Utils
         => MathF.Abs(a - b) <= eps;
 
     public static void DoNothing() { }
+
+    public static Vec2f ReadVec2f(this BinaryReader reader)
+        => new(reader.ReadSingle(), reader.ReadSingle());
+
+    public static Vec2i ReadVec2i(this BinaryReader reader)
+        => new(reader.ReadInt32(), reader.ReadInt32());
+
+    public static void Write(this BinaryWriter writer, Vec2f v)
+    {
+        writer.Write(v.x);
+        writer.Write(v.y);
+    }
+    public static void Write(this BinaryWriter writer, Vec2i v)
+    {
+        writer.Write(v.x);
+        writer.Write(v.y);
+    }
 }

@@ -1,54 +1,56 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
+using System;
 
 namespace Backrooms.Online;
 
-public struct ServerState : IState
+public class ServerState : IState<DataKey>
 {
     public Vec2f olafPos;
     public int levelSeed;
 
 
-    void IState.Deserialize(byte[] data, int length)
+    void IState<DataKey>.Deserialize(byte[] data, int start, int length)
     {
-        using MemoryStream stream = new(data, 0, length);
+        using MemoryStream stream = new(data, start, length);
         using BinaryReader reader = new(stream);
 
         while(reader.BaseStream.Position < length)
         {
             byte next = reader.ReadByte();
 
-            switch((ByteKey)next)
+            if(next == 0)
+                break;
+
+            switch((DataKey)next)
             {
-                case ByteKey.S_LevelSeed: levelSeed = reader.ReadInt32(); break;
-                case ByteKey.S_OlafPos: olafPos = new(reader.ReadSingle(), reader.ReadSingle()); break;
-                default: 
+                case DataKey.S_LevelSeed:
+                    levelSeed = reader.ReadInt32();
+                    break;
+                case DataKey.S_OlafPos:
+                    olafPos = reader.ReadVec2f();
+                    break;
+                default:
                     Console.WriteLine($"Unrecognized byte key encountered in ServerState.Deserialize(): 0x{Convert.ToString(next, 16)}");
-                    reader.BaseStream.Position = reader.BaseStream.Length; 
+                    reader.BaseStream.Position = reader.BaseStream.Length;
                     break;
             }
         }
     }
 
-    readonly byte[] IState.Serialize(byte[] fieldKeys)
+    byte[] IState<DataKey>.Serialize(DataKey[] dataKeys)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
 
-        foreach(byte keyByte in fieldKeys)
+        foreach(DataKey key in dataKeys)
         {
-            ByteKey key = (ByteKey)keyByte;
+            byte keyByte = (byte)key;
             writer.Write(keyByte);
 
             switch(key)
             {
-                case ByteKey.S_OlafPos:
-                    writer.Write(olafPos.x);
-                    writer.Write(olafPos.y);
-                    break;
-                case ByteKey.S_LevelSeed:
-                    writer.Write(levelSeed);
-                    break;
+                case DataKey.S_OlafPos: writer.Write(olafPos); break;
+                case DataKey.S_LevelSeed: writer.Write(levelSeed); break;
             }
         }
 

@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 
 namespace Backrooms.Online;
 
-public abstract class Client<TState>(TState defaultState, bool printDebug = false) where TState : IState
+public class Client(bool printDebug)
 {
-    public const int BUFFER_SIZE = 1024;
+    public const int BUFFER_SIZE = Server.BUFFER_SIZE;
 
-    public TState state = defaultState;
     public bool printDebug = printDebug;
+    public event Action connect, disconnect;
+    public event Action<byte[], int> handlePacket, handleClientRequest;
 
     protected TcpClient remoteClient;
 
@@ -24,6 +24,7 @@ public abstract class Client<TState>(TState defaultState, bool printDebug = fals
         {
             remoteClient = new(ipAddress, port);
             isConnected = true;
+            connect?.Invoke();
 
             OutIf(printDebug, $"Connected to server at {ipAddress}:{port}");
 
@@ -39,6 +40,7 @@ public abstract class Client<TState>(TState defaultState, bool printDebug = fals
     {
         isConnected = false;
         remoteClient.Close();
+        disconnect?.Invoke();
         OutIf(printDebug, "Disconnected");
     }
 
@@ -46,6 +48,9 @@ public abstract class Client<TState>(TState defaultState, bool printDebug = fals
     {
         try
         {
+            Assert(packet.Length <= BUFFER_SIZE, $"Attempting to send packet of size {packet.Length} [bytes], while the max packet size is {BUFFER_SIZE} [bytes]");
+
+            OutIf(printDebug, $"Sending packet of size {packet.Length} [bytes] to server");
             remoteClient.GetStream().Write(packet, 0, packet.Length);
         }
         catch(Exception exc)
@@ -53,9 +58,6 @@ public abstract class Client<TState>(TState defaultState, bool printDebug = fals
             OutErr(exc);
         }
     }
-
-    public void SendStateData(byte[] fieldKeys)
-        => SendPacket(state.Serialize(fieldKeys));
 
     
     private void HandleServerCommunication()
@@ -69,7 +71,11 @@ public abstract class Client<TState>(TState defaultState, bool printDebug = fals
             while((bytesRead = stream.Read(buf, 0, buf.Length)) > 0)
             {
                 OutIf(printDebug, $"Received server packet of size {bytesRead} [bytes]");
-                state.Deserialize(buf, bytesRead);
+
+                handlePacket?.Invoke(buf, bytesRead);
+
+                if((PacketType)buf[0] == PacketType.ServerRequest)
+                    handleClientRequest?.Invoke(buf, bytesRead);
             }
         }
         catch(Exception exc)

@@ -1,6 +1,6 @@
 ﻿namespace Backrooms.Online;
 
-public enum ByteKey : byte
+public enum DataKey : byte
 {
     Server = 1 << 7,
     Client = 0 << 7,

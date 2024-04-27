@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using Backrooms.Online;
 
 namespace Backrooms;
 
@@ -24,12 +26,17 @@ public class Game
     public SpriteRenderer olafScholz;
     public AudioSource olafScholzAudio;
     public float olafSpeed = .75f;
+    public bool isOnline;
+    public StatefulServer<ServerState, DataKey> server;
+    public StatefulClient<ClientState, DataKey> client;
+    public List<ClientState> clientStates;
+    public ServerState gameState;
 
     private readonly RoomGenerator generator = new();
-    private readonly Timer fpsTimer = new();
+    //private readonly Timer fpsTimer = new();
 
 
-    public Game(Window window)
+    public Game(Window window, bool host)
     {
         this.window = window;
         renderer = window.renderer;
@@ -41,9 +48,9 @@ public class Game
 
         window.tick += Tick;
 
-        fpsTimer.Tick += (_, _) => Out(1f / window.deltaTime);
-        fpsTimer.Interval = 1000;
-        fpsTimer.Start();
+        //fpsTimer.Tick += (_, _) => Out(1f / window.deltaTime);
+        //fpsTimer.Interval = 1000;
+        //fpsTimer.Start();
 
         renderer.map = map;
         map.textures = [
@@ -155,17 +162,22 @@ public class Game
 
         if(input.KeyDown(Keys.Escape))
             Environment.Exit(0);
+
+        if(input.KeyDown(Keys.F5))
+        {
+
+        }
+        if(input.KeyDown(Keys.F6))
+        {
+
+        }
         #endregion
 
         Vec2f olafToPlayer = camera.pos - olafScholz.pos;
         Vec2f oldOlaf = olafScholz.pos;
         if(camera.pos != olafScholz.pos)
             olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
-        olafScholz.pos = map.ResolveIntersectionIfNecessery(oldOlaf, olafScholz.pos, olafScholz.size.x/2f, out bool olafCollided);
-        if(olafCollided)
-        {
-            // igw machen idk
-        }
+        olafScholz.pos = map.ResolveIntersectionIfNecessery(oldOlaf, olafScholz.pos, olafScholz.size.x/2f, out _);
         olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);
     }
 }

@@ -1,7 +1,9 @@
-﻿namespace Backrooms.Online;
+﻿using System;
 
-public interface IState
+namespace Backrooms.Online;
+
+public interface IState<TKey> where TKey : Enum
 {
-    void Deserialize(byte[] data, int length);
-    byte[] Serialize(byte[] fieldKeys);
+    void Deserialize(byte[] data, int start, int length);
+    byte[] Serialize(TKey[] dataKeys);
 }
