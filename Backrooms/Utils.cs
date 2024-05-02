@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Backrooms;
 
@@ -60,4 +63,22 @@ public static class Utils
         writer.Write(v.x);
         writer.Write(v.y);
     }
+
+    public static string FormatStr<T>(this IEnumerable<T> tlist, string seperator, Func<T, string> toString)
+    {
+        StringBuilder sb = new();
+
+        foreach(T t in tlist)
+        {
+            sb.Append(toString(t));
+            sb.Append(seperator);
+        }
+
+        if(sb.Length != 0)
+            sb.Remove(sb.Length - seperator.Length, seperator.Length);
+
+        return sb.ToString();
+    }
+    public static string FormatStr<T>(this IEnumerable<T> tlist, string seperator)
+        => tlist.FormatStr(seperator, t => t.ToString());
 }

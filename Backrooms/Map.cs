@@ -31,7 +31,7 @@ public class Map(Tile[,] tiles) : IEnumerable
 
     public Tile this[int x, int y]
     {
-        get => tiles[x, y];
+        get => InBounds(x, y) ? tiles[x, y] : Tile.Empty;
         set => tiles[x, y] = value;
     }
 
@@ -115,6 +115,8 @@ public class Map(Tile[,] tiles) : IEnumerable
 
     public bool InBounds(Vec2f loc)
         => loc.x >= 0 && loc.y >= 0 && loc.x < size.x && loc.y < size.y;
+    public bool InBounds(float x, float y)
+        => x >= 0 && y >= 0 && x < size.x && y < size.y;
 
     public void SetTiles(Tile[,] tiles)
     {

@@ -2,21 +2,21 @@
 using System.Net.Sockets;
 using System.Threading;
 
-namespace Backrooms.Online;
+namespace Backrooms.Online.Generic;
 
-public class Client(bool printDebug)
+public class Client(int bufSize = 256, bool printDebug = false)
 {
-    public const int BUFFER_SIZE = Server.BUFFER_SIZE;
-
+    public int bufSize = bufSize;
     public bool printDebug = printDebug;
     public event Action connect, disconnect;
-    public event Action<byte[], int> handlePacket, handleServerRequest, handleServerState;
+    public event Action<byte[], int> handlePacket, handleServerRequest, handleServerState, handleWelcomePacket;
     public event Action<byte, byte[], int> handleClientState;
 
     protected TcpClient remoteClient;
 
 
     public bool isConnected { get; private set; }
+    public byte ownClientId { get; private set; }
 
 
     public void Connect(string ipAddress, int port)
@@ -49,7 +49,7 @@ public class Client(bool printDebug)
     {
         try
         {
-            Assert(packet.Length <= BUFFER_SIZE, $"Attempting to send packet of size {packet.Length} [bytes], while the max packet size is {BUFFER_SIZE} [bytes]");
+            Assert(packet.Length <= bufSize, $"Attempting to send packet of size {packet.Length} [bytes], while the max packet size is {bufSize} [bytes]");
 
             PrintIf(printDebug, $"Sending packet of size {packet.Length} [bytes] to server");
             remoteClient.GetStream().Write(packet, 0, packet.Length);
@@ -60,13 +60,13 @@ public class Client(bool printDebug)
         }
     }
 
-    
+
     private void HandleServerCommunication()
     {
         try
         {
             NetworkStream stream = remoteClient.GetStream();
-            byte[] buf = new byte[BUFFER_SIZE];
+            byte[] buf = new byte[bufSize];
             int bytesRead;
 
             while((bytesRead = stream.Read(buf, 0, buf.Length)) > 0)
@@ -75,16 +75,16 @@ public class Client(bool printDebug)
 
                 handlePacket?.Invoke(buf, bytesRead);
 
-                byte typeByte = (byte)(buf[0] & (0b11 << 6));
-                if(typeByte == (byte)PacketType.ClientState)
-                    handleClientState?.Invoke(buf[1], buf, bytesRead);
-                ((PacketType)typeByte switch {
-                    PacketType.ServerRequest => handleServerRequest,
-                    PacketType.ServerState => handleServerState,
-                    _ => null
-                })?.Invoke(buf, bytesRead);
+                PacketType packetType = (PacketType)(buf[0] & 0b11 << 6);
+                if(packetType == PacketType.ClientState)
+                    handleClientState?.Invoke(buf[1], buf, bytesRead); // TODO: make better
+                else if(packetType == PacketType.ServerState)
+                    handleServerState?.Invoke(buf, bytesRead);
+                else if(packetType == PacketType.WelcomePacket)
+                    handleWelcomePacket?.Invoke(buf, bytesRead);
             }
         }
+
         catch(Exception exc)
         {
             OutErr(exc);
@@ -92,5 +92,5 @@ public class Client(bool printDebug)
     }
 
 
-    private static void PrintIf(bool condition, object msg) => Globals.OutIf(condition, "[Client] " + msg);
+    private static void PrintIf(bool condition, object msg) => OutIf(condition, "[Client] " + msg);
 }

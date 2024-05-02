@@ -5,29 +5,31 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Linq;
 
-namespace Backrooms.Online;
+namespace Backrooms.Online.Generic;
 
 public class Server
 {
-    public const int BUFFER_SIZE = 1024;
-
+    public readonly int bufSize;
     public bool printDebug;
     public event Action<byte> connect, disconnect;
     public event Action<byte, byte[], int> handlePacket, handleClientRequest, handleClientState;
+    public event Action<byte[], int> handleServerState;
+    public event Func<byte, byte[]> constructWelcomePacket;
 
     protected TcpListener listener;
     protected readonly List<(TcpClient client, byte id)> clients = [];
 
-    private byte nextClientId = 1; // Start at one, since 0 == end of data
+    private byte nextClientId = 1; // One-indexed
 
 
     public bool isHosting { get; private set; }
 
 
-    public Server(bool printDebug = false)
+    public Server(int bufSize = 256, bool printDebug = false)
     {
+        this.bufSize = bufSize;
         this.printDebug = printDebug;
-        handleClientState = (byte clientId, byte[] packet, int packetSize) => BroadcastPacket(packet, clientId, packetSize);
+        handleClientState = (clientId, packet, packetSize) => BroadcastPacket(packet, [clientId], packetSize);
     }
 
 
@@ -65,20 +67,22 @@ public class Server
     {
         int len = length == -1 ? packet.Length : length;
 
-        Assert(len <= BUFFER_SIZE, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {BUFFER_SIZE} bytes");
+        Assert(len <= bufSize, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {bufSize} bytes");
 
         PrintIf(printDebug, $"Sending data packet of size {len} [bytes] to all ({clients.Count}) clients");
         foreach(TcpClient client in from c in clients select c.client)
             client.GetStream().Write(packet, 0, len);
     }
-    public void BroadcastPacket(byte[] packet, byte excluded, int length = -1)
+    public void BroadcastPacket(byte[] packet, byte[] excluded, int length = -1)
     {
         int len = length == -1 ? packet.Length : length;
 
-        Assert(len <= BUFFER_SIZE, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {BUFFER_SIZE} bytes");
+        Assert(len <= bufSize, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {bufSize} bytes");
 
         PrintIf(printDebug, $"Sending data packet of size {len} [bytes] to all ({clients.Count}) clients");
-        foreach(TcpClient client in from c in clients where c.id != excluded select c.client)
+        foreach(TcpClient client in from c in clients 
+                                    where !excluded.Contains(c.id) 
+                                    select c.client)
             client.GetStream().Write(packet, 0, len);
     }
 
@@ -86,7 +90,7 @@ public class Server
     {
         int len = length == -1 ? packet.Length : length;
 
-        Assert(len <= BUFFER_SIZE, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {BUFFER_SIZE} bytes");
+        Assert(len <= bufSize, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {bufSize} bytes");
 
         PrintIf(printDebug, $"Sending data packet of size {len} [bytes] to client with id {clientId}");
         GetClient(clientId).GetStream().Write(packet, 0, len);
@@ -117,20 +121,23 @@ public class Server
         try
         {
             using NetworkStream stream = client.GetStream();
-            byte[] buf = new byte[BUFFER_SIZE];
+            byte[] buf = new byte[bufSize];
             int bytesRead;
 
-            while((bytesRead = stream.Read(buf, 0, BUFFER_SIZE)) > 0)
+            if(constructWelcomePacket is not null)
+                stream.Write(constructWelcomePacket(clientId));
+
+            while((bytesRead = stream.Read(buf, 0, bufSize)) > 0)
             {
                 PrintIf(printDebug, $"Received client packet of size {bytesRead} [bytes] from client {client.Client.RemoteEndPoint}");
 
                 handlePacket?.Invoke(clientId, buf, bytesRead);
 
-                ((PacketType)(byte)(buf[0] & (0b11 << 6)) switch {
-                    PacketType.ClientRequest => handleClientRequest,
-                    PacketType.ClientState => handleClientState,
-                    _ => null
-                })?.Invoke(clientId, buf, bytesRead);
+                PacketType packetType = (PacketType)(byte)(buf[0] & 0b11 << 6);
+                if(packetType == PacketType.ServerState)
+                    handleServerState?.Invoke(buf, bytesRead);
+                else if(packetType == PacketType.ClientState)
+                    handleClientState?.Invoke(clientId, buf, bytesRead);
             }
 
             PrintIf(printDebug, $"Client disconnected: {client.Client.RemoteEndPoint}");
@@ -144,5 +151,5 @@ public class Server
     }
 
 
-    private static void PrintIf(bool condition, object msg) => Globals.OutIf(condition, "[Server] " + msg);
+    private static void PrintIf(bool condition, object msg) => OutIf(condition, "[Server] " + msg);
 }

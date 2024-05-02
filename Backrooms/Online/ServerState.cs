@@ -1,69 +1,63 @@
-﻿using System.IO;
-using System;
+﻿using System;
+using System.IO;
+using System.Linq;
+using Backrooms.Online.Generic;
 
 namespace Backrooms.Online;
 
-public class ServerState : IState<StateKey>
+/// <summary>
+/// Layout of serialized ServerState ([..] == 1 byte, {..} == x times): <br />
+/// <code>
+/// [PacketType.ServerState as byte]
+/// {
+///     [StateKey as byte]
+///     { [data] } (* size of data in bytes)
+/// } (* amount of data keys)
+/// [0xff] (== PacketType.EndOfData)
+/// </code>
+/// </summary>
+public class ServerState : State<StateKey>
 {
     public int levelSeed;
     public Vec2f olafPos;
     public byte olafTarget;
 
-    public static readonly StateKey[] allKeys = [StateKey.S_OlafPos, StateKey.S_LevelSeed];
+    public static readonly StateKey[] allKeys = (from v in Enum.GetValues<StateKey>()
+                                                 where (v != StateKey.Server) && (((byte)v & 0b1100_0000) == (byte)StateKey.Server)
+                                                 select v).ToArray();
 
 
-    public void Deserialize(byte[] data, int start, int end)
+    protected override StateKey KeyFromByte(byte value) => (StateKey)value;
+    protected override byte ByteFromKey(StateKey key) => (byte)key;
+
+    protected override void SerializeField(BinaryWriter writer, StateKey key)
     {
-        using MemoryStream stream = new(data, start, end - start);
-        using BinaryReader reader = new(stream);
-
-        while(reader.BaseStream.Position < reader.BaseStream.Length)
+        switch(key)
         {
-            byte next = reader.ReadByte();
-
-            if(next == 0)
-                break;
-
-            switch((StateKey)next)
-            {
-                case StateKey.S_LevelSeed:
-                    levelSeed = reader.ReadInt32();
-                    break;
-                case StateKey.S_OlafPos:
-                    olafPos = reader.ReadVec2f();
-                    break;
-                case StateKey.S_OlafTarget:
-                    olafTarget = reader.ReadByte();
-                    break;
-                default:
-                    Out($"Unrecognized byte key encountered in ServerState.Deserialize(): 0x{Convert.ToString(next, 16)}");
-                    reader.BaseStream.Position = reader.BaseStream.Length;
-                    break;
-            }
+            case StateKey.S_LevelSeed: writer.Write(levelSeed); break;
+            case StateKey.S_OlafPos: writer.Write(olafPos); break;
+            case StateKey.S_OlafTarget: writer.Write(olafTarget); break;
+            default: throw new($"Invalid StateKey in ServerState.SerializeField(): {key} // {(byte)key}");
         }
     }
 
-    public byte[] Serialize(byte? clientData = null, params StateKey[] dataKeys)
+    protected override void DeserializeField(BinaryReader reader, StateKey key)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
-
-        Assert(clientData is null, "ServerState does not take in clientData!");
-
-        foreach(StateKey key in dataKeys)
+        switch(key)
         {
-            byte keyByte = (byte)key;
-            writer.Write(keyByte);
-
-            switch(key)
-            {
-                case StateKey.S_LevelSeed: writer.Write(levelSeed); break;
-                case StateKey.S_OlafPos: writer.Write(olafPos); break;
-                case StateKey.S_OlafTarget: writer.Write(olafTarget); break;
-            }
+            case StateKey.S_LevelSeed: levelSeed = reader.ReadInt32(); break;
+            case StateKey.S_OlafPos: olafPos = reader.ReadVec2f(); break;
+            case StateKey.S_OlafTarget: olafTarget = reader.ReadByte(); break;
+            default: throw new($"Invalid StateKey in ServerState.DeserializeField(): {key} // {(byte)key}");
         }
-
-        writer.Write((byte)0);
-        return stream.ToArray();
     }
+
+    protected override void PreSerialize(BinaryWriter writer)
+        => writer.Write((byte)PacketType.ServerState);
+
+    protected override void PreDeserialize(BinaryReader reader)
+        => reader.ReadByte();
+
+    protected override void PostSerialize(BinaryWriter writer)
+        => writer.Write((byte)PacketType.EndOfData);
 }

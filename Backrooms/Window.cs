@@ -34,8 +34,8 @@ public class Window : Form
         BackColor = Color.Black;
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.None;
-        Size = Screen.PrimaryScreen.Bounds.Size;
-        WindowState = FormWindowState.Maximized;
+        Size = new(100, 100);//Screen.PrimaryScreen.Bounds.Size;
+        //WindowState = FormWindowState.Maximized;
         Location = Screen.FromPoint(Cursor.Position).WorkingArea.Location;
         SetIcon(iconManifest);
 

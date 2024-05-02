@@ -1,77 +1,70 @@
 ﻿using System.IO;
 using System;
+using Backrooms.Online.Generic;
+using System.Linq;
 
 namespace Backrooms.Online;
 
-public class ClientState : IState<StateKey>
+/// <summary>
+/// Layout of serialized ClientState ([..] == 1 byte, {..} == x times): <br />
+/// <code>
+/// [PacketType.ClientState as byte]
+/// [Client ID]
+/// {
+///     [StateKey as byte]
+///     { [data] } (* size of data in bytes)
+/// } (* amount of data keys)
+/// [0xff] (== PacketType.EndOfData)
+/// </code>
+/// </summary>
+public class ClientState(byte clientId) : State<StateKey>
 {
+    public byte clientId = clientId;
     public Vec2f pos;
     public float rot;
 
-    public static readonly StateKey[] allKeys = [StateKey.C_Pos, StateKey.C_Rot];
+    public static readonly StateKey[] allKeys = (from v in Enum.GetValues<StateKey>()
+                                                 where (v != StateKey.Client) && (((byte)v & 0b1100_0000) == (byte)StateKey.Client)
+                                                 select v).ToArray();
 
 
-    public void Deserialize(byte[] data, int start, int end)
+    protected override StateKey KeyFromByte(byte value) => (StateKey)value;
+    protected override byte ByteFromKey(StateKey key) => (byte)key;
+
+    protected override void SerializeField(BinaryWriter writer, StateKey key)
     {
-        using MemoryStream stream = new(data, start, end - start);
-        using BinaryReader reader = new(stream);
-
-        reader.BaseStream.Position += 2;
-
-        while(reader.BaseStream.Position < reader.BaseStream.Length)
+        switch(key)
         {
-            byte next = reader.ReadByte();
-
-            if(next == 0)
-                break;
-
-            switch((StateKey)next)
-            {
-                case StateKey.C_Pos:
-                    pos = reader.ReadVec2f();
-                    break;
-                case StateKey.C_Rot:
-                    rot = reader.ReadSingle();
-                    break;
-                default:
-                    Console.WriteLine($"Unrecognized byte key encountered in ServerState.Deserialize(): 0x{Convert.ToString(next, 16)}");
-                    reader.BaseStream.Position = reader.BaseStream.Length;
-                    break;
-            }
+            case StateKey.C_ClientId: writer.Write(clientId); break;
+            case StateKey.C_Pos: writer.Write(pos); break;
+            case StateKey.C_Rot: writer.Write(rot); break;
+            default: throw new($"Invalid StateKey in ClientState.SerializeField(): {key} // {(byte)key}");
         }
     }
 
-    /// <summary>
-    /// Serializes client data into an array of bytes: ([StateKey.Client][clientId]) when client != null; (..[StateKey][state data]) x times
-    /// </summary>
-    public byte[] Serialize(byte? clientId = null, params StateKey[] dataKeys)
+    protected override void DeserializeField(BinaryReader reader, StateKey key)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
-
-        if(clientId is not null)
+        switch(key)
         {
-            writer.Write((byte)StateKey.Client);
-            writer.Write(clientId is not null);
+            case StateKey.C_ClientId: clientId = reader.ReadByte(); break;
+            case StateKey.C_Pos: pos = reader.ReadVec2f(); break;
+            case StateKey.C_Rot: rot = reader.ReadSingle(); break;
+            default: break;//throw new($"Invalid StateKey in ClientState.DeserializeField(): {key} // {(byte)key}");
         }
-
-        foreach(StateKey key in dataKeys)
-        {
-            byte keyByte = (byte)key;
-            writer.Write(keyByte);
-
-            switch(key)
-            {
-                case StateKey.C_Pos:
-                    writer.Write(pos);
-                    break;
-                case StateKey.C_Rot:
-                    writer.Write(rot);
-                    break;
-            }
-        }
-
-        writer.Write((byte)0);
-        return stream.ToArray();
     }
+
+    protected override void PreSerialize(BinaryWriter writer)
+    {
+        writer.Write((byte)PacketType.ClientState);
+        writer.Write(clientId);
+    }
+
+    protected override void PreDeserialize(BinaryReader reader)
+    {
+        reader.ReadByte(); // PacketType.ClientState
+        reader.ReadByte(); // clientId
+    }
+
+    protected override void PostSerialize(BinaryWriter writer)
+        => writer.Write((byte)PacketType.EndOfData);
 }
