@@ -91,51 +91,18 @@ public class Game
     }
 
 
-    public void GenerateMap()
+    public void GenerateMap(int seed)
     {
-        Console.WriteLine("Initiating...");
-        generator.Initiate();
+        Out($"Generating map with seed {seed}");
 
-        Console.WriteLine("Generating rooms & hallways...");
+        generator.Initiate(seed);
+
         generator.GenerateHallways();
         generator.GenerateRooms();
         generator.GeneratePillarRooms();
 
-        //Console.WriteLine("Building Walls...");
-        //List<(Vec2i from, Vec2i to)> lines = [];
-        //using Bitmap walls = new(generator.gridSize.w*8+2, generator.gridSize.h*8+2);
-        //Graphics g = Graphics.FromImage(walls);
-        //for(int x = 0; x < generator.gridSize.w; x++)
-        //    for(int y = 0; y < generator.gridSize.h; y++)
-        //    {
-        //        if(generator[x, y])
-        //        {
-        //            g.FillRectangle(Brushes.White, new(x*8+1, y*8+1, 8, 8));
-
-        //            if(x > 0 && !generator[x-1, y]) lines.Add((new(x*8+1, y*8+9), new(x*8+1, y*8)));
-        //            if(y > 0 && !generator[x, y-1]) lines.Add((new(x*8+9, y*8+1), new(x*8+1, y*8+1)));
-        //            if(x < generator.gridSize.w-1 && !generator[x+1, y]) lines.Add((new(x*8+9, y*8+9), new(x*8+9, y*8)));
-        //            if(y < generator.gridSize.h-1 && !generator[x, y+1]) lines.Add((new(x*8+9, y*8+9), new(x*8, y*8+9)));
-        //        }
-        //    }
-        //Pen pen = new(Brushes.White);
-
-        //g.Clear(Color.Black);
-        //foreach(var ln in lines)
-        //    g.DrawLine(pen, ln.from, ln.to);
-        //g.Dispose();
-        //using LockedBitmap lb = new(walls, PixelFormat.Format24bppRgb);
-
-        //Console.WriteLine("Converting to sensible format...");
-        //Tile[,] tiles = new Tile[walls.Width, walls.Height];
-        //for(int x = 0; x < walls.Width; x++)
-        //    for(int y = 0; y < walls.Height; y++)
-        //        tiles[x, y] = lb.GetPixel24(x, y).r < 0x7f ? Tile.Empty : Tile.Wall;
-
-        Console.WriteLine("Refreshing map...");
         map.SetTiles(generator.FormatTiles());
 
-        Console.WriteLine("Moving player...");
         camera.pos = map.size/2f;
         while(camera.pos.Floor() is Vec2i cPos)
             if(map.InBounds(cPos))
@@ -147,7 +114,6 @@ public class Game
             }
             else
             {
-                Console.WriteLine("Regenerating...");
                 generator.Initiate();
                 generator.GenerateHallways();
                 generator.GenerateRooms();
@@ -156,9 +122,9 @@ public class Game
                 camera.pos = map.size/2f;
             }
         camera.pos += Vec2f.half;
+        mpHandler.ownClientState.pos = camera.pos;
+        mpHandler.SendClientStateChange(StateKey.C_Pos);
         camera.maxDist = 50f;
-
-        Console.WriteLine("Finished!");
     }
 
 
@@ -185,8 +151,14 @@ public class Game
 
         if(input.KeyDown(Keys.F5))
         {
-            GenerateMap();
-            renderer.sprites[0].pos = camera.pos;
+            if(!mpHandler.isHost)
+                Out("You must be host to refresh the map!");
+            else
+            {
+                mpHandler.serverState.levelSeed = new Random().Next();
+                mpHandler.SendServerStateChange(StateKey.S_LevelSeed);
+                mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
+            }
         }
 
         if(input.KeyDown(Keys.F1))

@@ -55,6 +55,7 @@ public unsafe class Renderer
 #else
         Bitmap bitmap = new(virtualRes.x, virtualRes.y);
 #endif
+
         Array.Fill(depthBuf, 1f);
         BitmapData data = bitmap.LockBits(new(0, 0, virtualRes.x, virtualRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 

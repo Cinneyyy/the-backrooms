@@ -6,8 +6,6 @@ namespace Backrooms;
 
 public class RoomGenerator : IEnumerable
 {
-    private static readonly Random rand = new();
-
     public Vec2i gridSize = new(192*2, 108*2); // 192, 108
     public float mazeFill = .5f; // .8f
     public int mazeCount = 1000; // 1000
@@ -22,6 +20,7 @@ public class RoomGenerator : IEnumerable
     public int[] frontierAttempts = [ 1 ]; // [ 1 ]
     public List<(Vec2i loc, Vec2i size)> rooms = [], pillarRooms = [];
 
+    private Random rand = new();
     private int columns, rows;
     private Tile[,] tiles;
 
@@ -33,8 +32,10 @@ public class RoomGenerator : IEnumerable
     }
 
 
-    public void Initiate()
+    public void Initiate(int seed = 0)
     {
+        rand = new(seed);
+
         rooms.Clear();
         pillarRooms.Clear();
 
@@ -170,6 +171,6 @@ public class RoomGenerator : IEnumerable
     public IEnumerator GetEnumerator() => tiles.GetEnumerator();
 
 
-    private static int Rand(int max, bool incl = false) => rand.Next(max + (incl ? 1 : 0));
-    private static int Rand(int min, int max, bool incl = false) => rand.Next(min, max + (incl ? 1 : 0));
+    private int Rand(int max, bool incl = false) => rand.Next(max + (incl ? 1 : 0));
+    private int Rand(int min, int max, bool incl = false) => rand.Next(min, max + (incl ? 1 : 0));
 }

@@ -83,6 +83,8 @@ public class Client(int bufSize = 256, bool printDebug = false)
                     handleServerState?.Invoke(buf, bytesRead);
                 else if(packetType == PacketType.WelcomePacket)
                     handleWelcomePacket?.Invoke(buf, bytesRead);
+                else if(packetType == PacketType.ServerRequest)
+                    handleServerRequest?.Invoke(buf, bytesRead);
             }
         }
 

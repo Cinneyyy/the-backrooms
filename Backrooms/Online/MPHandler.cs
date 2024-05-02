@@ -55,6 +55,9 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
     public void SendServerStateChange(params StateKey[] keys)
         => client.SendPacket(serverState.Serialize(keys));
 
+    public void SendServerRequest(RequestKey key)
+        => server.BroadcastPacket([(byte)key]);
+
 
     private void StartHost()
     {
@@ -91,7 +94,12 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
 
     private void HandleServerRequest(byte[] packet, int length)
     {
+        RequestKey key = (RequestKey)packet[0];
 
+        switch(key)
+        {
+            case RequestKey.S_RegenerateMap: game.GenerateMap(serverState.levelSeed); break;
+        }
     }
 
     private void HandleClientRequest(byte clientId, byte[] packet, int length)
