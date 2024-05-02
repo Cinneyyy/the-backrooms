@@ -13,7 +13,7 @@ namespace Backrooms.Online;
 ///     [StateKey as byte]
 ///     { [data] } (* size of data in bytes)
 /// } (* amount of data keys)
-/// [0xff] (== PacketType.EndOfData)
+/// [PacketType.EndOfData]
 /// </code>
 /// </summary>
 public class ServerState : State<StateKey>

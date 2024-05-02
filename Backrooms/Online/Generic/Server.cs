@@ -7,10 +7,10 @@ using System.Linq;
 
 namespace Backrooms.Online.Generic;
 
-public class Server
+public class Server(int bufSize = 256, bool printDebug = false)
 {
-    public readonly int bufSize;
-    public bool printDebug;
+    public readonly int bufSize = bufSize;
+    public bool printDebug = printDebug;
     public event Action<byte> connect, disconnect;
     public event Action<byte, byte[], int> handlePacket, handleClientRequest, handleClientState;
     public event Action<byte[], int> handleServerState;
@@ -23,14 +23,6 @@ public class Server
 
 
     public bool isHosting { get; private set; }
-
-
-    public Server(int bufSize = 256, bool printDebug = false)
-    {
-        this.bufSize = bufSize;
-        this.printDebug = printDebug;
-        handleClientState = (clientId, packet, packetSize) => BroadcastPacket(packet, [clientId], packetSize);
-    }
 
 
     public void StartHosting(int port)

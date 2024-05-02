@@ -8,6 +8,6 @@ public enum PacketType : byte
     ServerState = 0b10 << 6,
     /// <summary>The first packet that the client receives from the server, containing information about the server and client states</summary>
     WelcomePacket = 0b11 << 6,
-    /// <summary>Not a packet type per se, but this indicates that the deserialization process should break</summary>
+    /// <summary>Indicates the current stream of data is over, but the packet could still go on</summary>
     EndOfData = 0xff
 }

@@ -62,7 +62,7 @@ public class Game
         };
         //olafScholzAudio.Play();
 
-        mpHandler = new(this, host, "127.0.0.1", 1234, 256, true);
+        mpHandler = new(this, host, "127.0.0.1", 8080, 2048, printDebug: false);
         mpHandler.Start();
 
         mpHandler.serverState.olafPos = map.size/2f;
@@ -144,7 +144,6 @@ public class Game
 
     private void Tick(float dt)
     {
-        Out(mpHandler.ready);
         if(!mpHandler.ready)
             return;
 
@@ -155,7 +154,8 @@ public class Game
             (input.KeyHelt(Keys.A) ? 1f : input.KeyHelt(Keys.D) ? -1f : 0f) * camera.right +
             (input.KeyHelt(Keys.S) ? -1f : input.KeyHelt(Keys.W) ? 1f : 0f) * camera.forward).normalized;
         camera.pos = map.ResolveIntersectionIfNecessery(prevCamPos, camera.pos, .25f, out _);
-        camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity * dt;
+        if(input.lockCursor)
+            camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity * dt;
         mpHandler.ownClientState.pos = camera.pos;
         mpHandler.ownClientState.rot = camera.angle;
         mpHandler.SendClientStateChange(StateKey.C_Pos);
