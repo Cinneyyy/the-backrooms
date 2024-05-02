@@ -53,7 +53,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
 
     private void StartHost()
     {
-        server.handlePacket += (client, packet, length) => Out("[Server received packet] " + packet[0..length].FormatStr(" ", b => Convert.ToString(b, 16).PadLeft(2, '0')));
+        server.handlePacket += (client, packet, length) => OutIf(printDebug, "[Server received packet] " + packet[0..length].FormatStr(" ", b => Convert.ToString(b, 16).PadLeft(2, '0')));
         server.constructWelcomePacket += ConstructWelcomePacket;
         server.handleClientRequest += HandleClientRequest;
         server.handleClientState += (clientId, packet, length) => server.BroadcastPacket(packet, [clientId], length);
@@ -74,7 +74,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
 
     private void StartClient()
     {
-        client.handlePacket += (packet, length) => Out("[Client received packet] " + packet[0..length].FormatStr(" ", b => Convert.ToString(b, 16).PadLeft(2, '0')));
+        client.handlePacket += (packet, length) => OutIf(printDebug, "[Client received packet] " + packet[0..length].FormatStr(" ", b => Convert.ToString(b, 16).PadLeft(2, '0')));
         client.handleWelcomePacket += HandleWelcomePacket;
         client.handleClientState += (clientId, packet, length) => GetClientState(clientId).Deserialize(packet, 0, length, out _);
         client.handleServerState += (packet, length) => serverState.Deserialize(packet, 0, length, out _);
