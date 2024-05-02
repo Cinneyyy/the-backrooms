@@ -22,6 +22,7 @@ public unsafe class Renderer
     public Window window;
     public List<SpriteRenderer> sprites = [];
     public float[] depthBuf;
+    public bool drawIfCursorOffscreen = true;
 
 #if DONT_CLEAR
     private Bitmap lastBmp = new(1, 1);
@@ -46,7 +47,7 @@ public unsafe class Renderer
 
     public unsafe Bitmap Draw()
     {
-        if(camera is null || map is null)// || input.cursorOffScreen)
+        if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
             return new(1, 1);
 
 #if DONT_CLEAR
@@ -54,26 +55,11 @@ public unsafe class Renderer
 #else
         Bitmap bitmap = new(virtualRes.x, virtualRes.y);
 #endif
-        //Graphics.FromImage(bitmap).Clear(Color.FromArgb(0x95/4, 0x8e/4, 0x3b/4));
         Array.Fill(depthBuf, 1f);
         BitmapData data = bitmap.LockBits(new(0, 0, virtualRes.x, virtualRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        //for(int x = 0; x < virtualRes.x; x++)
-        //    for(int y = 0; y < virtualRes.y; y++)
-        //        SetPixel(data, x, y, new((float)x / virtualRes.x * MathF.Abs(MathF.Sin(window.timeElapsed)), 0f, (float)y / virtualRes.y * MathF.Abs(MathF.Cos(window.timeElapsed))));
-
-        //Color32 ceilAndFloorCol = new(0x95, 0x8e, 0x3b);
-        //for(int y = 0; y < virtualCenter.y; y++)
-        //{
-        //    Color32 col = ceilAndFloorCol * MathF.Pow(.5f - (float)y/virtualCenter.y, 2f);
-        //    for(int x = 0; x < virtualRes.x; x++)
-        //    {
-        //        SetPixel(data, x, y, col);
-        //        SetPixel(data, x, virtualRes.y - 1 - y, col);
-        //    }
-        //}
-
         int sprCount = sprites.Count;
+        sprites.Sort((a, b) => (int)MathF.Round((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength));
         for(int i = 0; i < sprCount; i++)
         {
             SpriteRenderer spr = sprites[i];
@@ -94,14 +80,14 @@ public unsafe class Renderer
                 int locY = (int)(virtualCenter.y - size.y/2f);
                 Vec2i sizeI = size.Round();
 
+                int xMin = Math.Max(0, locX), xMax = Math.Min(virtualRes.x-1, locX+sizeI.x);
+                for(int x = xMin; x < xMax; x++) // Draw wall behind transparent image
+                    DrawWallSegment(data, in x);
+
                 if(spr.hasTransparency)
-                {
-                    int xMin = Math.Max(0, locX), xMax = Math.Min(virtualRes.x-1, locX+sizeI.x);
-                    for(int x = xMin; x < xMax; x++) // Draw wall behind transparent image
-                        DrawWallSegment(data, in x);
                     DrawBitmapCutout24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
-                }
-                else DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
+                else 
+                    DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
 
                 FillDepthBuf(locX, sizeI.x, dist/camera.maxDist);
             }
