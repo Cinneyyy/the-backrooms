@@ -6,11 +6,10 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        Out("Press H to host, or J to join");
+        Out("Do you want to host? (y/n)");
         char input = char.ToLower(Console.ReadLine()[0]);
-        Assert(input is 'h' or 'j', "Input must be H or J");
 
         Game game;
-        Window window = new(new(1920/6, 1080/6), "The Backrooms", "oli_appicon", true, w => game = new(w, input == 'h'));
+        Window window = new(new(1920/6, 1080/6), "The Backrooms", "oli_appicon", false, w => game = new(w, input == 'y'));
     }
 }

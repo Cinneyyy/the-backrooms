@@ -88,13 +88,7 @@ public class Map(Tile[,] tiles) : IEnumerable
             _ => 0
         });
 
-        if(offset == Vec2i.zero) // Not edging
-        {
-            type = this[tile];
-            return type != Tile.Empty;
-        }
-
-        if(offset.x == 0 || offset.y == 0) // Edging on one side
+        if(offset.x == 0 || offset.y == 0) // Not edging or edging on one side
         {
             type = this[tile + offset];
             return type != Tile.Empty;
@@ -104,8 +98,8 @@ public class Map(Tile[,] tiles) : IEnumerable
              collB = this[tile.x, offset.y + tile.y], 
              collC = this[tile + offset];
 
-        type = collA != Tile.Empty ? collA : collB != Tile.Empty ? collB : collC != Tile.Empty ? collC : Tile.Empty;
-        return type != Tile.Empty;
+        // sorry
+        return (type = collA != Tile.Empty ? collA : collB != Tile.Empty ? collB : collC != Tile.Empty ? collC : Tile.Empty) != Tile.Empty;
     }
 
     public Vec2f ResolveIntersectionIfNecessery(Vec2f oldPt, Vec2f newPt, float radius, out bool didCollide)

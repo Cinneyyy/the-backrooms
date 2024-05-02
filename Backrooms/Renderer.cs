@@ -46,7 +46,7 @@ public unsafe class Renderer
 
     public unsafe Bitmap Draw()
     {
-        if(camera is null || map is null || input.cursorOffScreen)
+        if(camera is null || map is null)// || input.cursorOffScreen)
             return new(1, 1);
 
 #if DONT_CLEAR

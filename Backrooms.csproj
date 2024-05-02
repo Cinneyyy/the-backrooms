@@ -17,6 +17,7 @@
     <None Remove="Resources\oli_appicon.ico" />
     <None Remove="Resources\Textures\oli.png" />
     <None Remove="Resources\Textures\pillar.png" />
+    <None Remove="Resources\Textures\square.png" />
     <None Remove="Resources\wall.png" />
   </ItemGroup>
 
@@ -27,6 +28,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\Textures\oli.png" />
     <EmbeddedResource Include="Resources\Textures\pillar.png" />
+    <EmbeddedResource Include="Resources\Textures\square.png" />
     <EmbeddedResource Include="Resources\Textures\wall.png" />
   </ItemGroup>
 

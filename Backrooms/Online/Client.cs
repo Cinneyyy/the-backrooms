@@ -10,7 +10,8 @@ public class Client(bool printDebug)
 
     public bool printDebug = printDebug;
     public event Action connect, disconnect;
-    public event Action<byte[], int> handlePacket, handleClientRequest;
+    public event Action<byte[], int> handlePacket, handleServerRequest, handleServerState;
+    public event Action<byte, byte[], int> handleClientState;
 
     protected TcpClient remoteClient;
 
@@ -26,7 +27,7 @@ public class Client(bool printDebug)
             isConnected = true;
             connect?.Invoke();
 
-            OutIf(printDebug, $"Connected to server at {ipAddress}:{port}");
+            PrintIf(printDebug, $"Connected to server at {ipAddress}:{port}");
 
             new Thread(HandleServerCommunication).Start();
         }
@@ -41,7 +42,7 @@ public class Client(bool printDebug)
         isConnected = false;
         remoteClient.Close();
         disconnect?.Invoke();
-        OutIf(printDebug, "Disconnected");
+        PrintIf(printDebug, "Disconnected");
     }
 
     public void SendPacket(byte[] packet)
@@ -50,7 +51,7 @@ public class Client(bool printDebug)
         {
             Assert(packet.Length <= BUFFER_SIZE, $"Attempting to send packet of size {packet.Length} [bytes], while the max packet size is {BUFFER_SIZE} [bytes]");
 
-            OutIf(printDebug, $"Sending packet of size {packet.Length} [bytes] to server");
+            PrintIf(printDebug, $"Sending packet of size {packet.Length} [bytes] to server");
             remoteClient.GetStream().Write(packet, 0, packet.Length);
         }
         catch(Exception exc)
@@ -70,12 +71,18 @@ public class Client(bool printDebug)
 
             while((bytesRead = stream.Read(buf, 0, buf.Length)) > 0)
             {
-                OutIf(printDebug, $"Received server packet of size {bytesRead} [bytes]");
+                PrintIf(printDebug, $"Received server packet of size {bytesRead} [bytes]");
 
                 handlePacket?.Invoke(buf, bytesRead);
 
-                if((PacketType)buf[0] == PacketType.ServerRequest)
-                    handleClientRequest?.Invoke(buf, bytesRead);
+                byte typeByte = (byte)(buf[0] & (0b11 << 6));
+                if(typeByte == (byte)PacketType.ClientState)
+                    handleClientState?.Invoke(buf[1], buf, bytesRead);
+                ((PacketType)typeByte switch {
+                    PacketType.ServerRequest => handleServerRequest,
+                    PacketType.ServerState => handleServerState,
+                    _ => null
+                })?.Invoke(buf, bytesRead);
             }
         }
         catch(Exception exc)
@@ -83,4 +90,7 @@ public class Client(bool printDebug)
             OutErr(exc);
         }
     }
+
+
+    private static void PrintIf(bool condition, object msg) => Globals.OutIf(condition, "[Client] " + msg);
 }
