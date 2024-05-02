@@ -33,7 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lidgren.Network" Version="1.0.2" />
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 

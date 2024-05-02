@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
@@ -27,6 +28,7 @@ public class Game
     public AudioSource olafScholzAudio;
     public float olafSpeed = .75f;
     public MPHandler mpHandler;
+    public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
 
 
     private readonly RoomGenerator generator = new();
@@ -68,6 +70,24 @@ public class Game
         mpHandler.serverState.olafPos = map.size/2f;
         mpHandler.serverState.olafTarget = 1;
         mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
+
+        mpHandler.onFinishConnect += () => {
+            foreach(var (id, state) in mpHandler.clientStates)
+                if(id != mpHandler.ownClientId)
+                {
+                    SpriteRenderer newPlayerRenderer = new(state.pos, new(.25f, .6f), false, Resources.sprites["square"]);
+                    renderer.sprites.Add(newPlayerRenderer);
+                    playerRenderers.Add((id, newPlayerRenderer));
+                }
+        };
+        mpHandler.onPlayerConnect += id => {
+            if(id != mpHandler.ownClientId)
+            {
+                SpriteRenderer newPlayerRenderer = new(mpHandler.GetClientState(id).pos, new(.25f, .6f), false, Resources.sprites["square"]);
+                renderer.sprites.Add(newPlayerRenderer);
+                playerRenderers.Add((id, newPlayerRenderer));
+            }
+        };
     }
 
 
@@ -196,5 +216,8 @@ public class Game
         {
             olafScholz.pos = mpHandler.serverState.olafPos;
         }
+
+        foreach(var (id, rend) in playerRenderers)
+            rend.pos = mpHandler.GetClientState(id).pos;
     }
 }

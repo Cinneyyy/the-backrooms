@@ -16,6 +16,8 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
     public readonly Client client = new(bufSize, printDebug);
     public readonly ServerState serverState = new();
     public readonly List<(byte id, ClientState state)> clientStates = [];
+    public event Action onFinishConnect;
+    public event Action<byte> onPlayerConnect;
 
 
     public byte ownClientId { get; private set; }
@@ -39,6 +41,9 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
         {
             state = new(clientId);
             clientStates.Add((clientId, state));
+
+            if(ready)
+                onPlayerConnect?.Invoke(clientId);
         }
 
         return state;
@@ -64,10 +69,11 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
             };
 
             clientStates.Add((clientId, newState));
+            if(clientId != 1)
+                onPlayerConnect?.Invoke(clientId);
 
             server.BroadcastPacket(newState.Serialize(ClientState.allKeys), [clientId, ownClientId]);
         };
-        server.disconnect += null;
 
         server.StartHosting(port);
     }
@@ -145,6 +151,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
         ownClientState = GetClientState(ownClientId);
 
         ready = true;
+        onFinishConnect?.Invoke();
 
         OutIf(printDebug, $"[Client] Successfully handled welcome packet ({length} bytes)");
     }

@@ -7,6 +7,7 @@ using System.Linq;
 
 namespace Backrooms.Online.Generic;
 
+#pragma warning disable CS0067
 public class Server(int bufSize = 256, bool printDebug = false)
 {
     public readonly int bufSize = bufSize;
@@ -33,7 +34,7 @@ public class Server(int bufSize = 256, bool printDebug = false)
             listener.Start();
             isHosting = true;
 
-            PrintIf(printDebug, $"Hosting on port {port}");
+            Out($"Hosting on port {port}");
 
             new Thread(AcceptClients).Start();
         }
@@ -52,7 +53,7 @@ public class Server(int bufSize = 256, bool printDebug = false)
         isHosting = false;
         listener.Stop();
 
-        PrintIf(printDebug, "Stopped hosting");
+        Out("Stopped hosting");
     }
 
     public void BroadcastPacket(byte[] packet, int length = -1)

@@ -4,6 +4,7 @@ using System.Threading;
 
 namespace Backrooms.Online.Generic;
 
+#pragma warning disable CS0067
 public class Client(int bufSize = 256, bool printDebug = false)
 {
     public int bufSize = bufSize;
@@ -27,7 +28,7 @@ public class Client(int bufSize = 256, bool printDebug = false)
             isConnected = true;
             connect?.Invoke();
 
-            PrintIf(printDebug, $"Connected to server at {ipAddress}:{port}");
+            Out($"Connected to server at {ipAddress}:{port}");
 
             new Thread(HandleServerCommunication).Start();
         }
@@ -42,7 +43,7 @@ public class Client(int bufSize = 256, bool printDebug = false)
         isConnected = false;
         remoteClient.Close();
         disconnect?.Invoke();
-        PrintIf(printDebug, "Disconnected");
+        Out("Disconnected");
     }
 
     public void SendPacket(byte[] packet)
