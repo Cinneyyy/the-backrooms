@@ -56,9 +56,9 @@ public class Server(int bufSize = 256, bool printDebug = false)
         Out("Stopped hosting");
     }
 
-    public void BroadcastPacket(byte[] packet, int length = -1)
+    public void BroadcastPacket(byte[] packet, int? length = null)
     {
-        int len = length == -1 ? packet.Length : length;
+        int len = length ?? packet.Length;
 
         Assert(len <= bufSize, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {bufSize} bytes");
 
@@ -66,9 +66,9 @@ public class Server(int bufSize = 256, bool printDebug = false)
         foreach(TcpClient client in from c in clients select c.client)
             client.GetStream().Write(packet, 0, len);
     }
-    public void BroadcastPacket(byte[] packet, byte[] excluded, int length = -1)
+    public void BroadcastPacket(byte[] packet, byte[] excluded, int? length = null)
     {
-        int len = length == -1 ? packet.Length : length;
+        int len = length ?? packet.Length;
 
         Assert(len <= bufSize, $"Attempting to send packet of size {len} [bytes], while the buffer size is merely {bufSize} bytes");
 
@@ -126,7 +126,7 @@ public class Server(int bufSize = 256, bool printDebug = false)
 
                 handlePacket?.Invoke(clientId, buf, bytesRead);
 
-                PacketType packetType = (PacketType)(byte)(buf[0] & 0b11 << 6);
+                PacketType packetType = (PacketType)(byte)(buf[0] & 0b111 << 5);
                 if(packetType == PacketType.ServerState)
                     handleServerState?.Invoke(buf, bytesRead);
                 else if(packetType == PacketType.ClientState)

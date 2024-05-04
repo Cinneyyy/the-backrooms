@@ -76,15 +76,15 @@ public class Client(int bufSize = 256, bool printDebug = false)
 
                 handlePacket?.Invoke(buf, bytesRead);
 
-                PacketType packetType = (PacketType)(buf[0] & 0b11 << 6);
-                if(packetType == PacketType.ClientState)
-                    handleClientState?.Invoke(buf[1], buf, bytesRead); // TODO: make better
+                PacketType packetType = (PacketType)(buf[0] & 0b111 << 5);
+                if(packetType == PacketType.ServerRequest)
+                    handleServerRequest?.Invoke(buf, bytesRead);
+                else if(packetType == PacketType.ClientState)
+                    handleClientState?.Invoke(buf[1], buf, bytesRead);
                 else if(packetType == PacketType.ServerState)
                     handleServerState?.Invoke(buf, bytesRead);
                 else if(packetType == PacketType.WelcomePacket)
                     handleWelcomePacket?.Invoke(buf, bytesRead);
-                else if(packetType == PacketType.ServerRequest)
-                    handleServerRequest?.Invoke(buf, bytesRead);
             }
         }
 

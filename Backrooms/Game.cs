@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing.Imaging;
+using System.Threading;
 using System.Windows.Forms;
 using Backrooms.Online;
 
@@ -64,7 +65,7 @@ public class Game
         };
         //olafScholzAudio.Play();
 
-        mpHandler = new(this, host, "127.0.0.1", 8080, 2048, printDebug: false);
+        mpHandler = new(this, host, "127.0.0.1", 8080, 512, printDebug: false);
         mpHandler.Start();
 
         mpHandler.serverState.olafPos = map.size/2f;
@@ -123,6 +124,11 @@ public class Game
             }
         camera.pos += Vec2f.half;
         mpHandler.ownClientState.pos = camera.pos;
+        if(mpHandler.isHost)
+        {
+            mpHandler.serverState.olafPos = mpHandler.ownClientState.pos;
+            mpHandler.SendServerStateChange(StateKey.S_OlafPos);
+        }
         mpHandler.SendClientStateChange(StateKey.C_Pos);
         camera.maxDist = 50f;
     }
@@ -147,19 +153,18 @@ public class Game
         mpHandler.SendClientStateChange(StateKey.C_Pos);
 
         if(!map.InBounds(camera.pos))
-            camera.pos = map.size/2f;
+            mpHandler.ownClientState.pos = camera.pos = map.size/2f;
 
         if(input.KeyDown(Keys.F5))
-        {
             if(!mpHandler.isHost)
                 Out("You must be host to refresh the map!");
             else
             {
                 mpHandler.serverState.levelSeed = new Random().Next();
                 mpHandler.SendServerStateChange(StateKey.S_LevelSeed);
+                Thread.Sleep(1);
                 mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
             }
-        }
 
         if(input.KeyDown(Keys.F1))
             input.lockCursor ^= true;

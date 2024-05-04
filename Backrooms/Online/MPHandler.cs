@@ -65,7 +65,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
         server.constructWelcomePacket += ConstructWelcomePacket;
         server.handleClientRequest += HandleClientRequest;
         server.handleClientState += (clientId, packet, length) => server.BroadcastPacket(packet, [clientId], length);
-        server.handleServerState += server.BroadcastPacket;
+        server.handleServerState += (packet, length) => server.BroadcastPacket(packet, length);
         server.connect += clientId => {
             ClientState newState = new(clientId) {
                 pos = game.map.size/2f
@@ -95,6 +95,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
     private void HandleServerRequest(byte[] packet, int length)
     {
         RequestKey key = (RequestKey)packet[0];
+        Out(key);
 
         switch(key)
         {
