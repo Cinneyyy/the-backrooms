@@ -19,6 +19,14 @@ public struct Color32(byte r, byte g, byte b, byte a = 0xff)
 
     public Color32(float r, float g, float b, float a = 1f) : this((byte)(r * 255f), (byte)(g * 255f), (byte)(b * 255f), (byte)(a * 255f)) { }
 
+    public Color32(float v, float a) : this((byte)(v * 255f), (byte)(a * 255f)) { }
+
+    public Color32(float v) : this((byte)(v * 255f)) { }
+
+    public Color32(byte v, byte a) : this(v, v, v, a) { }
+
+    public Color32(byte v) : this(v, v, v, v) { }
+
 
     public readonly override bool Equals([NotNullWhen(true)] object obj) => base.Equals(obj);
     public readonly override int GetHashCode() => base.GetHashCode();

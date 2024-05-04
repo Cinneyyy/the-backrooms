@@ -25,6 +25,9 @@ public static class Utils
     public static int Clamp(int a, int min, int max)
         => a <= min ? min : a >= max ? max : a;
 
+    public static float Clamp01(float f)
+        => Clamp(f, 0f, 1f);
+
     public static void ResizeArr2D<T>(ref T[,] arr, int newX, int newY)
     {
         T[,] res = new T[newX, newY];
@@ -42,8 +45,10 @@ public static class Utils
     public static float NormAngle(float a)
         => Mod(a, Tau);
 
-    public static bool RoughlyEqual(float a, float b, float eps = 1e-5f)
+    public static bool RoughlyEqual(float a, float b, float eps = 1e-8f)
         => MathF.Abs(a - b) <= eps;
+    public static bool RoughlyZero(float f, float eps = 1e-8f)
+        => MathF.Abs(f) < eps;
 
     public static void DoNothing() { }
 

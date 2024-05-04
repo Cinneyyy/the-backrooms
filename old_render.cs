@@ -1,13 +1,14 @@
 ﻿#define DONT_CLEAR
 #undef DONT_CLEAR
+#define FIX_FISHEYE
 
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Numerics;
+using Backrooms;
 
-namespace Backrooms;
+namespace borkrums;
 
 public unsafe class Renderer
 {
@@ -85,9 +86,9 @@ public unsafe class Renderer
                     DrawWallSegment(data, in x);
 
                 if(spr.hasTransparency)
-                    DrawBitmapCutout24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist / camera.maxDist));
-                else 
-                    DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist / camera.maxDist));
+                    DrawBitmapCutout24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
+                else
+                    DrawBitmap24(data, spr.lockedImage.data, locX, locY, sizeI.x, sizeI.y, GetDistanceFog(dist));
 
                 FillDepthBuf(locX, sizeI.x, dist/camera.maxDist);
             }
@@ -108,82 +109,47 @@ public unsafe class Renderer
     {
         float baseAngle = camera.fov * (x / (virtualRes.x-1f) - .5f);
         float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
-        Vec2f dir = Vec2f.FromAngle(rayAngle);
-        Vec2i iPos = Map.Round(camera.pos);
 
-        Vec2f deltaDist = new(
-            dir.x == 0f ? float.MaxValue : MathF.Abs(1f / dir.x),
-            dir.y == 0f ? float.MaxValue : MathF.Abs(1f / dir.y));
-
-        Vec2f sideDist = new(
-            deltaDist.x * (dir.x < 0f ? (camera.pos.x - iPos.x) : (iPos.x + 1f - camera.pos.x)),
-            deltaDist.y * (dir.y < 0f ? (camera.pos.y - iPos.y) : (iPos.y + 1f - camera.pos.y)));
-
-        Vec2i step = new(Math.Sign(dir.x), Math.Sign(dir.y));
-
-        (Tile tile, bool nsSide, Vec2f pos) hit = (Tile.Empty, false, new());
-        while(hit.tile == Tile.Empty)
-        {
-            if(sideDist.x < sideDist.y)
-            {
-                sideDist.x += deltaDist.x;
-                iPos.x += step.x;
-                hit.nsSide = true;
-            }
-            else
-            {
-                sideDist.y += deltaDist.y;
-                iPos.y += step.y;
-                hit.nsSide = false;
-            }
-
-            if(!map.InBounds(iPos))
-                return;
-
-            hit.tile = map[iPos];
-        }
-
-        hit.pos = camera.pos + sideDist;
-        float dist = (hit.nsSide ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y) * MathF.Cos(baseAngle);
-        float dist01 = Utils.Clamp01(dist / camera.maxDist);
-
-        if(dist > camera.maxDist || dist == 0f || depthBuf[x] < dist01)
+        if(!Raycast(map, camera.pos, Vec2f.FromAngle(rayAngle), out Vec2i hit) || (camera.pos - (Vec2f)hit).length > camera.maxDist)
             return;
 
-        depthBuf[x] = dist01;
+        GetIntersectionData(camera.pos, hit, rayAngle, out Side side, out float interTime, out float dist);
+        Tile tile = map[hit.x, hit.y];
 
-        float heightF = virtualRes.y / dist / 2f;
-        float brightness = (hit.nsSide ? 1f : .8f) * GetDistanceFogUnclamped(dist01);
+        if(dist > camera.maxDist || dist == 0f || dist/camera.maxDist is float dist01 && GetDepthBuf(x) < dist01)
+            return;
 
-        LockedBitmap tex = map.textures[(int)hit.tile];
-        int texX = (int)((hit.pos.x - MathF.Floor(hit.pos.x)) * (tex.data.Width-1));
-        byte* texPtr = (byte*)tex.data.Scan0 + texX*3;
+        SetDepthBuf(x, dist01);
 
-        int height = (int)heightF,
-            y0 = Math.Max(0, virtualCenter.y - height),
-            y1 = Math.Min(virtualRes.y-1, virtualCenter.y + height),
-            tMin = y0 - virtualCenter.y + height,
-            tMax = (int)(2f * heightF);
-        byte* outPtr = (byte*)data.Scan0 + x*3 + y0*data.Stride;
-        for(int y = y0, i = tMin; y < y1; y++, i++)
-        {
-            byte* texRow = texPtr + (int)((float)i / tMax * tex.data.Height) * tex.data.Stride;
-            *(outPtr) = (byte)(*(texRow) * brightness);
-            *(outPtr+1) = (byte)(*(texRow+1) * brightness);
-            *(outPtr+2) = (byte)(*(texRow+2) * brightness);
-            outPtr += data.Stride;
-        }
+#if FIX_FISHEYE
+        float fisheyeDist = dist * MathF.Cos(baseAngle);
+#else
+        float fisheyeDist = dist;
+#endif
+
+        float height = MathF.Max(0f, virtualRes.y / fisheyeDist / 2f);
+        float max = 2f * height;
+        float brightness = MathF.Min(1f, (int)side/5f + .5f) * GetDistanceFog(dist);
+
+        int biggestY = Math.Min(virtualRes.y-1, (int)MathF.Ceiling(virtualCenter.y + height));
+        for(int y = Math.Max(virtualCenter.y - (int)height, 0), i = y - virtualCenter.y + (int)height; y < biggestY; y++, i++)
+            SetPixel24(data, x, y, map.textures[(int)tile].GetUv24(interTime, i/max) * brightness);
     }
 
-    private void FillDepthBuf(int x, int w, float depth)
-        => FillDepthBufRange(x, x+w, depth);
+    private float GetDistanceFog(float dist)
+        => MathF.Max(0f, MathF.Pow(.8f - dist / camera.maxDist, 1.5f));
 
-    private void FillDepthBufRange(int x0, int x1, float depth)
+    private void SetDepthBuf(int x, float depth)
+        => depthBuf[x] = depth;
+
+    private float GetDepthBuf(int x)
+        => depthBuf[x];
+
+    private void FillDepthBuf(int x, int w, float depth)
     {
-        x0 = Utils.Clamp(x0, 0, virtualRes.x);
-        x1 = Utils.Clamp(x1, 0, virtualRes.x);
-        for(int x = x0; x < x1; x++)
-            depthBuf[x] = depth;
+        int fx = Math.Min(virtualRes.x, x+w);
+        for(int i = Math.Max(0, x); i < fx; i++)
+            depthBuf[i] = depth;
     }
 
     private unsafe void SetPixel24(BitmapData data, int x, int y, Color32 col)
@@ -262,13 +228,125 @@ public unsafe class Renderer
     private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMul = 1f)
         => DrawBitmapCutout24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
 
-
-    private static float GetDistanceFogUnclamped(float dist01)
+    private static bool Raycast(Map map, Vec2f from, Vec2f dir, out Vec2i hitLoc)
     {
-        float inv = 1f - dist01;
-        return .75f * inv*inv;
+        Vec2i initMap = Map.Round(from);
+        Vec2f deltaDist = new(
+            dir.x == 0f ? float.MaxValue : MathF.Abs(1f / dir.x),
+            dir.y == 0f ? float.MaxValue : MathF.Abs(1f / dir.y));
+
+        Vec2i step = new();
+        Vec2f initSideDist = new();
+        (step.x, initSideDist.x) = dir.x < 0f
+            ? (-1, (from.x - initMap.x) * deltaDist.x)
+            : (1, (initMap.x + 1f - from.x) * deltaDist.x);
+        (step.y, initSideDist.y) = dir.y < 0f
+            ? (-1, (from.y - initMap.y) * deltaDist.y)
+            : (1, (initMap.y + 1f - from.y) * deltaDist.y);
+
+        (bool hit, Vec2i pt, Vec2f sideDist, bool northOrSouth) res = (false, initMap, initSideDist, initSideDist.x < initSideDist.y);
+        while(!res.hit && res.pt.x < map.size.x && res.pt.y < map.size.y)
+        {
+            Vec2i inMap;
+            Vec2f sideDist;
+            bool northOrSouth;
+
+            if(res.sideDist.x < res.sideDist.y)
+            {
+                inMap = new(res.pt.x + step.x, res.pt.y);
+                northOrSouth = true;
+                sideDist = new(res.sideDist.x + deltaDist.x, res.sideDist.y);
+            }
+            else
+            {
+                inMap = new(res.pt.x, res.pt.y + step.y);
+                northOrSouth = false;
+                sideDist = new(res.sideDist.x, res.sideDist.y + deltaDist.y);
+            }
+
+            bool inTile = map.InBounds(inMap) && map[inMap.x, inMap.y] != 0;
+            res = (inTile, inMap, sideDist, northOrSouth);
+        }
+
+        hitLoc = res.pt;
+        //northOrSouth = res.northOrSouth
+        return res.hit;
     }
 
-    private static float GetDistanceFog(float dist01)
-        => GetDistanceFogUnclamped(Utils.Clamp01(dist01));
+    private static void GetIntersectionData(Vec2f player, Vec2i tile, float angle, out Side interSide, out float interTime, out float dist)
+    {
+        Vec2f center = new(tile.x + .5f, tile.y + .5f);
+
+        // Corners to player
+        Vec2f tl = new Vec2f(tile.x,    tile.y) - player,
+              tr = new Vec2f(tile.x+1f, tile.y) - player,
+              bl = new Vec2f(tile.x,    tile.y+1f) - player,
+              br = new Vec2f(tile.x+1f, tile.y+1f) - player;
+
+        Dir playerToTile;
+        if(Utils.RoughlyEqual(player.y, center.y, 0.5f)) // On the same y as tile, so it has to be W or E
+            playerToTile = player.x > center.x ? Dir.East : Dir.West;
+        else if(Utils.RoughlyEqual(player.x, center.x, 0.5f)) // On the same x as tile, so it has to be N or S
+            playerToTile = player.y > center.y ? Dir.South : Dir.North;
+        else if(player.x > center.x) // To right of tile
+            playerToTile = player.y > center.y ? Dir.SE : Dir.NE;
+        else if(player.x < center.x) // To the left of tile
+            playerToTile = player.y > center.y ? Dir.SW : Dir.NW;
+        else
+            throw new($"Could not identifiy where player {player} was in relation to tile {tile}");
+
+        // Angles from player to corner
+        float tlA = tl.toAngle,
+              trA = tr.toAngle,
+              blA = bl.toAngle,
+              brA = br.toAngle;
+
+        interSide = playerToTile switch {
+            Dir.North => Side.North,
+            Dir.South => Side.South,
+            Dir.West => Side.West,
+            Dir.East => Side.East,
+
+            Dir.NE => angle < trA ? Side.East : Side.North,
+            Dir.NW => angle < tlA ? Side.North : Side.West,
+            Dir.SW => angle < blA ? Side.West : Side.South,
+            Dir.SE => angle < brA ? Side.South : Side.East,
+
+            _ => throw new($"Could not identifiy the intersection side of player {player}, intersecting tile {tile}")
+        };
+
+        // Distances from corners to player
+        float tlL = tl.length,
+              trL = tr.length,
+              blL = bl.length,
+              brL = br.length;
+
+        (float minA, float maxA, float minL, float maxL) = interSide switch {
+            Side.East => (brA, trA, brL, trL),
+            Side.West => (tlA, blA, tlL, blL),
+            Side.North => (trA, tlA, trL, tlL),
+            Side.South => (blA, brA, blL, brL),
+            _ => throw new()
+        };
+
+        void offset_angles(float amount)
+            => (minA, maxA, angle) = ((minA + amount) % MathF.Tau, (maxA + amount) % MathF.Tau, (angle + amount) % MathF.Tau);
+
+        //int dy = (int)MathF.Floor(player.y); // forgot why i did this might change l8r
+        //if(interSide == Side.West &&
+        //    (angle > MathF.PI && player.y < tile.y
+        //    || angle < MathF.PI && player.y > tile.y
+        //    || angle < MathF.PI && dy == tile.y))
+        //    if(dy == tile.y)
+        //        offset_angles(MathF.PI);
+        //    else
+        //        offset_angles(MathF.PI);
+        //else if(interSide == Side.North && angle > MathF.PI || interSide == Side.South && angle < MathF.PI)
+        //    offset_angles(MathF.PI);
+        if(interSide == Side.West || interSide == Side.North && angle > MathF.PI || interSide == Side.South && angle < MathF.PI)
+            offset_angles(MathF.PI);
+
+        interTime = (angle - minA) / (maxA - minA);
+        dist = Utils.LerpUnclamped(minL, maxL, interTime);
+    }
 }
