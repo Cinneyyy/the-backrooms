@@ -156,7 +156,7 @@ public unsafe class Renderer
         float brightness = (hit.nsSide ? 1f : .8f) * GetDistanceFogUnclamped(dist01);
 
         LockedBitmap tex = map.textures[(int)hit.tile];
-        int texX = (int)((hit.pos.x - MathF.Floor(hit.pos.x)) * (tex.data.Width-1));
+        int texX = (int)((tex.data.Width-1) * GetTileScan(iPos, camera.pos, rayAngle, dist));
         byte* texPtr = (byte*)tex.data.Scan0 + texX*3;
 
         int height = (int)heightF,
@@ -262,6 +262,49 @@ public unsafe class Renderer
     private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMul = 1f)
         => DrawBitmapCutout24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
 
+
+    private static float GetTileScan(Vec2i tile, Vec2f cPos, float angle, float dist)
+    {
+        Vec2f center = tile + Vec2f.half;
+        Dir playerToTile;
+        if(Utils.RoughlyEqual(cPos.y, center.y, 0.5f)) // On the same y as tile, so it has to be W or E
+            playerToTile = cPos.x > center.x ? Dir.East : Dir.West;
+        else if(Utils.RoughlyEqual(cPos.x, center.x, 0.5f)) // On the same x as tile, so it has to be N or S
+            playerToTile = cPos.y > center.y ? Dir.South : Dir.North;
+        else if(cPos.x > center.x) // To right of tile
+            playerToTile = cPos.y > center.y ? Dir.SE : Dir.NE;
+        else if(cPos.x < center.x) // To the left of tile
+            playerToTile = cPos.y > center.y ? Dir.SW : Dir.NW;
+        else
+            throw new();
+
+        float tl = (new Vec2f(tile.x,    tile.y) - cPos).toAngle,
+              tr = (new Vec2f(tile.x+1f, tile.y) - cPos).toAngle,
+              bl = (new Vec2f(tile.x,    tile.y+1f) - cPos).toAngle,
+              br = (new Vec2f(tile.x+1f, tile.y+1f) - cPos).toAngle;
+
+        Side side = playerToTile switch {
+            Dir.North or Dir.South or Dir.West or Dir.East => (Side)playerToTile,
+            Dir.NE => angle < tr ? Side.East : Side.North,
+            Dir.NW => angle < tl ? Side.North : Side.West,
+            Dir.SW => angle < bl ? Side.West : Side.South,
+            Dir.SE => angle < br ? Side.South : Side.East,
+            _ => throw new()
+        };
+
+        (float minA, float maxA) = side switch {
+            Side.East => (br, tr),
+            Side.West => (tl, bl),
+            Side.North => (tr, tl),
+            Side.South => (bl, br),
+            _ => throw new()
+        };
+
+        if(side == Side.West || side == Side.North && angle > MathF.PI || side == Side.South && angle < MathF.PI)
+            (minA, maxA, angle) = ((minA + MathF.PI) % MathF.Tau, (maxA + MathF.PI) % MathF.Tau, (angle + MathF.PI) % MathF.Tau);
+
+        return (angle - minA) / (maxA - minA);
+    }
 
     private static float GetDistanceFogUnclamped(float dist01)
     {
