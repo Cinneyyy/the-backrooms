@@ -22,6 +22,7 @@ public class ClientState(byte clientId) : State<StateKey>
     public byte clientId = clientId;
     public Vec2f pos;
     public float rot;
+    public int skinIdx;
 
     public static readonly StateKey[] allKeys = (from v in Enum.GetValues<StateKey>()
                                                  where (v != StateKey.Client) && (((byte)v & 0b1100_0000) == (byte)StateKey.Client)
@@ -38,6 +39,7 @@ public class ClientState(byte clientId) : State<StateKey>
             case StateKey.C_ClientId: writer.Write(clientId); break;
             case StateKey.C_Pos: writer.Write(pos); break;
             case StateKey.C_Rot: writer.Write(rot); break;
+            case StateKey.C_Skin: writer.Write(skinIdx); break;
             default: throw new($"Invalid StateKey in ClientState.SerializeField(): {key} // {(byte)key}");
         }
     }
@@ -49,6 +51,7 @@ public class ClientState(byte clientId) : State<StateKey>
             case StateKey.C_ClientId: clientId = reader.ReadByte(); break;
             case StateKey.C_Pos: pos = reader.ReadVec2f(); break;
             case StateKey.C_Rot: rot = reader.ReadSingle(); break;
+            case StateKey.C_Skin: skinIdx = reader.ReadInt32(); break;
             default: break;//throw new($"Invalid StateKey in ClientState.DeserializeField(): {key} // {(byte)key}");
         }
     }

@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Threading;
 using System.Windows.Forms;
+using System.Linq;
 using Backrooms.Online;
+using System.Drawing;
 
 namespace Backrooms;
 
@@ -31,13 +33,16 @@ public class Game
     public MPHandler mpHandler;
     public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
     public PathfindingEntity olafPathfinder;
+    public readonly Image[] skins = (from str in new string[] { "hazmat_suit", "entity", "freddy_fazbear", "huggy_wuggy", "purple_guy" }
+                                    select Resources.sprites[str])
+                                    .ToArray();
 
 
     private readonly RoomGenerator generator = new();
     //private readonly Timer fpsTimer = new();
 
 
-    public Game(Window window, bool host, string ip, int port)
+    public Game(Window window, bool host, string ip, int port, int skinIdx)
     {
         this.window = window;
         renderer = window.renderer;
@@ -67,6 +72,7 @@ public class Game
         olafScholzAudio.Play();
 
         olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
+        window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
 
         mpHandler = new(this, host, ip, port, 512, printDebug: false);
         mpHandler.Start();
@@ -76,10 +82,15 @@ public class Game
         mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
 
         mpHandler.onFinishConnect += () => {
+            mpHandler.ownClientState.skinIdx = skinIdx;
+            mpHandler.SendClientStateChange(StateKey.C_Skin);
+            mpHandler.SendClientRequest(RequestKey.C_UpdateSkin);
+
             foreach(var (id, state) in mpHandler.clientStates)
                 if(id != mpHandler.ownClientId)
                 {
-                    SpriteRenderer newPlayerRenderer = new(state.pos, new(.25f, .6f), false, Resources.sprites["square"]);
+                    Image skin = skins[state.skinIdx];
+                    SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), true, skin);
                     renderer.sprites.Add(newPlayerRenderer);
                     playerRenderers.Add((id, newPlayerRenderer));
                 }
@@ -87,7 +98,9 @@ public class Game
         mpHandler.onPlayerConnect += id => {
             if(id != mpHandler.ownClientId)
             {
-                SpriteRenderer newPlayerRenderer = new(mpHandler.GetClientState(id).pos, new(.25f, .6f), false, Resources.sprites["square"]);
+                ClientState state = mpHandler.GetClientState(id);
+                Image skin = skins[state.skinIdx];
+                SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), true, skin);
                 renderer.sprites.Add(newPlayerRenderer);
                 playerRenderers.Add((id, newPlayerRenderer));
             }
@@ -178,7 +191,7 @@ public class Game
         if(input.KeyDown(Keys.F3))
             Debugger.Break();
 
-        if(input.KeyDown(Keys.R))
+        if(input.KeyDown(Keys.E))
             mpHandler.SendClientRequest(RequestKey.C_MakeMeOlafTarget);
         #endregion
 
@@ -187,7 +200,6 @@ public class Game
         //Vec2f oldOlaf = olafScholz.pos;
         //if(olafTarget != olafScholz.pos)
         //    olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
-        olafPathfinder.RefreshPath(olafTarget);
         olafPathfinder.Tick(dt);
         olafScholz.pos = olafPathfinder.pos;//map.ResolveIntersectionIfNecessery(oldOlaf, olafPathfinder.pos, olafScholz.size.x/2f, out _);
         olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);

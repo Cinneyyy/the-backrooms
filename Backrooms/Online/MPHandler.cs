@@ -60,6 +60,8 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
 
     public void SendServerRequest(RequestKey key)
         => server.BroadcastPacket([(byte)key]);
+    public void SendServerRequest(RequestKey key, byte[] additionalData, byte[] excluded)
+        => server.BroadcastPacket([(byte)key, ..additionalData], excluded);
 
     public void SendClientRequest(RequestKey key)
         => client.SendPacket([(byte)key]);
@@ -82,6 +84,9 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
                 onPlayerConnect?.Invoke(clientId);
 
             server.BroadcastPacket(newState.Serialize(ClientState.allKeys), [clientId, ownClientId]);
+        };
+        server.disconnect += clientId => {
+            clientStates.RemoveAll(c => c.id == clientId);
         };
 
         server.StartHosting(port);
@@ -108,6 +113,11 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
             case RequestKey.S_RegenerateMap: 
                 game.GenerateMap(serverState.levelSeed); 
                 break;
+            case RequestKey.S_UpdateSkin:
+                byte clientId = packet[1];
+                game.playerRenderers.Find(r => r.id == clientId).renderer.SetImage(game.skins[GetClientState(clientId).skinIdx], true);
+                Out($"Updated skin of client #{clientId} to be skin #{GetClientState(clientId).skinIdx}");
+                break;
         }
     }
 
@@ -120,7 +130,10 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
         {
             case RequestKey.C_MakeMeOlafTarget:
                 serverState.olafTarget = clientId;
-                SendServerStateChange(StateKey.S_OlafTarget);
+                SendServerStateChangeAsServer(StateKey.S_OlafTarget);
+                break;
+            case RequestKey.C_UpdateSkin:
+                SendServerRequest(RequestKey.S_UpdateSkin, [clientId], [clientId]);
                 break;
         }
     }
@@ -170,7 +183,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
 
         while(stream.Position < stream.Length)
         {
-            GetClientState(ownClientId).Deserialize(data, (int)stream.Position, null, out int csBytesRead);
+            GetClientState(data[(int)stream.Position + 1]).Deserialize(data, (int)stream.Position, null, out int csBytesRead);
             stream.Position += csBytesRead;
         }
 

@@ -55,8 +55,11 @@ public class PathfindingEntity(Map map, Vec2f pos, float speed, float olafRadius
         Vec2i node = target;
         while(node != start)
         {
-            path.Add(node);
-            node = parent[node];
+            if(parent.TryGetValue(node, out Vec2i value))
+            {
+                path.Add(node);
+                node = value;
+            }
         }
         path.Reverse();
 

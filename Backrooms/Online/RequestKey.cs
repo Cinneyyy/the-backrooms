@@ -8,6 +8,8 @@ public enum RequestKey
     Client = PacketType.ClientRequest,
 
     S_RegenerateMap = Server | 1,
+    S_UpdateSkin = Server | 2,
 
-    C_MakeMeOlafTarget = Client | 1
+    C_MakeMeOlafTarget = Client | 1,
+    C_UpdateSkin = Client | 2
 }

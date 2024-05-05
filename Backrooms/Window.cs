@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
+using SWF = System.Windows.Forms;
 
 namespace Backrooms;
 
@@ -13,9 +14,11 @@ public class Window : Form
     public Renderer renderer;
     public Input input;
     public event Action<float> tick;
+    public event Action pulse;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly Stopwatch timeElapsedSw;
+    private readonly SWF::Timer timer;
 
 
     public string title
@@ -60,6 +63,12 @@ public class Window : Form
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
 
+        timer = new() {
+            Interval = 1000,
+            Enabled = true
+        };
+        timer.Tick += (_, _) => pulse?.Invoke();
+
         // Start processes
         load?.Invoke(this);
         (timeElapsedSw = new()).Start();
@@ -89,20 +98,29 @@ public class Window : Form
         Stopwatch sw = new();
         while(Visible)
         {
-            tick?.Invoke(deltaTime = (float)sw.Elapsed.TotalSeconds);
-            sw.Restart();
+            try
+            {
+                tick?.Invoke(deltaTime = (float)sw.Elapsed.TotalSeconds);
+                sw.Restart();
 
-            Bitmap renderResult = renderer.Draw();
-            Thread.Sleep(1);
+            }
+            catch(Exception exc)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{exc.GetType()} in Draw(), Window.cs:\n{exc}");
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
 
             try
             {
+                Bitmap renderResult = renderer.Draw();
+                Thread.Sleep(1);
                 pictureBox.Image = renderResult;
             }
-            catch(InvalidOperationException exc)
+            catch(Exception exc)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"InvalidOperationException in Draw(), Window.cs:\n{exc}");
+                Console.WriteLine($"{exc.GetType()} in Draw(), Window.cs:\n{exc}");
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
         }

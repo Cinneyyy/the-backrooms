@@ -103,7 +103,7 @@ public class Server(int bufSize = 256, bool printDebug = false)
             clients.Add((client, clientId));
             connect?.Invoke(clientId);
 
-            PrintIf(printDebug, $"Client connected: {client.Client.RemoteEndPoint}");
+            Out($"Client connected: {client.Client.RemoteEndPoint}");
 
             new Thread(() => HandleClient(client, clientId)).Start();
         }
@@ -127,12 +127,12 @@ public class Server(int bufSize = 256, bool printDebug = false)
                 handlePacket?.Invoke(clientId, buf, bytesRead);
 
                 PacketType packetType = (PacketType)(byte)(buf[0] & 0b111 << 5);
-                if(packetType == PacketType.ServerState)
+                if(packetType == PacketType.ClientRequest)
+                    handleClientRequest?.Invoke(clientId, buf, bytesRead);
+                else if(packetType == PacketType.ServerState)
                     handleServerState?.Invoke(buf, bytesRead);
                 else if(packetType == PacketType.ClientState)
                     handleClientState?.Invoke(clientId, buf, bytesRead);
-                else if(packetType == PacketType.ClientRequest)
-                    handleClientRequest?.Invoke(clientId, buf, bytesRead);
             }
 
             PrintIf(printDebug, $"Client disconnected: {client.Client.RemoteEndPoint}");

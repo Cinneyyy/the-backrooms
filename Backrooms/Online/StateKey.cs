@@ -14,5 +14,6 @@ public enum StateKey : byte
 
     C_ClientId = Client | 1,
     C_Pos = Client | 2,
-    C_Rot = Client | 3
+    C_Rot = Client | 3,
+    C_Skin = Client | 4
 }
