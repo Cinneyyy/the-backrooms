@@ -30,13 +30,14 @@ public class Game
     public float olafSpeed = .75f;
     public MPHandler mpHandler;
     public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
+    public PathfindingEntity olafPathfinder;
 
 
     private readonly RoomGenerator generator = new();
     //private readonly Timer fpsTimer = new();
 
 
-    public Game(Window window, bool host)
+    public Game(Window window, bool host, string ip, int port)
     {
         this.window = window;
         renderer = window.renderer;
@@ -63,9 +64,11 @@ public class Game
         olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {
             loop = true
         };
-        //olafScholzAudio.Play();
+        olafScholzAudio.Play();
 
-        mpHandler = new(this, host, "127.0.0.1", 8080, 512, printDebug: false);
+        olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
+
+        mpHandler = new(this, host, ip, port, 512, printDebug: false);
         mpHandler.Start();
 
         mpHandler.serverState.olafPos = map.size/2f;
@@ -126,7 +129,7 @@ public class Game
         mpHandler.ownClientState.pos = camera.pos;
         if(mpHandler.isHost)
         {
-            mpHandler.serverState.olafPos = mpHandler.ownClientState.pos;
+            mpHandler.serverState.olafPos = olafScholz.pos = olafPathfinder.pos = mpHandler.ownClientState.pos;
             mpHandler.SendServerStateChange(StateKey.S_OlafPos);
         }
         mpHandler.SendClientStateChange(StateKey.C_Pos);
@@ -174,15 +177,21 @@ public class Game
 
         if(input.KeyDown(Keys.F3))
             Debugger.Break();
+
+        if(input.KeyDown(Keys.R))
+            mpHandler.SendClientRequest(RequestKey.C_MakeMeOlafTarget);
         #endregion
 
         Vec2f olafTarget = mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos;
         Vec2f olafToPlayer = olafTarget - olafScholz.pos;
-        Vec2f oldOlaf = olafScholz.pos;
-        if(olafTarget != olafScholz.pos)
-            olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
-        olafScholz.pos = map.ResolveIntersectionIfNecessery(oldOlaf, olafScholz.pos, olafScholz.size.x/2f, out _);
+        //Vec2f oldOlaf = olafScholz.pos;
+        //if(olafTarget != olafScholz.pos)
+        //    olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
+        olafPathfinder.RefreshPath(olafTarget);
+        olafPathfinder.Tick(dt);
+        olafScholz.pos = olafPathfinder.pos;//map.ResolveIntersectionIfNecessery(oldOlaf, olafPathfinder.pos, olafScholz.size.x/2f, out _);
         olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);
+
 
         if(mpHandler.isHost)
         {

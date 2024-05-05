@@ -51,6 +51,9 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
         => GetEnumerator();
 
 
+    public static float Dist(Vec2f a, Vec2f b)
+        => (a - b).length;
+
     public static Vec2f Op(Vec2f a, Vec2f b, Func<float, float, float> op)
         => new(op(a.x, b.x), op(a.y, b.y));
 
@@ -61,6 +64,9 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
             vec.x * cos - vec.y * sin,
             vec.x * sin + vec.y * cos);
     }
+
+    public static bool RoughlyEqual(Vec2f a, Vec2f b, float eps = 1e-8f)
+        => Utils.RoughlyEqual(a.x, b.x, eps) && Utils.RoughlyEqual(a.y, b.y, eps);
 
     public static Vec2f FromAngle(float radians)
         => new(MathF.Cos(radians), MathF.Sin(radians));

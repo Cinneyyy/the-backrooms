@@ -131,6 +131,8 @@ public class Server(int bufSize = 256, bool printDebug = false)
                     handleServerState?.Invoke(buf, bytesRead);
                 else if(packetType == PacketType.ClientState)
                     handleClientState?.Invoke(clientId, buf, bytesRead);
+                else if(packetType == PacketType.ClientRequest)
+                    handleClientRequest?.Invoke(clientId, buf, bytesRead);
             }
 
             PrintIf(printDebug, $"Client disconnected: {client.Client.RemoteEndPoint}");

@@ -83,27 +83,28 @@ public class Window : Form
             renderThread.Start();
         };
 
-        try
+        while(!Visible)
+            Thread.Sleep(10);
+
+        Stopwatch sw = new();
+        while(Visible)
         {
-            while(!Visible)
-                Thread.Sleep(10);
+            tick?.Invoke(deltaTime = (float)sw.Elapsed.TotalSeconds);
+            sw.Restart();
 
-            Stopwatch sw = new();
-            while(Visible)
+            Bitmap renderResult = renderer.Draw();
+            Thread.Sleep(1);
+
+            try
             {
-                tick?.Invoke(deltaTime = (float)sw.Elapsed.TotalSeconds);
-                sw.Restart();
-
-                Bitmap renderResult = renderer.Draw();
-                Thread.Sleep(1);
                 pictureBox.Image = renderResult;
             }
-        }
-        catch(InvalidOperationException exc)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"InvalidOperationException in Draw(), Window.cs:\n{exc}");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            catch(InvalidOperationException exc)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"InvalidOperationException in Draw(), Window.cs:\n{exc}");
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
         }
     }
 }

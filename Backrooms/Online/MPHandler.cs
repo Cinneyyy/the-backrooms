@@ -55,8 +55,14 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
     public void SendServerStateChange(params StateKey[] keys)
         => client.SendPacket(serverState.Serialize(keys));
 
+    public void SendServerStateChangeAsServer(params StateKey[] keys)
+        => server.BroadcastPacket(serverState.Serialize(keys), [ownClientId]);
+
     public void SendServerRequest(RequestKey key)
         => server.BroadcastPacket([(byte)key]);
+
+    public void SendClientRequest(RequestKey key)
+        => client.SendPacket([(byte)key]);
 
 
     private void StartHost()
@@ -95,17 +101,28 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
     private void HandleServerRequest(byte[] packet, int length)
     {
         RequestKey key = (RequestKey)packet[0];
-        Out(key);
+        Out($"Received server request: {key}");
 
         switch(key)
         {
-            case RequestKey.S_RegenerateMap: game.GenerateMap(serverState.levelSeed); break;
+            case RequestKey.S_RegenerateMap: 
+                game.GenerateMap(serverState.levelSeed); 
+                break;
         }
     }
 
     private void HandleClientRequest(byte clientId, byte[] packet, int length)
     {
+        RequestKey key = (RequestKey)packet[0];
+        Out($"Received client request: {key}, by client #{clientId}");
 
+        switch(key)
+        {
+            case RequestKey.C_MakeMeOlafTarget:
+                serverState.olafTarget = clientId;
+                SendServerStateChange(StateKey.S_OlafTarget);
+                break;
+        }
     }
 
     /// <summary>
