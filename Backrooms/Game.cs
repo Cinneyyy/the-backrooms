@@ -39,7 +39,8 @@ public class Game
 
 
     private readonly RoomGenerator generator = new();
-    //private readonly Timer fpsTimer = new();
+    private readonly TextElement fpsDisplay;
+    private int fpsCounter;
 
 
     public Game(Window window, bool host, string ip, int port, int skinIdx)
@@ -54,9 +55,12 @@ public class Game
 
         window.tick += Tick;
 
-        //fpsTimer.Tick += (_, _) => Out(1f / window.deltaTime);
-        //fpsTimer.Interval = 1000;
-        //fpsTimer.Start();
+        fpsDisplay = new("00 fps", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
+        renderer.texts.Add(fpsDisplay);
+        window.pulse += () => {
+            fpsDisplay.text = fpsCounter.ToString("00 fps");
+            fpsCounter = 0;
+        };
 
         renderer.map = map;
         map.textures = [
@@ -69,7 +73,7 @@ public class Game
         olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {
             loop = true
         };
-        olafScholzAudio.Play();
+        //olafScholzAudio.Play();
 
         olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
         window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
@@ -146,12 +150,21 @@ public class Game
             mpHandler.SendServerStateChange(StateKey.S_OlafPos);
         }
         mpHandler.SendClientStateChange(StateKey.C_Pos);
-        camera.maxDist = 50f;
+        camera.maxDist = 30f;
+    }
+
+    public void ReloadSkins()
+    {
+        foreach(var (id, renderer) in playerRenderers)
+            if(id != mpHandler.ownClientId)
+                renderer.SetImage(skins[mpHandler.GetClientState(id).skinIdx], true);
     }
 
 
     private void Tick(float dt)
     {
+        fpsCounter++;
+
         if(!mpHandler.ready)
             return;
 

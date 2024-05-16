@@ -91,7 +91,7 @@ public class Map(Tile[,] tiles) : IEnumerable
         if(offset.x == 0 || offset.y == 0) // Not edging or edging on one side
         {
             type = this[tile + offset];
-            return type != Tile.Empty;
+            return IsCollidingTile(type);
         }
 
         Tile collA = this[tile.x + offset.x, tile.y], 
@@ -99,7 +99,7 @@ public class Map(Tile[,] tiles) : IEnumerable
              collC = this[tile + offset];
 
         // sorry
-        return (type = collA != Tile.Empty ? collA : collB != Tile.Empty ? collB : collC != Tile.Empty ? collC : Tile.Empty) != Tile.Empty;
+        return IsCollidingTile(type = collA != Tile.Empty ? collA : collB != Tile.Empty ? collB : collC != Tile.Empty ? collC : Tile.Empty);
     }
 
     public Vec2f ResolveIntersectionIfNecessery(Vec2f oldPt, Vec2f newPt, float radius, out bool didCollide)
@@ -126,5 +126,8 @@ public class Map(Tile[,] tiles) : IEnumerable
 
 
     public static Vec2i Round(Vec2f pt)
-        => (Vec2i)pt;//.Floor();
+        => pt.Round();
+
+    public static bool IsCollidingTile(Tile tile)
+        => tile != Tile.Empty;
 }

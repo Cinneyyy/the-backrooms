@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace Backrooms;
 
@@ -21,7 +22,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public readonly float sqrLength => x*x + y*y;
     public readonly float length => MathF.Sqrt(sqrLength);
     public readonly Vec2f normalized => sqrLength == 0f ? zero : this / length;
-    public readonly float toAngle => Utils.NormAngle(MathF.Atan2(y, x));
+    public readonly float toAngleUnnormalized => MathF.Atan2(y, x);
+    public readonly float toAngle => Utils.NormAngle(toAngleUnnormalized);
 
 
     public Vec2f(float xy) : this(xy, xy) { }
@@ -38,9 +40,15 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
 
     public void Normalize() => this = normalized;
 
-    public readonly Vec2i Round() => new((int)x, (int)y);
-    public readonly Vec2i Ceil() => new((int)MathF.Ceiling(x), (int)MathF.Ceiling(y));
-    public readonly Vec2i Floor() => new((int)MathF.Floor(x), (int)MathF.Floor(y));
+    public readonly Vec2i Round() 
+        => new((int)x, (int)y);
+    public readonly Vec2i Ceil() 
+        => new((int)MathF.Ceiling(x), (int)MathF.Ceiling(y));
+    public readonly Vec2i Floor() 
+        => new((int)MathF.Floor(x), (int)MathF.Floor(y));
+
+    public void Rotate(float radians)
+        => this = Rotate(this, radians);
 
     public readonly IEnumerator<float> GetEnumerator()
     {
@@ -53,9 +61,6 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
 
     public static float Dist(Vec2f a, Vec2f b)
         => (a - b).length;
-
-    public static Vec2f Op(Vec2f a, Vec2f b, Func<float, float, float> op)
-        => new(op(a.x, b.x), op(a.y, b.y));
 
     public static Vec2f Rotate(Vec2f vec, float radians)
     {
@@ -95,6 +100,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public static Vec2f operator -(Vec2f v) => new(-v.x, -v.y);
 
 
-    public static explicit operator Vec2i(Vec2f v) => new((int)v.x, (int)v.y);
+    public static explicit operator Vec2i(Vec2f v) => v.Round();
     public static implicit operator Vec2f(Vec2i v) => new(v.x, v.y);
+
+    public static explicit operator PointF(Vec2f v) => new(v.x, v.y);
 }

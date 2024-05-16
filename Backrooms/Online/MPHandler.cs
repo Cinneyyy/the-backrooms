@@ -114,9 +114,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
                 game.GenerateMap(serverState.levelSeed); 
                 break;
             case RequestKey.S_UpdateSkin:
-                byte clientId = packet[1];
-                game.playerRenderers.Find(r => r.id == clientId).renderer.SetImage(game.skins[GetClientState(clientId).skinIdx], true);
-                Out($"Updated skin of client #{clientId} to be skin #{GetClientState(clientId).skinIdx}");
+                game.ReloadSkins();
                 break;
         }
     }
@@ -133,7 +131,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
                 SendServerStateChangeAsServer(StateKey.S_OlafTarget);
                 break;
             case RequestKey.C_UpdateSkin:
-                SendServerRequest(RequestKey.S_UpdateSkin, [clientId], [clientId]);
+                SendServerRequest(RequestKey.S_UpdateSkin);
                 break;
         }
     }

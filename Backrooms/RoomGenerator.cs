@@ -47,13 +47,13 @@ public class RoomGenerator : IEnumerable
 
     public void GenerateHallways()
     {
-        HashSet<(int x, int y)> visited = [];
+        HashSet<Vec2i> visited = [];
 
         for(int i = 0; i < mazeCount; i++)
         {
-            (int x, int y) startCell = (Rand(columns), Rand(rows));
+            Vec2i startCell = new(Rand(columns), Rand(rows));
             visited.Add(startCell);
-            List<(int x, int y)> frontier = [ startCell ];
+            List<Vec2i> frontier = [ startCell ];
 
             while((float)visited.Count / (columns * rows) < mazeFill)
             {
@@ -61,28 +61,28 @@ public class RoomGenerator : IEnumerable
                     break;
 
                 int idx = Rand(frontier.Count);
-                (int x, int y) cell = frontier[idx];
+                Vec2i cell = frontier[idx];
                 frontier.RemoveAt(idx);
 
                 visited.Add(cell);
                 this[cell.x, cell.y] = Tile.Empty;
 
-                List<(int x, int y)> neighbors = [];
-                (int x, int y) c;
+                List<Vec2i> neighbors = [];
+                Vec2i c;
 
-                if(cell.x > 1 && !visited.Contains(c = (cell.x - 2, cell.y)))
+                if(cell.x > 1 && !visited.Contains(c = new(cell.x - 2, cell.y)))
                     neighbors.Add(c);
-                if(cell.x < columns - 2 && !visited.Contains(c = (cell.x + 2, cell.y)))
+                if(cell.x < columns - 2 && !visited.Contains(c = new(cell.x + 2, cell.y)))
                     neighbors.Add(c);
-                if(cell.y > 1 && !visited.Contains(c = (cell.x, cell.y - 2)))
+                if(cell.y > 1 && !visited.Contains(c = new(cell.x, cell.y - 2)))
                     neighbors.Add(c);
-                if(cell.y < rows - 2 && !visited.Contains(c = (cell.x, cell.y + 2)))
+                if(cell.y < rows - 2 && !visited.Contains(c = new(cell.x, cell.y + 2)))
                     neighbors.Add(c);
 
                 int attempts = frontierAttempts[Rand(frontierAttempts.Length)];
                 for(int j = 0; j < attempts && neighbors is not []; j++)
                 {
-                    (int x, int y) nextCell = neighbors[Rand(neighbors.Count)];
+                    Vec2i nextCell = neighbors[Rand(neighbors.Count)];
                     if(rand.NextDouble() > collResolveChance || this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2] != Tile.Empty)
                     {
                         frontier.Add(nextCell);
@@ -100,12 +100,12 @@ public class RoomGenerator : IEnumerable
 
         for(int i = 0; i < roomCount; i++)
         {
-            (int w, int h) size = (Rand(roomSize.min, roomSize.max, true), Rand(roomSize.min, roomSize.max, true));
-            (int x, int y) loc = (Rand(columns - size.w), Rand(rows - size.h));
-            rooms.Add((new(loc.x, loc.y), new(size.w, size.h)));
+            Vec2i size = new(Rand(roomSize.min, roomSize.max, true), Rand(roomSize.min, roomSize.max, true));
+            Vec2i loc = new(Rand(columns - size.x), Rand(rows - size.y));
+            rooms.Add((new(loc.x, loc.y), new(size.x, size.y)));
 
-            for(int y = loc.y; y < loc.y + size.h; y++)
-                for(int x = loc.x; x < loc.x + size.w; x++)
+            for(int y = loc.y; y < loc.y + size.y; y++)
+                for(int x = loc.x; x < loc.x + size.x; x++)
                     this[x, y] = Tile.Empty;
         }
     }
@@ -117,7 +117,7 @@ public class RoomGenerator : IEnumerable
         for(int i = 0; i < roomCount; i++)
         {
             (int w, int h) size = (Rand(pillarRoomSize.min, pillarRoomSize.max, true), Rand(pillarRoomSize.min, pillarRoomSize.max, true));
-            (int x, int y) loc = (Rand(columns - size.w), Rand(rows - size.h));
+            Vec2i loc = new(Rand(columns - size.w), Rand(rows - size.h));
             pillarRooms.Add((new(loc.x, loc.y), new(size.w, size.h)));
 
             for(int y = loc.y; y < loc.y + size.h; y++)

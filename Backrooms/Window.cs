@@ -53,7 +53,7 @@ public class Window : Form
             InterpolationMode = InterpolationMode.NearestNeighbor,
             SmoothingMode = SmoothingMode.None,
             PixelOffsetMode = PixelOffsetMode.Half,
-            CompositingQuality = CompositingQuality.HighQuality
+            CompositingQuality = CompositingQuality.HighSpeed
         };
         Controls.Add(pictureBox);
 
@@ -62,6 +62,7 @@ public class Window : Form
         this.tick += _ => input.Tick();
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
+        FormClosed += (_, _) => Environment.Exit(0);
 
         timer = new() {
             Interval = 1000,
@@ -85,13 +86,6 @@ public class Window : Form
 
     public void Draw()
     {
-        AppDomain.CurrentDomain.UnhandledException += (_, exc) => {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Unhandled exception in RenderThread:\n{exc}");
-            Console.ForegroundColor = ConsoleColor.Gray;
-            renderThread.Start();
-        };
-
         while(!Visible)
             Thread.Sleep(10);
 
@@ -103,16 +97,6 @@ public class Window : Form
                 tick?.Invoke(deltaTime = (float)sw.Elapsed.TotalSeconds);
                 sw.Restart();
 
-            }
-            catch(Exception exc)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{exc.GetType()} in Draw(), Window.cs:\n{exc}");
-                Console.ForegroundColor = ConsoleColor.Gray;
-            }
-
-            try
-            {
                 Bitmap renderResult = renderer.Draw();
                 Thread.Sleep(1);
                 pictureBox.Image = renderResult;
