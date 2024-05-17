@@ -66,7 +66,10 @@ public class Window : Form
 
         // Start pulse timer
         pulseThread = new(() => {
-            while(true)
+            while(!Visible)
+                Thread.Sleep(500);
+
+            while(Visible)
             {
                 Thread.Sleep(1000);
 

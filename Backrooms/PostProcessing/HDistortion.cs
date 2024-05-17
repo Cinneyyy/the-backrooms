@@ -42,14 +42,16 @@ public unsafe class HDistortion(Func<float, float> distort, Color32? emptyCol = 
             }
             else if(offset < 0)
             {
-                for(x = 0; x < w-absOffset; x++)
+                int offsetWidth = w-absOffset;
+
+                for(x = 0; x < offsetWidth; x++)
                 {
                     *scan0 = *(scan0++ + pixOffset);
                     *scan0 = *(scan0++ + pixOffset);
                     *scan0 = *(scan0++ + pixOffset);
                 }
 
-                for(x = w-absOffset; x < w; x++)
+                for(x = offsetWidth; x < w; x++)
                 {
                     *scan0++ = emptyCol.b;
                     *scan0++ = emptyCol.g;
