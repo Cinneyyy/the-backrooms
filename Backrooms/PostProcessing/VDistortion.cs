@@ -18,10 +18,29 @@ public unsafe class VDistortion(Func<float, float> distort, Color32? emptyCol = 
             int offset = (int)(distort(x / (w-1f)) * h);
             int pixOffset = -3 * offset;
             int absOffset = Math.Abs(offset);
+            byte* scan = scan0 + 3 * x;
 
             if(offset > 0)
             {
+                scan += stride * h;
 
+                for(int y = absOffset; y < h; y++)
+                {
+                    *scan = *(scan + pixOffset);
+                    *(scan+1) = *(scan+1 + pixOffset);
+                    *(scan+2) = *(scan+2 + pixOffset);
+
+                    scan -= stride;
+                }
+
+                for(int y = 0; y < absOffset; y++)
+                {
+                    *scan = emptyCol.b;
+                    *(scan+1) = emptyCol.g;
+                    *(scan+2) = emptyCol.r;
+
+                    scan -= stride;
+                }
             }
             else if(offset < 0)
             {
