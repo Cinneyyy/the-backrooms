@@ -41,6 +41,8 @@ public unsafe class Renderer
 
     public unsafe Bitmap Draw()
     {
+        // TODO: Floor & Ceiling, Fisheye fix for sprites (probably requires rewriting sprite renderer)
+
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
             return new(1, 1);
 
@@ -71,7 +73,7 @@ public unsafe class Renderer
             if(sizeF.x <= 0f || sizeF.y <= 0f)
                 continue;
 
-            // TODO: if(camera.fixFisheyeEffect) ...; but I do not know how
+            // if(camera.fixFisheyeEffect) ...;
             Vec2f locF = new((sprAngle/camera.fov + .5f) * virtRes.x - sizeF.x/2f, (virtRes.y - sizeF.y) / 2f);
 
             Vec2i size = sizeF.Round();

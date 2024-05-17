@@ -159,10 +159,10 @@ public class RoomGenerator : IEnumerable
 
     public Tile[,] FormatTiles()
     {
-        Tile[,] ret = new Tile[tiles.GetLength(1), tiles.GetLength(0)];
+        Tile[,] ret = new Tile[tiles.Length1(), tiles.Length0()];
 
-        for(int x = 0; x < ret.GetLength(0); x++)
-            for(int y = 0; y < ret.GetLength(1); y++)
+        for(int x = 0; x < ret.Length0(); x++)
+            for(int y = 0; y < ret.Length1(); y++)
                 ret[x, y] = this[x, y];
 
         return ret;

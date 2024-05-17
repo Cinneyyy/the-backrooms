@@ -3,7 +3,6 @@ using System.Collections.Specialized;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
-using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace Backrooms;

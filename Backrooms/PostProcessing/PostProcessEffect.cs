@@ -30,6 +30,11 @@ public abstract unsafe class PostProcessEffect(bool enabled = true)
         Exec((byte*)data.Scan0, refScan0, data.Stride, data.Width, data.Height);
     }
 
+    /// <summary>Only call from the outside if you know what you're doing!</summary>
+    public void ApplyUnsafe(byte* scan0, int stride, int w, int h) => Exec(scan0, stride, w, h);
+    /// <summary>Only call from the outside if you know what you're doing!</summary>
+    public void ApplyUnsafe(byte* scan0, byte* refScan0, int stride, int w, int h) => Exec(scan0, refScan0, stride, w, h);
+
 
     /// <summary>Implemented if requireRefBitmap == false, scan0 is both the reference and modified bitmap</summary>
     protected abstract void Exec(byte* scan0, int stride, int w, int h);

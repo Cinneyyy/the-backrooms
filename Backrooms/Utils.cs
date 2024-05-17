@@ -19,6 +19,22 @@ public static class Utils
     public static float LerpUnclamped(float a, float b, float t)
         => a + (b - a) * t;
 
+    public static int Length<T>(this T[,] arr2d, int idx)
+        => arr2d.GetLength(idx);
+    public static int Length0<T>(this T[,] arr2d)
+        => arr2d.Length(0);
+    public static int Length1<T>(this T[,] arr2d)
+        => arr2d.Length(1);
+
+    public static int Length<T>(this T[,,] arr3d, int idx)
+        => arr3d.GetLength(idx);
+    public static int Length0<T>(this T[,,] arr3d)
+        => arr3d.Length(0);
+    public static int Length1<T>(this T[,,] arr3d)
+        => arr3d.Length(1);
+    public static int Length2<T>(this T[,,] arr3d)
+        => arr3d.Length(2);
+
     public static float Clamp(float a, float min, float max)
         => a <= min ? min : a >= max ? max : a;
     public static int Clamp(int a, int min, int max)
@@ -31,8 +47,8 @@ public static class Utils
     {
         T[,] res = new T[newX, newY];
 
-        for(int x = 0; x < arr.GetLength(0); x++)
-            for(int y = 0; y < arr.GetLength(1); y++)
+        for(int x = 0; x < arr.Length0(); x++)
+            for(int y = 0; y < arr.Length1(); y++)
                 res[x, y] = arr[x, y];
 
         arr = res;

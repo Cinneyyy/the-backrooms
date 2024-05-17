@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.Threading;
 using System.Windows.Forms;
 using System.Linq;
 using Backrooms.Online;
 using System.Drawing;
-using Backrooms.PostProcessing;
+using Backrooms.Pathfinding;
 
 namespace Backrooms;
 
@@ -37,6 +36,7 @@ public class Game
     public readonly Image[] skins = (from str in new string[] { "hazmat_suit", "entity", "freddy_fazbear", "huggy_wuggy", "purple_guy" }
                                     select Resources.sprites[str])
                                     .ToArray();
+    public Pathfinder olafPathfinding;
 
 
     private readonly RoomGenerator generator = new();
@@ -57,7 +57,7 @@ public class Game
 
         window.tick += Tick;
 
-        fpsDisplay = new("00 fps", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
+        fpsDisplay = new("?? fps", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
         renderer.texts.Add(fpsDisplay);
         window.pulse += () => {
             fpsDisplay.text = fpsCounter.ToString("00 fps");
@@ -66,8 +66,9 @@ public class Game
 
         renderer.map = map;
         map.texturesStr = [null, "wall", "pillar"];
-        renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
-        renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
+        //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
+        //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
+        //renderer.postProcessEffects.Add(new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
 
         renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), true, Resources.sprites["oli"]));
         olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {
@@ -75,8 +76,10 @@ public class Game
         };
         //olafScholzAudio.Play();
 
-        olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
-        window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
+        olafPathfinding = new(map, new BreadthFirstSearch());
+        window.pulse += () => olafPathfinding.FindPath(olafScholz.pos, mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos);
+        //olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
+        //window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
 
         mpHandler = new(this, host, ip, port, 512, printDebug: false);
         mpHandler.Start();
@@ -146,7 +149,7 @@ public class Game
         mpHandler.ownClientState.pos = camera.pos;
         if(mpHandler.isHost)
         {
-            mpHandler.serverState.olafPos = olafScholz.pos = olafPathfinder.pos = mpHandler.ownClientState.pos;
+            mpHandler.serverState.olafPos = olafScholz.pos = camera.pos;
             mpHandler.SendServerStateChange(StateKey.S_OlafPos);
         }
         mpHandler.SendClientStateChange(StateKey.C_Pos);
@@ -210,6 +213,9 @@ public class Game
 
         Vec2f olafTarget = mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos;
         Vec2f olafToPlayer = olafTarget - olafScholz.pos;
+        olafScholz.pos = olafPathfinding.MoveTowards(olafScholz.pos, olafScholz.size.x/2f, olafSpeed, dt);
+        //Out(olafScholz.pos);
+
         //Vec2f oldOlaf = olafScholz.pos;
         //if(olafTarget != olafScholz.pos)
         //    olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;

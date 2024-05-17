@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
 
@@ -9,7 +10,7 @@ public class Map(Tile[,] tiles) : IEnumerable
     public LockedBitmap[] textures = [];
 
     private Tile[,] tiles = tiles;
-    private Vec2i _size = new(tiles?.GetLength(0) ?? 0, tiles?.GetLength(1) ?? 0);
+    private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
 
 
     public Vec2i size => _size;
@@ -19,17 +20,17 @@ public class Map(Tile[,] tiles) : IEnumerable
     }
 
 
-    public Map(bool[,] tiles) : this(new Tile[tiles.GetLength(0), tiles.GetLength(1)])
+    public Map(bool[,] tiles) : this(new Tile[tiles.Length0(), tiles.Length1()])
     {
-        for(int x = 0; x < tiles.GetLength(0); x++)
-            for(int y = 0; y < tiles.GetLength(0); y++)
+        for(int x = 0; x < tiles.Length0(); x++)
+            for(int y = 0; y < tiles.Length1(); y++)
                 this.tiles[x, y] = tiles[x, y] ? Tile.Wall : Tile.Empty;
     }
 
     public Map(byte[,] tiles) : this(new Tile[tiles.GetLength(0), tiles.GetLength(1)])
     {
-        for(int x = 0; x < tiles.GetLength(0); x++)
-            for(int y = 0; y < tiles.GetLength(0); y++)
+        for(int x = 0; x < tiles.Length0(); x++)
+            for(int y = 0; y < tiles.Length1(); y++)
                 this.tiles[x, y] = (Tile)tiles[x, y];
     }
 
@@ -58,12 +59,12 @@ public class Map(Tile[,] tiles) : IEnumerable
     {
         tiles ??= new Tile[_size.x = row.Length, 0];
 
-        if(tiles.GetLength(1) != 0 && tiles.GetLength(0) != row.Length)
+        if(tiles.Length1() != 0 && tiles.Length0() != row.Length)
             throw new("Cannot add row to map, as it is of different size/length");
 
         Utils.ResizeArr2D(ref tiles, row.Length, tiles.Length + 1);
         for(int x = 0; x < row.Length; x++)
-            tiles[x, tiles.GetLength(1)-1] = row[x];
+            tiles[x, tiles.Length1() - 1] = row[x];
         _size.y++;
     }
     public void Add(params byte[] row)
@@ -135,8 +136,14 @@ public class Map(Tile[,] tiles) : IEnumerable
     public void SetTiles(Tile[,] tiles)
     {
         this.tiles = tiles;
-        _size = new(tiles.GetLength(0), tiles.GetLength(1));
+        _size = new(tiles.Length0(), tiles.Length1());
     }
+
+    public IEnumerable<Vec2i> GetNeighbors(Vec2i cell)
+        => from delta in Vec2i.directions
+           let neighbor = cell + delta
+           where InBounds(neighbor)
+           select neighbor;
 
 
     public static Vec2i Round(Vec2f pt)

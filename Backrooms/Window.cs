@@ -63,6 +63,7 @@ public class Window : Form
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
         FormClosed += (_, _) => Environment.Exit(0);
+        Shown += (_, _) => Cursor.Hide();
 
         // Start pulse timer
         pulseThread = new(() => {
@@ -102,13 +103,16 @@ public class Window : Form
         while(!Visible)
             Thread.Sleep(10);
 
-        Stopwatch sw = new();
+        DateTime lastFrame = DateTime.UtcNow;
         while(Visible)
         {
             try
             {
-                tick?.Invoke(deltaTime = (float)sw.Elapsed.TotalSeconds);
-                sw.Restart();
+                DateTime now = DateTime.UtcNow;
+                deltaTime = (float)(now - lastFrame).TotalSeconds;
+                lastFrame = now;
+
+                tick?.Invoke(deltaTime);
 
                 Bitmap renderResult = renderer.Draw();
                 Thread.Sleep(0);
