@@ -55,8 +55,6 @@ public class Game
         camera.angle = 270f * Utils.Deg2Rad;
         camera.fixFisheyeEffect = false;
 
-        renderer.postProcessEffects.Add(new HDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
-
         window.tick += Tick;
 
         fpsDisplay = new("00 fps", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
@@ -66,14 +64,9 @@ public class Game
             fpsCounter = 0;
         };
 
-        window.pulse += () => Out("Pulse");
-
         renderer.map = map;
-        map.textures = [
-            null,
-            new LockedBitmap(Resources.sprites["wall"], PixelFormat.Format24bppRgb),
-            new LockedBitmap(Resources.sprites["pillar"], PixelFormat.Format24bppRgb)
-        ];
+        map.texturesStr = [null, "wall", "pillar"];
+        //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
 
         renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), true, Resources.sprites["oli"]));
         olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {

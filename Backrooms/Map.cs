@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Drawing.Imaging;
 using System.Linq;
 
 namespace Backrooms;
@@ -12,6 +13,10 @@ public class Map(Tile[,] tiles) : IEnumerable
 
 
     public Vec2i size => _size;
+    public string[] texturesStr
+    {
+        set => LoadTextures(value);
+    }
 
 
     public Map(bool[,] tiles) : this(new Tile[tiles.GetLength(0), tiles.GetLength(1)])
@@ -32,7 +37,10 @@ public class Map(Tile[,] tiles) : IEnumerable
     public Tile this[int x, int y]
     {
         get => InBounds(x, y) ? tiles[x, y] : Tile.Empty;
-        set => tiles[x, y] = value;
+        set {
+            if(InBounds(x, y))
+                tiles[x, y] = value;
+        }
     }
 
     public Tile this[Vec2i v]
@@ -42,7 +50,8 @@ public class Map(Tile[,] tiles) : IEnumerable
     }
 
 
-    IEnumerator IEnumerable.GetEnumerator() => tiles.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() 
+        => tiles.GetEnumerator();
 
 
     public void Add(params Tile[] row)
@@ -59,6 +68,11 @@ public class Map(Tile[,] tiles) : IEnumerable
     }
     public void Add(params byte[] row)
         => Add(row.Cast<Tile>().ToArray());
+
+    public void LoadTextures(params string[] textureIds)
+        => textures = (from tId in textureIds
+                      select tId == null ? null : new LockedBitmap(Resources.sprites[tId], PixelFormat.Format24bppRgb))
+                      .ToArray();
 
     public bool Intersects(Vec2f pt, out Tile type)
     {
