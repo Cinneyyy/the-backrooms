@@ -8,7 +8,7 @@ namespace Backrooms;
 
 public unsafe class Renderer
 {
-    public readonly Vec2i virtualRes, physicalRes;
+    public readonly Vec2i virtRes, physicalRes;
     public readonly Vec2i virtualCenter, physicalCenter;
     public readonly Vec2i outputRes, outputLocation;
     public readonly float downscaleFactor, upscaleFactor;
@@ -25,7 +25,7 @@ public unsafe class Renderer
 
     public Renderer(Vec2i virtualRes, Vec2i physicalRes, Window window)
     {
-        this.virtualRes = virtualRes;
+        this.virtRes = virtualRes;
         this.physicalRes = physicalRes;
         this.window = window;
         virtualCenter = virtualRes/2;
@@ -45,8 +45,8 @@ public unsafe class Renderer
             return new(1, 1);
 
         Array.Fill(depthBuf, 1f);
-        Bitmap bitmap = new(virtualRes.x, virtualRes.y);
-        BitmapData data = bitmap.LockBits(new(0, 0, virtualRes.x, virtualRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+        Bitmap bitmap = new(virtRes.x, virtRes.y);
+        BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
         sprites.Sort((a, b) => (int)MathF.Round((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength));
         Vec2f camDir = Vec2f.FromAngle(camera.angle);
@@ -65,19 +65,19 @@ public unsafe class Renderer
             float sprAngle = camSpace.toAngleRaw;
             float hFov = camera.fov/2f;
 
-            Vec2f sizeF = new(virtualRes.y / dist * spr.size.y);
+            Vec2f sizeF = new(virtRes.y / dist * spr.size.y);
             sizeF.x *= spr.size.x/spr.size.y;
 
             if(sizeF.x <= 0f || sizeF.y <= 0f)
                 continue;
 
             // TODO: if(camera.fixFisheyeEffect) ...; but I do not know how
-            Vec2f locF = new((sprAngle/camera.fov + .5f) * virtualRes.x - sizeF.x/2f, (virtualRes.y - sizeF.y) / 2f);
+            Vec2f locF = new((sprAngle/camera.fov + .5f) * virtRes.x - sizeF.x/2f, (virtRes.y - sizeF.y) / 2f);
 
             Vec2i size = sizeF.Round();
             Vec2i loc = locF.Round();
 
-            int x0 = Math.Max(0, loc.x), x1 = Math.Min(virtualRes.x-1, loc.x + size.x);
+            int x0 = Math.Max(0, loc.x), x1 = Math.Min(virtRes.x-1, loc.x + size.x);
 
             if(x0 >= x1)
                 continue;
@@ -98,7 +98,7 @@ public unsafe class Renderer
             FillDepthBufRange(x0, x1, dist01);
         }
 
-        for(int x = 0; x < virtualRes.x; x++)
+        for(int x = 0; x < virtRes.x; x++)
             DrawWallSegment(data, in x);
 
         foreach(PostProcessEffect effect in postProcessEffects)
@@ -119,7 +119,7 @@ public unsafe class Renderer
 
     private void DrawWallSegment(BitmapData data, in int x)
     {
-        float baseAngle = camera.fov * (x / (virtualRes.x-1f) - .5f);
+        float baseAngle = camera.fov * (x / (virtRes.x-1f) - .5f);
         float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
         Vec2f dir = Vec2f.FromAngle(rayAngle);
         Vec2i iPos = Map.Round(camera.pos);
@@ -167,7 +167,7 @@ public unsafe class Renderer
 
         depthBuf[x] = dist01;
 
-        float heightF = virtualRes.y / dist / 2f;
+        float heightF = virtRes.y / dist / 2f;
         float brightness = (hit.vert ? 1f : .75f) * GetDistanceFogUnclamped(dist01);
 
         LockedBitmap tex = map.textures[(int)hit.tile];
@@ -176,7 +176,7 @@ public unsafe class Renderer
 
         int height = (int)heightF,
             y0 = Math.Max(0, virtualCenter.y - height),
-            y1 = Math.Min(virtualRes.y-1, virtualCenter.y + height),
+            y1 = Math.Min(virtRes.y-1, virtualCenter.y + height),
             tMin = y0 - virtualCenter.y + height,
             tMax = (int)(2f * heightF);
         byte* outPtr = (byte*)data.Scan0 + x*3 + y0*data.Stride;
@@ -195,8 +195,8 @@ public unsafe class Renderer
 
     private void FillDepthBufRange(int x0, int x1, float depth)
     {
-        x0 = Utils.Clamp(x0, 0, virtualRes.x);
-        x1 = Utils.Clamp(x1, 0, virtualRes.x);
+        x0 = Utils.Clamp(x0, 0, virtRes.x);
+        x1 = Utils.Clamp(x1, 0, virtRes.x);
         for(int x = x0; x < x1; x++)
             depthBuf[x] = depth;
     }
