@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
-using SWF = System.Windows.Forms;
+using System.Threading.Tasks;
 
 namespace Backrooms;
 
@@ -18,7 +18,7 @@ public class Window : Form
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly Stopwatch timeElapsedSw;
-    private readonly SWF::Timer timer;
+    private readonly Thread pulseThread;
 
 
     public string title
@@ -64,11 +64,21 @@ public class Window : Form
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
         FormClosed += (_, _) => Environment.Exit(0);
 
-        timer = new() {
-            Interval = 1000,
-            Enabled = true
+        // Start pulse timer
+        pulseThread = new(() => {
+            while(true)
+            {
+                Thread.Sleep(1000);
+
+                async void invoke()
+                    => await Task.Run(pulse);
+
+                invoke();
+            }
+        }) {
+            IsBackground = true
         };
-        timer.Tick += (_, _) => pulse?.Invoke();
+        pulseThread.Start();
 
         // Start processes
         load?.Invoke(this);
@@ -98,7 +108,7 @@ public class Window : Form
                 sw.Restart();
 
                 Bitmap renderResult = renderer.Draw();
-                Thread.Sleep(1);
+                Thread.Sleep(0);
                 pictureBox.Image = renderResult;
             }
             catch(Exception exc)

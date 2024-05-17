@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Backrooms;
+namespace Backrooms.PostProcessing;
 
 public unsafe class HDistortion(Func<float, float> distort, Color32? emptyCol = null, bool enabled = true) : PostProcessEffect(enabled)
 {
@@ -60,6 +60,6 @@ public unsafe class HDistortion(Func<float, float> distort, Color32? emptyCol = 
                 scan0 += stride;
         }
     }
-    protected override unsafe void Exec(byte* srcScan0, byte* targetScan0, int stride, int w, int h)
-        => throw new NotImplementedException();
+    protected override unsafe void Exec(byte* scan0, byte* refScan0, int stride, int w, int h)
+        => ThrowWrongExecExc<HDistortion>();
 }

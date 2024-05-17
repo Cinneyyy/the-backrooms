@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.Linq;
 using Backrooms.Online;
 using System.Drawing;
+using Backrooms.PostProcessing;
 
 namespace Backrooms;
 
@@ -26,7 +27,7 @@ public class Game
         { 1, 0, 0, 0, 0, 0, 0, 1 },
         { 1, 1, 1, 1, 1, 1, 1, 1 },
     });
-    public float playerSpeed = 2f, sensitivity = 1f;
+    public float playerSpeed = 2f, sensitivity = 1/5000f;
     public SpriteRenderer olafScholz;
     public AudioSource olafScholzAudio;
     public float olafSpeed = .75f;
@@ -52,6 +53,9 @@ public class Game
         camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length);
         camera.pos = (Vec2f)map.size/2f;
         camera.angle = 270f * Utils.Deg2Rad;
+        camera.fixFisheyeEffect = false;
+
+        renderer.postProcessEffects.Add(new HDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
 
         window.tick += Tick;
 
@@ -61,6 +65,8 @@ public class Game
             fpsDisplay.text = fpsCounter.ToString("00 fps");
             fpsCounter = 0;
         };
+
+        window.pulse += () => Out("Pulse");
 
         renderer.map = map;
         map.textures = [
@@ -176,7 +182,7 @@ public class Game
             (input.KeyHelt(Keys.S) ? -1f : input.KeyHelt(Keys.W) ? 1f : 0f) * camera.forward).normalized;
         camera.pos = map.ResolveIntersectionIfNecessery(prevCamPos, camera.pos, .25f, out _);
         if(input.lockCursor)
-            camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity * dt;
+            camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity / dt;
         mpHandler.ownClientState.pos = camera.pos;
         mpHandler.ownClientState.rot = camera.angle;
         mpHandler.SendClientStateChange(StateKey.C_Pos);
@@ -213,8 +219,8 @@ public class Game
         //Vec2f oldOlaf = olafScholz.pos;
         //if(olafTarget != olafScholz.pos)
         //    olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
-        olafPathfinder.Tick(dt);
-        olafScholz.pos = olafPathfinder.pos;//map.ResolveIntersectionIfNecessery(oldOlaf, olafPathfinder.pos, olafScholz.size.x/2f, out _);
+        //olafPathfinder.Tick(dt);
+        //olafScholz.pos = olafPathfinder.pos;//map.ResolveIntersectionIfNecessery(oldOlaf, olafPathfinder.pos, olafScholz.size.x/2f, out _);
         olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);
 
 

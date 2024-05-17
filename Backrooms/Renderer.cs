@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Backrooms.PostProcessing;
 
 namespace Backrooms;
 
@@ -15,8 +16,9 @@ public unsafe class Renderer
     public Input input;
     public Map map;
     public Window window;
-    public List<SpriteRenderer> sprites = [];
-    public List<TextElement> texts = [];
+    public readonly List<SpriteRenderer> sprites = [];
+    public readonly List<TextElement> texts = [];
+    public readonly List<PostProcessEffect> postProcessEffects = [];
     public float[] depthBuf;
     public bool drawIfCursorOffscreen = true;
 
@@ -47,57 +49,66 @@ public unsafe class Renderer
         BitmapData data = bitmap.LockBits(new(0, 0, virtualRes.x, virtualRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
         sprites.Sort((a, b) => (int)MathF.Round((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength));
+        Vec2f camDir = Vec2f.FromAngle(camera.angle);
 
-        Vec2f fovDir = Vec2f.FromAngle(camera.fov + camera.angle - 15*Utils.Deg2Rad), camDir = camera.forward;
-        float fovCamDot = Vec2f.Dot(fovDir, camDir);
         foreach(SpriteRenderer spr in sprites)
         {
-            Vec2f relPos = spr.pos - camera.pos;
+            Vec2f camToSpr = spr.pos - camera.pos;
+            Vec2f camSpace = new(
+                camToSpr.x * camDir.x + camToSpr.y * camDir.y,
+                -camToSpr.x * camDir.y + camToSpr.y * camDir.x);
 
-            float dist = relPos.length;
+            float dist = camToSpr.length;
             if(dist == 0f)
                 continue;
 
-            relPos.Normalize();
-            Vec2i size = (virtualRes.y / dist * spr.size).Round();
+            float sprAngle = camSpace.toAngleRaw;
+            float hFov = camera.fov/2f;
 
-            if(Vec2f.Dot(camDir, relPos) <= fovCamDot || size.x <= 0 || size.y <= 0)
+            Vec2f sizeF = new(virtualRes.y / dist * spr.size.y);
+            sizeF.x *= spr.size.x/spr.size.y;
+
+            if(sizeF.x <= 0f || sizeF.y <= 0f)
                 continue;
 
-            float relDot = Vec2f.Dot(Vec2f.FromAngle(camera.angle + MathF.PI/2f).normalized, relPos);
+            // TODO: if(camera.fixFisheyeEffect) ...; but I do not know how
+            Vec2f locF = new((sprAngle/camera.fov + .5f) * virtualRes.x - sizeF.x/2f, (virtualRes.y - sizeF.y) / 2f);
 
-            // idk why the /1.5f nearly fixes the sprite moving too much with the camera angle, but somehow it does
-            int locX = (int)(relDot/1.5f * virtualRes.x + virtualCenter.x - size.x/2f);
-            int locY = (int)(virtualCenter.y - size.y/2f);
+            Vec2i size = sizeF.Round();
+            Vec2i loc = locF.Round();
 
-            int x0 = Math.Max(0, locX), x1 = Math.Min(virtualRes.x, locX+size.x);
-            for(int x = x0; x < x1; x++) // Draw wall behind transparent image
-                DrawWallSegment(data, in x, out _);
+            int x0 = Math.Max(0, loc.x), x1 = Math.Min(virtualRes.x-1, loc.x + size.x);
+
+            if(x0 >= x1)
+                continue;
+
+            for(int x = x0; x < x1; x++)
+                DrawWallSegment(data, in x);
 
             float dist01 = dist / camera.maxDist;
-            float brightness = GetDistanceFog(dist01);
-            if(spr.hasTransparency)
-                DrawBitmapCutout24(data, spr.lockedImage.data, locX, locY, size.x, size.y, brightness);
-            else
-                DrawBitmap24(data, spr.lockedImage.data, locX, locY, size.x, size.y, brightness);
+            if(dist01 >= 1f || dist01 <= 0f)
+                continue;
 
-            FillDepthBuf(locX, size.x, (dist - .2f) / camera.maxDist);
+            float fog = GetDistanceFog(dist01);
+            if(spr.hasTransparency)
+                DrawBitmapCutout24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog);
+            else
+                DrawBitmap24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog);
+
+            FillDepthBufRange(x0, x1, dist01);
         }
 
         for(int x = 0; x < virtualRes.x; x++)
-            DrawWallSegment(data, in x, out _);
+            DrawWallSegment(data, in x);
 
-        //DrawWallSegment(data, in virtualCenter.x, out Bitmap debugOut, true);
-
-        PostProcessEffect effect = new HDistortion(t => MathF.Sin(4f * (window.timeElapsed + t)) / 22.5f);
-        effect.Apply(data);
+        foreach(PostProcessEffect effect in postProcessEffects)
+            effect.Apply(data);
 
         bitmap.UnlockBits(data);
 
         if(texts is not [])
         {
             using Graphics g = Graphics.FromImage(bitmap);
-            //g.DrawImage(debugOut, virtualCenter.x - debugOut.Width/2f, virtualCenter.y - debugOut.Height/2f);
             foreach(TextElement t in texts)
                 g.DrawString(t.text, t.font, Brushes.White, t.rect);
         }
@@ -106,8 +117,8 @@ public unsafe class Renderer
     }
 
 
-    private void DrawWallSegment(BitmapData data, in int x, out Bitmap dOut, bool drawDebug = false)
-    {dOut = null;
+    private void DrawWallSegment(BitmapData data, in int x)
+    {
         float baseAngle = camera.fov * (x / (virtualRes.x-1f) - .5f);
         float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
         Vec2f dir = Vec2f.FromAngle(rayAngle);
@@ -146,10 +157,11 @@ public unsafe class Renderer
         }
 
         Vec2f hitPos = camera.pos + sideDist;
-        float dist = (hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y) * MathF.Cos(baseAngle);
+        float dist = hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y;
+        if(camera.fixFisheyeEffect) 
+            dist *= MathF.Cos(baseAngle);
         float dist01 = Utils.Clamp01(dist / camera.maxDist);
 
-        if(!drawDebug)
         if(dist > camera.maxDist || dist == 0f || depthBuf[x] < dist01)
             return;
 
@@ -175,28 +187,6 @@ public unsafe class Renderer
             *(outPtr+1) = (byte)(*(texRow+1) * brightness);
             *(outPtr+2) = (byte)(*(texRow+2) * brightness);
             outPtr += data.Stride;
-        }
-
-        if(drawDebug)
-        {
-            Bitmap res = new(map.size.x * 16, map.size.y * 16);
-            using Graphics gr = Graphics.FromImage(res);
-            gr.Clear(Color.Black);
-            Brush emptyBr = new SolidBrush(Color.FromArgb(0xff << 24 | 0x222222)), wallBr = new SolidBrush(Color.FromArgb(0xff << 24 | 0xaaaaaa)), pillarBr = new SolidBrush(Color.FromArgb(0xff << 24 | 0x999999));
-            for(int i = 0; i < map.size.x; i++)
-                for(int j = 0; j < map.size.y; j++)
-                {
-                    gr.FillRectangle(map[i, j] switch {
-                        Tile.Wall => wallBr,
-                        Tile.Pillar => pillarBr,
-                        _ => emptyBr
-                    }, i * 16 + 1, j * 16 + 1, 14, 14);
-                }
-            Vec2f cPos = camera.pos * 16f;
-            gr.FillEllipse(Brushes.Red, cPos.x-3, cPos.y-3, 6, 6);
-            gr.DrawLine(new(Color.Green), cPos.x, cPos.y, iPos.x * 16, iPos.y * 16);
-            gr.DrawLine(new(Color.Blue), cPos.x, cPos.y, hitPos.x * 16, hitPos.y * 16);
-            dOut = res;
         }
     }
 

@@ -7,6 +7,7 @@ public class Camera(float fovRadians, float maxDist)
     public float fov = fovRadians;
     public Vec2f pos;
     public float maxDist = maxDist;
+    public bool fixFisheyeEffect = true;
 
     private float _angle;
 

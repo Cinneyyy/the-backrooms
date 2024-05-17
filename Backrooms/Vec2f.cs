@@ -22,8 +22,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public readonly float sqrLength => x*x + y*y;
     public readonly float length => MathF.Sqrt(sqrLength);
     public readonly Vec2f normalized => sqrLength == 0f ? zero : this / length;
-    public readonly float toAngleUnnormalized => MathF.Atan2(y, x);
-    public readonly float toAngle => Utils.NormAngle(toAngleUnnormalized);
+    public readonly float toAngleRaw => MathF.Atan2(y, x);
+    public readonly float toAngle => Utils.NormAngle(toAngleRaw);
 
 
     public Vec2f(float xy) : this(xy, xy) { }
@@ -38,7 +38,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
         y = this.y;
     }
 
-    public void Normalize() => this = normalized;
+    public void Normalize() 
+        => this = normalized;
 
     public readonly Vec2i Round() 
         => new((int)x, (int)y);
