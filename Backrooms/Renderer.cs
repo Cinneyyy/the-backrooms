@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using Backrooms.PostProcessing;
-using NAudio.Gui;
 
 namespace Backrooms;
 
@@ -73,6 +72,7 @@ public unsafe class Renderer
         return bitmap;
     }
 
+    // TODO: Floor rendering, ceiling moves with you in y-direction (fix that), fisheye fix toggle, fog
     public void DrawFloorAndCeil(BitmapData data)
     {
         BitmapData floorTex = map.floorTex.data, ceilTex = map.ceilTex.data;
@@ -83,8 +83,6 @@ public unsafe class Renderer
 
         byte* ceilScan = (byte*)data.Scan0;
         byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
-
-        //Bitmap res = new(virtRes.x, virtRes.y);
 
         for(int y = 0; y < virtCenter.y; y++)
         {
@@ -105,9 +103,6 @@ public unsafe class Renderer
                       floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3;
 
                 floor += floorStep;
-
-                //res.SetPixel(x, y, Color.FromArgb(*ceilColPtr++, *ceilColPtr++, *ceilColPtr));
-                //res.SetPixel(x, virtRes.y-y-1, Color.FromArgb(*floorColPtr++, *floorColPtr++, *floorColPtr));
                 *ceilScan++ = *ceilColPtr++;
                 *ceilScan++ = *ceilColPtr++;
                 *ceilScan++ = *ceilColPtr;
@@ -117,8 +112,6 @@ public unsafe class Renderer
                 //*floorScan++ = *floorColPtr;
             }
         }
-
-        //res.Save("C:\\tmp\\draw.png");
     }
 
 
@@ -165,7 +158,7 @@ public unsafe class Renderer
             if(dist01 >= 1f || dist01 <= 0f)
                 continue;
 
-            float fog = GetDistanceFog(dist01);
+            float fog = 1f; //GetDistanceFog(dist01);
             if(spr.hasTransparency)
                 DrawBitmapCutout24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog);
             else
@@ -215,10 +208,8 @@ public unsafe class Renderer
         }
 
         Vec2f hitPos = camera.pos + sideDist;
-        float uncorrectedDist = hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y;
-        float dist = (camera.fixFisheyeEffect ? MathF.Cos(baseAngle) : 1f) * uncorrectedDist;
-        if(camera.fixFisheyeEffect) 
-            dist *= MathF.Cos(baseAngle);
+        float euclideanDist = hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y;
+        float dist = (camera.fixFisheyeEffect ? MathF.Cos(baseAngle) : 1f) * euclideanDist;
         float dist01 = Utils.Clamp01(dist / camera.maxDist);
 
         if(dist > camera.maxDist || dist == 0f || depthBuf[x] < dist01)
@@ -227,10 +218,11 @@ public unsafe class Renderer
         depthBuf[x] = dist01;
 
         float heightF = virtRes.y / dist / 2f;
-        float brightness = (hit.vert ? 1f : .75f) * GetDistanceFogUnclamped(dist01);
+        float brightness = (hit.vert ? 1f : .75f);// * GetDistanceFogUnclamped(dist01);
 
+        // TODO: Better fix for fisheye effect
         LockedBitmap tex = map.textures[(int)hit.tile];
-        float wallX = (hit.vert ? camera.pos.y + uncorrectedDist * dir.y : camera.pos.x + uncorrectedDist * dir.x) % 1f;
+        float wallX = (hit.vert ? camera.pos.y + euclideanDist * dir.y : camera.pos.x + euclideanDist * dir.x) % 1f;
         int texX = (int)(wallX * tex.data.Width);
         if(hit.vert && dir.x > 0f || !hit.vert && dir.y < 0f)
             texX = tex.data.Width - texX - 1;
@@ -403,9 +395,9 @@ public unsafe class Renderer
         => DrawBitmapCutout24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
 
 
-    private static float GetDistanceFogUnclamped(float dist01)
+    public static float GetDistanceFogUnclamped(float dist01)
         => .75f * Utils.Sqr(1f - dist01);
 
-    private static float GetDistanceFog(float dist01)
+    public static float GetDistanceFog(float dist01)
         => GetDistanceFogUnclamped(Utils.Clamp01(dist01));
 }

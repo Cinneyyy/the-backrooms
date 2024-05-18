@@ -7,6 +7,7 @@ using System.Linq;
 using Backrooms.Online;
 using System.Drawing;
 using Backrooms.Pathfinding;
+using Backrooms.PostProcessing;
 
 namespace Backrooms;
 
@@ -53,7 +54,7 @@ public class Game
         camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length);
         camera.pos = (Vec2f)map.size/2f;
         camera.angle = 270f * Utils.Deg2Rad;
-        camera.fixFisheyeEffect = true;
+        camera.fixFisheyeEffect = false;
 
         window.tick += Tick;
 
@@ -68,6 +69,7 @@ public class Game
         map.texturesStr = [null, "wall", "pillar"];
         map.floorTexStr = "floor";
         map.ceilTexStr = "ceiling";
+        renderer.postProcessEffects.Add(new DistanceFog(Renderer.GetDistanceFog, renderer.depthBuf));
         //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
@@ -168,9 +170,6 @@ public class Game
 
     private void Tick(float dt)
     {
-        if(input.KeyDown(Keys.F6))
-            renderer.DrawFloorAndCeil(null);
-
         fpsCounter++;
 
         if(!mpHandler.ready)
