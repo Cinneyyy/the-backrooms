@@ -50,7 +50,7 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        DrawFloorAndCeil(data);
+        //DrawFloorAndCeil(data);
 
         DrawSprites(data);
 
@@ -63,23 +63,22 @@ public unsafe class Renderer
         bitmap.UnlockBits(data);
 
         if(texts is not [])
-        {
             using(Graphics g = Graphics.FromImage(bitmap))
                 foreach(TextElement t in texts)
-                    g.DrawString(t.text, t.font, Brushes.White, t.rect);
-        }
+                    if(t.enabled)
+                        g.DrawString(t.text, t.font, Brushes.White, t.rect);
 
         return bitmap;
     }
 
-    // TODO: Floor rendering, ceiling moves with you in y-direction (fix that), fisheye fix toggle, fog
+    // TODO: Floor rendering, ceiling moves and rotates wrong along with the camera, fisheye fix toggle, fog
     public void DrawFloorAndCeil(BitmapData data)
     {
         BitmapData floorTex = map.floorTex.data, ceilTex = map.ceilTex.data;
         Vec2i floorTexSize = map.floorTex.size, ceilTexSize = map.ceilTex.size;
         Vec2i floorTexBounds = floorTexSize - Vec2i.one, ceilTexBounds = ceilTexSize - Vec2i.one;
-        Vec2f dir = camera.forward;
-        Vec2f plane = camera.plane;
+        Vec2f dir = Vec2f.FromAngle(camera.angle);
+        Vec2f plane = new Vec2f(-dir.y, dir.x) * camera.fovFactor;
 
         byte* ceilScan = (byte*)data.Scan0;
         byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
@@ -88,10 +87,11 @@ public unsafe class Renderer
         {
             Vec2f lDir = dir - plane, rDir = dir + plane;
 
-            float rowDist = (float)virtCenter.y / (y - virtCenter.y);
+            float rowDist = (float)virtCenter.y / (virtCenter.y - y);
+            Vec2f rowDistVec = new(rowDist, -rowDist);
 
-            Vec2f floorStep = (rDir - lDir) * rowDist / virtRes.x;
-            Vec2f floor = camera.pos + (rowDist * lDir);
+            Vec2f floorStep = (rDir - lDir) * rowDistVec / virtRes.x;
+            Vec2f floor = camera.pos + (rowDistVec * lDir);
 
             for(int x = 0; x < virtRes.x; x++)
             {
@@ -158,7 +158,7 @@ public unsafe class Renderer
             if(dist01 >= 1f || dist01 <= 0f)
                 continue;
 
-            float fog = 1f; //GetDistanceFog(dist01);
+            float fog = GetDistanceFog(dist01);
             if(spr.hasTransparency)
                 DrawBitmapCutout24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog);
             else
@@ -218,7 +218,7 @@ public unsafe class Renderer
         depthBuf[x] = dist01;
 
         float heightF = virtRes.y / dist / 2f;
-        float brightness = (hit.vert ? 1f : .75f);// * GetDistanceFogUnclamped(dist01);
+        float brightness = (hit.vert ? 1f : .75f) * GetDistanceFogUnclamped(dist01);
 
         // TODO: Better fix for fisheye effect
         LockedBitmap tex = map.textures[(int)hit.tile];

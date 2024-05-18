@@ -86,7 +86,7 @@ public class PathfindingEntity(Map map, Vec2f pos, float speed, float olafRadius
         {
             Vec2i newPos = cell + delta;
 
-            if(map.InBounds(newPos) && map[newPos] == Tile.Empty)
+            if(map.InBounds(newPos) && Map.IsEmptyTile(map[newPos]))
                 yield return newPos;
         }
     }

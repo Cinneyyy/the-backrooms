@@ -25,7 +25,7 @@ public class DijkstrasShortestPath : IPathfindingAlgorithm
             if(curr == end)
                 break;
 
-            foreach(Vec2i neighbor in from n in map.GetNeighbors(curr, t => t == Tile.Empty)
+            foreach(Vec2i neighbor in from n in map.GetNeighbors(curr, t => Map.IsEmptyTile(t))
                                       where !parentMap.ContainsKey(n)
                                       select n)
             {

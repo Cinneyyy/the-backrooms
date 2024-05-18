@@ -92,18 +92,18 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
                       select tId == null ? null : new LockedBitmap(Resources.sprites[tId], PixelFormat.Format24bppRgb))
                       .ToArray();
 
-    public bool Intersects(Vec2f pt, out Tile type)
+    public bool Intersects(Vec2f pt, out Tile tile)
     {
         Vec2i idx = Round(pt);
 
         if(idx.x < 0 || idx.x >= _size.x || idx.y < 0 || idx.y >= _size.y)
         {
-            type = Tile.Empty;
+            tile = Tile.Empty;
             return false;
         } 
 
-        type = tiles[idx.x, idx.y];
-        return type != Tile.Empty;
+        tile = tiles[idx.x, idx.y];
+        return IsCollidingTile(tile);
     }
     public bool Intersects(Vec2f pt, float radius, out Tile type)
     {
@@ -131,7 +131,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
              collC = this[tile + offset];
 
         // sorry
-        return IsCollidingTile(type = collA != Tile.Empty ? collA : collB != Tile.Empty ? collB : collC != Tile.Empty ? collC : Tile.Empty);
+        return IsCollidingTile(type = IsCollidingTile(collA) ? collA : IsCollidingTile(collB) ? collB : IsCollidingTile(collC) ? collC : Tile.Empty);
     }
 
     public Vec2f ResolveIntersectionIfNecessery(Vec2f oldPt, Vec2f newPt, float radius, out bool didCollide)
@@ -172,6 +172,8 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     public static Vec2i Round(Vec2f pt)
         => pt.Round();
 
+    public static bool IsEmptyTile(Tile tile)
+        => tile == Tile.Empty;
     public static bool IsCollidingTile(Tile tile)
-        => tile != Tile.Empty;
+        => !IsEmptyTile(tile);
 }

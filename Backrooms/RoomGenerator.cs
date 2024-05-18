@@ -83,7 +83,7 @@ public class RoomGenerator : IEnumerable
                 for(int j = 0; j < attempts && neighbors is not []; j++)
                 {
                     Vec2i nextCell = neighbors[Rand(neighbors.Count)];
-                    if(rand.NextDouble() > collResolveChance || this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2] != Tile.Empty)
+                    if(rand.NextDouble() > collResolveChance || Map.IsCollidingTile(this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2]))
                     {
                         frontier.Add(nextCell);
                         this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2] = Tile.Empty;

@@ -18,7 +18,7 @@ public interface IPathfindingAlgorithm
         bool lineOfSight(int a, int b)
         {
             for(int i = a; i < b; i++)
-                if(map[nodes[i]] != Tile.Empty)
+                if(Map.IsCollidingTile(map[nodes[i]]))
                     return false;
 
             return true;
