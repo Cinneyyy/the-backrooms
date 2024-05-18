@@ -81,7 +81,7 @@ public unsafe class Renderer
         Vec2f dir = camera.forward;
         Vec2f plane = camera.plane;
 
-        byte* ceilScan = (byte*)data.Scan0;
+        byte* ceilScan = (byte*)data.Scan0 + (virtCenter.y + 1) * data.Stride;
         byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
 
         //Bitmap res = new(virtRes.x, virtRes.y);
@@ -90,7 +90,7 @@ public unsafe class Renderer
         {
             Vec2f lDir = dir - plane, rDir = dir + plane;
 
-            float rowDist = (float)virtCenter.y/y - 1f;
+            float rowDist = (float)virtCenter.y / (y - virtCenter.y);
 
             Vec2f floorStep = (rDir - lDir) * rowDist / virtRes.x;
             Vec2f floor = camera.pos + (rowDist * lDir);
@@ -98,7 +98,7 @@ public unsafe class Renderer
             for(int x = 0; x < virtRes.x; x++)
             {
                 Vec2i cell = floor.Round();
-                Vec2i ceilTexCoord = (4f * ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
+                Vec2i ceilTexCoord = (2f * ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
                       floorTexCoord = (floorTexSize * (floor - cell)).Round() & floorTexBounds;
                 byte* ceilColPtr = (byte*)ceilTex.Scan0 + ceilTexCoord.y * ceilTex.Stride + ceilTexCoord.x * 3,
                       floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3;
@@ -107,9 +107,9 @@ public unsafe class Renderer
 
                 //res.SetPixel(x, y, Color.FromArgb(*ceilColPtr++, *ceilColPtr++, *ceilColPtr));
                 //res.SetPixel(x, virtRes.y-y-1, Color.FromArgb(*floorColPtr++, *floorColPtr++, *floorColPtr));
-                *ceilScan++ = *ceilColPtr++;
-                *ceilScan++ = *ceilColPtr++;
-                *ceilScan++ = *ceilColPtr;
+                *--ceilScan = *ceilColPtr++;
+                *--ceilScan = *ceilColPtr++;
+                *--ceilScan = *ceilColPtr;
 
                 //*floorScan++ = *floorColPtr++;
                 //*floorScan++ = *floorColPtr++;
