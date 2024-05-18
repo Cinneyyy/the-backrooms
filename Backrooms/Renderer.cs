@@ -73,8 +73,7 @@ public unsafe class Renderer
         return bitmap;
     }
 
-
-    private void DrawFloorAndCeil(BitmapData data)
+    public void DrawFloorAndCeil(BitmapData data)
     {
         BitmapData floorTex = map.floorTex.data, ceilTex = map.ceilTex.data;
         Vec2i floorTexSize = map.floorTex.size, ceilTexSize = map.ceilTex.size;
@@ -85,12 +84,13 @@ public unsafe class Renderer
         byte* ceilScan = (byte*)data.Scan0;
         byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
 
+        //Bitmap res = new(virtRes.x, virtRes.y);
+
         for(int y = 0; y < virtCenter.y; y++)
         {
             Vec2f lDir = dir - plane, rDir = dir + plane;
 
-            int distFromCenter = y - virtRes.y;
-            float rowDist = (float)virtCenter.y / distFromCenter;
+            float rowDist = (float)virtCenter.y/y - 1f;
 
             Vec2f floorStep = (rDir - lDir) * rowDist / virtRes.x;
             Vec2f floor = camera.pos + (rowDist * lDir);
@@ -98,23 +98,28 @@ public unsafe class Renderer
             for(int x = 0; x < virtRes.x; x++)
             {
                 Vec2i cell = floor.Round();
-                Vec2i ceilTexCoord = (ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
+                Vec2i ceilTexCoord = (4f * ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
                       floorTexCoord = (floorTexSize * (floor - cell)).Round() & floorTexBounds;
                 byte* ceilColPtr = (byte*)ceilTex.Scan0 + ceilTexCoord.y * ceilTex.Stride + ceilTexCoord.x * 3,
                       floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3;
 
                 floor += floorStep;
 
+                //res.SetPixel(x, y, Color.FromArgb(*ceilColPtr++, *ceilColPtr++, *ceilColPtr));
+                //res.SetPixel(x, virtRes.y-y-1, Color.FromArgb(*floorColPtr++, *floorColPtr++, *floorColPtr));
                 *ceilScan++ = *ceilColPtr++;
                 *ceilScan++ = *ceilColPtr++;
                 *ceilScan++ = *ceilColPtr;
 
-                *floorScan++ = *floorColPtr++;
-                *floorScan++ = *floorColPtr++;
-                *floorScan++ = *floorColPtr;
+                //*floorScan++ = *floorColPtr++;
+                //*floorScan++ = *floorColPtr++;
+                //*floorScan++ = *floorColPtr;
             }
         }
+
+        //res.Save("C:\\tmp\\draw.png");
     }
+
 
     private void DrawSprites(BitmapData data)
     {
