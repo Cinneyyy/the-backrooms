@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using Backrooms.PostProcessing;
+using NAudio.Gui;
 
 namespace Backrooms;
 
@@ -77,32 +78,30 @@ public unsafe class Renderer
     {
         BitmapData floorTex = map.floorTex.data, ceilTex = map.ceilTex.data;
         Vec2i floorTexSize = map.floorTex.size, ceilTexSize = map.ceilTex.size;
+        Vec2i floorTexBounds = floorTexSize - Vec2i.one, ceilTexBounds = ceilTexSize - Vec2i.one;
         Vec2f dir = camera.forward;
+        Vec2f plane = camera.plane;
+
+        byte* ceilScan = (byte*)data.Scan0;
+        byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
 
         for(int y = 0; y < virtCenter.y; y++)
         {
-            const float planeY = .5f;
-            Vec2f lDir = new(dir.x, dir.y - planeY),
-                  rDir = new(dir.x, dir.y + planeY);
+            Vec2f lDir = dir - plane, rDir = dir + plane;
 
             int distFromCenter = y - virtRes.y;
             float rowDist = (float)virtCenter.y / distFromCenter;
 
-            Vec2f floorStep = new(
-                rowDist * (rDir.x - lDir.x) / virtRes.x,
-                rowDist * (rDir.y - lDir.y) / virtRes.x);
-
-            Vec2f floor = new(
-                -pos.x + rowDist * lDir.x,
-                -pos.y + rowDist * lDir.y);
+            Vec2f floorStep = (rDir - lDir) * rowDist / virtRes.x;
+            Vec2f floor = camera.pos + (rowDist * lDir);
 
             for(int x = 0; x < virtRes.x; x++)
             {
                 Vec2i cell = floor.Round();
-                Vec2i ceilTexCoord = (ceilTexSize * 20f * (floor - cell)).Round() & (ceilTexSize - Vec2i.one),
-                      floorTexCoord = (floorTexSize * 20f * (floor - cell)).Round() & (floorTexSize - Vec2i.one);
+                Vec2i ceilTexCoord = (ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
+                      floorTexCoord = (floorTexSize * (floor - cell)).Round() & floorTexBounds;
                 byte* ceilColPtr = (byte*)ceilTex.Scan0 + ceilTexCoord.y * ceilTex.Stride + ceilTexCoord.x * 3,
-                      floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3 + 2;
+                      floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3;
 
                 floor += floorStep;
 
@@ -110,9 +109,9 @@ public unsafe class Renderer
                 *ceilScan++ = *ceilColPtr++;
                 *ceilScan++ = *ceilColPtr;
 
-                *--floorScan = *floorColPtr--;
-                *--floorScan = *floorColPtr--;
-                *--floorScan = *floorColPtr;
+                *floorScan++ = *floorColPtr++;
+                *floorScan++ = *floorColPtr++;
+                *floorScan++ = *floorColPtr;
             }
         }
     }
