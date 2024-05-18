@@ -81,7 +81,7 @@ public unsafe class Renderer
         Vec2f dir = camera.forward;
         Vec2f plane = camera.plane;
 
-        byte* ceilScan = (byte*)data.Scan0 + (virtCenter.y + 1) * data.Stride;
+        byte* ceilScan = (byte*)data.Scan0;
         byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
 
         //Bitmap res = new(virtRes.x, virtRes.y);
@@ -100,6 +100,7 @@ public unsafe class Renderer
                 Vec2i cell = floor.Round();
                 Vec2i ceilTexCoord = (2f * ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
                       floorTexCoord = (floorTexSize * (floor - cell)).Round() & floorTexBounds;
+
                 byte* ceilColPtr = (byte*)ceilTex.Scan0 + ceilTexCoord.y * ceilTex.Stride + ceilTexCoord.x * 3,
                       floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3;
 
@@ -107,9 +108,9 @@ public unsafe class Renderer
 
                 //res.SetPixel(x, y, Color.FromArgb(*ceilColPtr++, *ceilColPtr++, *ceilColPtr));
                 //res.SetPixel(x, virtRes.y-y-1, Color.FromArgb(*floorColPtr++, *floorColPtr++, *floorColPtr));
-                *--ceilScan = *ceilColPtr++;
-                *--ceilScan = *ceilColPtr++;
-                *--ceilScan = *ceilColPtr;
+                *ceilScan++ = *ceilColPtr++;
+                *ceilScan++ = *ceilColPtr++;
+                *ceilScan++ = *ceilColPtr;
 
                 //*floorScan++ = *floorColPtr++;
                 //*floorScan++ = *floorColPtr++;
@@ -214,7 +215,8 @@ public unsafe class Renderer
         }
 
         Vec2f hitPos = camera.pos + sideDist;
-        float dist = hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y;
+        float uncorrectedDist = hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y;
+        float dist = (camera.fixFisheyeEffect ? MathF.Cos(baseAngle) : 1f) * uncorrectedDist;
         if(camera.fixFisheyeEffect) 
             dist *= MathF.Cos(baseAngle);
         float dist01 = Utils.Clamp01(dist / camera.maxDist);
@@ -228,7 +230,7 @@ public unsafe class Renderer
         float brightness = (hit.vert ? 1f : .75f) * GetDistanceFogUnclamped(dist01);
 
         LockedBitmap tex = map.textures[(int)hit.tile];
-        float wallX = (hit.vert ? camera.pos.y + dist * dir.y : camera.pos.x + dist * dir.x) % 1f;
+        float wallX = (hit.vert ? camera.pos.y + uncorrectedDist * dir.y : camera.pos.x + uncorrectedDist * dir.x) % 1f;
         int texX = (int)(wallX * tex.data.Width);
         if(hit.vert && dir.x > 0f || !hit.vert && dir.y < 0f)
             texX = tex.data.Width - texX - 1;
