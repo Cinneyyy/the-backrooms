@@ -66,6 +66,8 @@ public class Game
 
         renderer.map = map;
         map.texturesStr = [null, "wall", "pillar"];
+        map.floorTexStr = "floor";
+        map.ceilTexStr = "ceiling";
         //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));

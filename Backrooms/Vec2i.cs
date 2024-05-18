@@ -82,6 +82,18 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
     public static Vec2i operator +(Vec2i v) => new(+v.x, +v.y);
     public static Vec2i operator -(Vec2i v) => new(-v.x, -v.y);
 
+    public static Vec2i operator &(Vec2i a, Vec2i b) => new(a.x & b.x, a.y & b.y);
+    public static Vec2i operator |(Vec2i a, Vec2i b) => new(a.x | b.x, a.y | b.y);
+    public static Vec2i operator ^(Vec2i a, Vec2i b) => new(a.x ^ b.x, a.y ^ b.y);
+    public static Vec2i operator <<(Vec2i a, Vec2i b) => new(a.x << b.x, a.y << b.y);
+    public static Vec2i operator >>(Vec2i a, Vec2i b) => new(a.x >> b.x, a.y >> b.y);
+
+    public static Vec2i operator &(Vec2i a, int b) => new(a.x & b, a.y & b);
+    public static Vec2i operator |(Vec2i a, int b) => new(a.x | b, a.y | b);
+    public static Vec2i operator ^(Vec2i a, int b) => new(a.x ^ b, a.y ^ b);
+    public static Vec2i operator <<(Vec2i a, int b) => new(a.x << b, a.y << b);
+    public static Vec2i operator >>(Vec2i a, int b) => new(a.x >> b, a.y >> b);
+
 
     public static implicit operator Size(Vec2i v) => new(v.x, v.y);
     public static implicit operator Vec2i(Size s) => new(s.Width, s.Height);

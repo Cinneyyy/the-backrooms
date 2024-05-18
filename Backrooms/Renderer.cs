@@ -9,7 +9,7 @@ namespace Backrooms;
 public unsafe class Renderer
 {
     public readonly Vec2i virtRes, physicalRes;
-    public readonly Vec2i virtualCenter, physicalCenter;
+    public readonly Vec2i virtCenter, physicalCenter;
     public readonly Vec2i outputRes, outputLocation;
     public readonly float downscaleFactor, upscaleFactor;
     public Camera camera;
@@ -23,19 +23,19 @@ public unsafe class Renderer
     public bool drawIfCursorOffscreen = true;
 
 
-    public Renderer(Vec2i virtualRes, Vec2i physicalRes, Window window)
+    public Renderer(Vec2i virtRes, Vec2i physicalRes, Window window)
     {
-        this.virtRes = virtualRes;
+        this.virtRes = virtRes;
         this.physicalRes = physicalRes;
         this.window = window;
-        virtualCenter = virtualRes/2;
+        virtCenter = virtRes/2;
         physicalCenter = physicalRes/2;
-        downscaleFactor = (float)virtualRes.y/physicalRes.y;
-        upscaleFactor = (float)physicalRes.y/virtualRes.y;
-        float virtRatio = (float)virtualRes.x / virtualRes.y;
+        downscaleFactor = (float)virtRes.y/physicalRes.y;
+        upscaleFactor = (float)physicalRes.y/virtRes.y;
+        float virtRatio = (float)virtRes.x / virtRes.y;
         outputRes = new((int)(virtRatio * physicalRes.y), physicalRes.y);
         outputLocation = new((physicalRes.x - outputRes.x) / 2, 0);
-        depthBuf = new float[virtualRes.x];
+        depthBuf = new float[virtRes.x];
     }
 
 
@@ -50,8 +50,77 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
+        DrawFloorAndCeil(data);
+
+        DrawSprites(data);
+
+        for(int x = 0; x < virtRes.x; x++)
+            DrawWallSegment(data, in x);
+
+        foreach(PostProcessEffect effect in postProcessEffects)
+            effect.Apply(data);
+
+        bitmap.UnlockBits(data);
+
+        if(texts is not [])
+        {
+            using(Graphics g = Graphics.FromImage(bitmap))
+                foreach(TextElement t in texts)
+                    g.DrawString(t.text, t.font, Brushes.White, t.rect);
+        }
+
+        return bitmap;
+    }
+
+
+    private void DrawFloorAndCeil(BitmapData data)
+    {
+        BitmapData floorTex = map.floorTex.data, ceilTex = map.ceilTex.data;
+        Vec2i floorTexSize = map.floorTex.size, ceilTexSize = map.ceilTex.size;
+        Vec2f dir = camera.forward;
+
+        for(int y = 0; y < virtCenter.y; y++)
+        {
+            const float planeY = .5f;
+            Vec2f lDir = new(dir.x, dir.y - planeY),
+                  rDir = new(dir.x, dir.y + planeY);
+
+            int distFromCenter = y - virtRes.y;
+            float rowDist = (float)virtCenter.y / distFromCenter;
+
+            Vec2f floorStep = new(
+                rowDist * (rDir.x - lDir.x) / virtRes.x,
+                rowDist * (rDir.y - lDir.y) / virtRes.x);
+
+            Vec2f floor = new(
+                -pos.x + rowDist * lDir.x,
+                -pos.y + rowDist * lDir.y);
+
+            for(int x = 0; x < virtRes.x; x++)
+            {
+                Vec2i cell = floor.Round();
+                Vec2i ceilTexCoord = (ceilTexSize * 20f * (floor - cell)).Round() & (ceilTexSize - Vec2i.one),
+                      floorTexCoord = (floorTexSize * 20f * (floor - cell)).Round() & (floorTexSize - Vec2i.one);
+                byte* ceilColPtr = (byte*)ceilTex.Scan0 + ceilTexCoord.y * ceilTex.Stride + ceilTexCoord.x * 3,
+                      floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3 + 2;
+
+                floor += floorStep;
+
+                *ceilScan++ = *ceilColPtr++;
+                *ceilScan++ = *ceilColPtr++;
+                *ceilScan++ = *ceilColPtr;
+
+                *--floorScan = *floorColPtr--;
+                *--floorScan = *floorColPtr--;
+                *--floorScan = *floorColPtr;
+            }
+        }
+    }
+
+    private void DrawSprites(BitmapData data)
+    {
         sprites.Sort((a, b) => (int)MathF.Round((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength));
-        Vec2f camDir = Vec2f.FromAngle(camera.angle);
+        Vec2f camDir = camera.forward;
 
         foreach(SpriteRenderer spr in sprites)
         {
@@ -99,25 +168,7 @@ public unsafe class Renderer
 
             FillDepthBufRange(x0, x1, dist01);
         }
-
-        for(int x = 0; x < virtRes.x; x++)
-            DrawWallSegment(data, in x);
-
-        foreach(PostProcessEffect effect in postProcessEffects)
-            effect.Apply(data);
-
-        bitmap.UnlockBits(data);
-
-        if(texts is not [])
-        {
-            using Graphics g = Graphics.FromImage(bitmap);
-            foreach(TextElement t in texts)
-                g.DrawString(t.text, t.font, Brushes.White, t.rect);
-        }
-
-        return bitmap;
     }
-
 
     private void DrawWallSegment(BitmapData data, in int x)
     {
@@ -173,18 +224,17 @@ public unsafe class Renderer
         float brightness = (hit.vert ? 1f : .75f) * GetDistanceFogUnclamped(dist01);
 
         LockedBitmap tex = map.textures[(int)hit.tile];
-        Vec2f rayDir = Vec2f.FromAngle(rayAngle);
-        float wallX = (hit.vert ? camera.pos.y + dist * rayDir.y : camera.pos.x + dist * rayDir.x) % 1f;
+        float wallX = (hit.vert ? camera.pos.y + dist * dir.y : camera.pos.x + dist * dir.x) % 1f;
         int texX = (int)(wallX * tex.data.Width);
-        if(hit.vert && rayDir.x > 0f || !hit.vert && rayDir.y < 0f)
+        if(hit.vert && dir.x > 0f || !hit.vert && dir.y < 0f)
             texX = tex.data.Width - texX - 1;
 
         byte* texPtr = (byte*)tex.data.Scan0 + texX*3;
 
         int height = (int)heightF,
-            y0 = Math.Max(0, virtualCenter.y - height),
-            y1 = Math.Min(virtRes.y-1, virtualCenter.y + height),
-            tMin = y0 - virtualCenter.y + height,
+            y0 = Math.Max(0, virtCenter.y - height),
+            y1 = Math.Min(virtRes.y-1, virtCenter.y + height),
+            tMin = y0 - virtCenter.y + height,
             tMax = (int)(2f * heightF);
         byte* outPtr = (byte*)data.Scan0 + x*3 + y0*data.Stride;
         for(int y = y0, i = tMin; y < y1; y++, i++)
@@ -348,10 +398,7 @@ public unsafe class Renderer
 
 
     private static float GetDistanceFogUnclamped(float dist01)
-    {
-        float inv = 1f - dist01;
-        return .75f * inv*inv;
-    }
+        => .75f * Utils.Sqr(1f - dist01);
 
     private static float GetDistanceFog(float dist01)
         => GetDistanceFogUnclamped(Utils.Clamp01(dist01));

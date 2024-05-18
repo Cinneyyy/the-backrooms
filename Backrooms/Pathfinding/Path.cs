@@ -36,10 +36,10 @@ public struct Path(Vec2f[] points) : IEnumerable<Vec2f>
 
     public Vec2f GetNextPoint(Vec2f pos, float marginOfError)
     {
-        if(points.Length == 0)
+        if(current >= points.Length)
             return pos;
 
-        if((pos - points[current]).length <= marginOfError)
+        if(current < points.Length - 1 && (pos - points[current]).length <= marginOfError)
             current++;
 
         return points[current];

@@ -1,13 +1,15 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Linq;
 
 namespace Backrooms;
 
-public class Map(Tile[,] tiles) : IEnumerable
+public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 {
     public LockedBitmap[] textures = [];
+    public LockedBitmap floorTex, ceilTex;
 
     private Tile[,] tiles = tiles;
     private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
@@ -17,6 +19,14 @@ public class Map(Tile[,] tiles) : IEnumerable
     public string[] texturesStr
     {
         set => LoadTextures(value);
+    }
+    public string floorTexStr
+    {
+        set => floorTex = new(Resources.sprites[value], PixelFormat.Format24bppRgb);
+    }
+    public string ceilTexStr
+    {
+        set => ceilTex = new(Resources.sprites[value], PixelFormat.Format24bppRgb);
     }
 
 
@@ -52,8 +62,15 @@ public class Map(Tile[,] tiles) : IEnumerable
 
 
     IEnumerator IEnumerable.GetEnumerator() 
-        => tiles.GetEnumerator();
+        => GetEnumerator();
 
+
+    public IEnumerator<Vec2i> GetEnumerator()
+    {
+        for(int x = 0; x < tiles.Length0(); x++)
+            for(int y = 0; y < tiles.Length1(); y++)
+                yield return new(x, y);
+    }
 
     public void Add(params Tile[] row)
     {
@@ -143,6 +160,12 @@ public class Map(Tile[,] tiles) : IEnumerable
         => from delta in Vec2i.directions
            let neighbor = cell + delta
            where InBounds(neighbor)
+           select neighbor;
+    public IEnumerable<Vec2i> GetNeighbors(Vec2i cell, Predicate<Tile> predicate)
+        => from delta in Vec2i.directions
+           let neighbor = cell + delta
+           where InBounds(neighbor)
+           where predicate(this[neighbor])
            select neighbor;
 
 

@@ -32,6 +32,10 @@ public struct Color32(byte r, byte g, byte b, byte a = 0xff)
     public readonly override int GetHashCode() => base.GetHashCode();
 
 
+    public static unsafe Color32 FromData24(byte* scan)
+        => new(*(scan+2), (*scan+1), *scan);
+
+
     public static Color32 operator +(Color32 a, Color32 b) => new(a.r + b.r, a.g + b.g, a.b + b.b);
     public static Color32 operator -(Color32 a, Color32 b) => new(a.r - b.r, a.g - b.g, a.b - b.b);
     public static Color32 operator *(Color32 a, Color32 b) => new(a.rf * b.rf, a.gf * b.gf, a.bf * b.bf);

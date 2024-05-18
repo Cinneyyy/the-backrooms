@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text;
 
 namespace Backrooms;
@@ -13,9 +14,13 @@ public static class Utils
     public const float Deg2Rad = Pi/180f;
 
 
+    public static T Lerp<T>(T a, T b, T t) where T : INumber<T>
+        => Clamp(LerpUnclamped(a, b, t), T.Zero, T.One);
     public static float Lerp(float a, float b, float t)
-        => Clamp(a + (b - a) * t, 0f, 1f);
+        => Clamp(LerpUnclamped(a, b, t), 0f, 1f);
 
+    public static T LerpUnclamped<T>(T a, T b, T t) where T : INumber<T>
+        => a + (b - a) * t;
     public static float LerpUnclamped(float a, float b, float t)
         => a + (b - a) * t;
 
@@ -35,6 +40,8 @@ public static class Utils
     public static int Length2<T>(this T[,,] arr3d)
         => arr3d.Length(2);
 
+    public static T Clamp<T>(T a, T min, T max) where T : INumber<T>
+        => a <= min ? min : a >= max ? max : a;
     public static float Clamp(float a, float min, float max)
         => a <= min ? min : a >= max ? max : a;
     public static int Clamp(int a, int min, int max)
@@ -54,6 +61,8 @@ public static class Utils
         arr = res;
     }
 
+    public static T Mod<T>(T x, T y) where T : INumber<T>
+        => (x%y + y) % y;
     public static float Mod(float x, float y)
         => (x%y + y) % y;
 
@@ -63,7 +72,7 @@ public static class Utils
     public static bool RoughlyEqual(float a, float b, float eps = 1e-8f)
         => MathF.Abs(a - b) <= eps;
     public static bool RoughlyZero(float f, float eps = 1e-8f)
-        => MathF.Abs(f) < eps;
+        => MathF.Abs(f) <= eps;
 
     public static void DoNothing() { }
 
@@ -101,4 +110,18 @@ public static class Utils
     }
     public static string FormatStr<T>(this IEnumerable<T> tlist, string seperator)
         => tlist.FormatStr(seperator, t => t.ToString());
+
+    public static T Sqr<T>(T x) where T : INumber<T>
+        => x*x;
+    public static float Sqr(float x)
+        => x*x;
+    public static int Sqr(int x)
+        => x*x;
+
+    public static T Cube<T>(T x) where T : INumber<T>
+        => x*x*x;
+    public static float Cube(float x)
+        => x*x*x;
+    public static int Cube(int x)
+        => x*x*x;
 }

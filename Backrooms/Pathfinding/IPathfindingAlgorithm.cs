@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace Backrooms.Pathfinding;
 
@@ -10,6 +9,9 @@ public interface IPathfindingAlgorithm
 
     static List<Vec2i> ShortenPath(Map map, List<Vec2i> nodes)
     {
+        //// TODO: fix this fix this fix this
+        //return nodes;
+
         if(nodes.Count <= 2)
             return nodes;
 

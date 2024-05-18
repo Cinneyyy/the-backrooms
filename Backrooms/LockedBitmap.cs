@@ -11,6 +11,7 @@ public unsafe class LockedBitmap : IDisposable
 
 
     public BitmapData data { get; private set; }
+    public Vec2i size => new(data.Width, data.Height);
 
 
     public LockedBitmap(Image src, PixelFormat pixelFormat, bool preLock = true)

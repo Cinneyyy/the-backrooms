@@ -17,13 +17,26 @@ public class Camera(float fovRadians, float maxDist)
         get => _angle;
         set => _angle = Utils.NormAngle(value);
     }
+    public float angleDeg
+    {
+        get => angle * Utils.Rad2Deg;
+        set => angle = value * Utils.Deg2Rad;
+    }
     public Vec2f forward => Vec2f.FromAngle(angle);
     public Vec2f right => Vec2f.FromAngle(angle - MathF.PI/2f);
+    public Vec2f plane
+    {
+        get {
+            Vec2f dir = forward * fovFactor;
+            return new(dir.y, -dir.x);
+        }
+    }
+    public float fovFactor => MathF.Tan(fov/2f);
 
 
     public void RotateRad(float rad)
         => angle += rad;
 
     public void RotateDeg(float deg)
-        => angle += deg * Utils.Rad2Deg;
+        => angleDeg += deg;
 }
