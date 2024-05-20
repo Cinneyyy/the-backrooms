@@ -49,5 +49,5 @@ public struct Color32(byte r, byte g, byte b, byte a = 0xff)
     public static bool operator !=(Color32 a, Color32 b) => !(a == b);
 
 
-    public static implicit operator Color(Color32 col32) => Color.FromArgb(col32.a, col32.r, col32.g, col32.b);
+    public static explicit operator Color(Color32 col32) => Color.FromArgb(col32.a, col32.r, col32.g, col32.b);
 }

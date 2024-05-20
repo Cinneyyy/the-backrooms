@@ -17,7 +17,7 @@ public class BreadthFirstSearch : IPathfindingAlgorithm
                 break;
 
 
-            foreach(Vec2i neighbor in from n in map.GetNeighbors(curr, t => Map.IsEmptyTile(t))
+            foreach(Vec2i neighbor in from n in map.GetNeighbors(curr, Map.IsEmptyTile)
                                       where !visited.ContainsKey(n)
                                       select n)
             {

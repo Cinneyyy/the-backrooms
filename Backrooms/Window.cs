@@ -58,7 +58,8 @@ public class Window : Form
         Controls.Add(pictureBox);
 
         // Add callbacks
-        this.tick += tick;
+        if(tick is not null)
+            this.tick += tick;
         this.tick += _ => input.Tick();
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
@@ -68,7 +69,7 @@ public class Window : Form
         // Start pulse timer
         pulseThread = new(() => {
             while(!Visible)
-                Thread.Sleep(500);
+                Thread.Sleep(1);
 
             while(Visible)
             {
@@ -101,7 +102,7 @@ public class Window : Form
     public void Draw()
     {
         while(!Visible)
-            Thread.Sleep(10);
+            Thread.Sleep(1);
 
         DateTime lastFrame = DateTime.UtcNow;
         while(Visible)

@@ -92,7 +92,7 @@ public class RoomGenerator : IEnumerable
                 }
             }
         }
-    }
+    }     
 
     public void GenerateRooms()
     {
