@@ -225,8 +225,7 @@ public unsafe class Renderer
         if(dist >= camera.maxDist || dist <= 0f)
             return;
 
-        Vec2f sizeF = new(virtRes.y / dist * spr.size.y);
-        sizeF.x *= spr.size.x/spr.size.y;
+        Vec2f sizeF = spr.size * virtRes.y / dist;
 
         if(sizeF.x <= 0f || sizeF.y <= 0f)
             return;
@@ -236,9 +235,13 @@ public unsafe class Renderer
         Vec2i size = sizeF.Floor();
         int locX = locXF.Floor();
 
-        int x0 = Math.Max(locX - size.x/2, 0),
-            x1 = Math.Min(locX + size.x/2, virtRes.x-1),
-            xDiff = x1-x0;
+        int x0 = locX - size.x/2,
+            x1 = locX + size.x/2,
+            xDiff = x1-x0,
+            unfixedX0 = x0;
+        x0 = Math.Max(x0, 0);
+        x1 = Math.Min(x1, virtRes.x-1);
+        int x0Change = x0 - unfixedX0;
 
         if(x0 >= x1)
             return;
@@ -248,16 +251,18 @@ public unsafe class Renderer
             return;
 
         float brightness = GetDistanceFog(normDist);
-        int y0 = Math.Max(virtCenter.y - size.y/2, 0),
-            y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y-1),
+        int y0 = virtCenter.y - size.y/2,
+            y1 = virtCenter.y + size.y/2,
             yDiff = y1-y0;
+        y0 = Math.Max(y0, 0);
+        y1 = Math.Min(y1, virtRes.y-1);
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
-        int backpaddle = yDiff * data.Stride;
+        int backpaddle = (y1-y0) * data.Stride;
 
         for(int x = x0; x < x1; x++)
         {
-            int texX = Utils.Clamp((((float)x-x0)/xDiff * (spr.graphic.w-1)).Floor(), 0, spr.graphic.w-1);
+            int texX = Utils.Clamp((((float)x-x0+x0Change)/xDiff * (spr.graphic.w-1)).Floor(), 0, spr.graphic.w-1);
             byte* texScan = spr.graphic.scan0 + texX*4;
 
             for(int y = y0; y < y1; y++)
@@ -267,9 +272,15 @@ public unsafe class Renderer
 
                 if(*(colScan+3) > 0x80)
                 {
-                    *scan = (byte)(*colScan * brightness);
-                    *(scan+1) = (byte)(*(colScan+1) * brightness);
-                    *(scan+2) = (byte)(*(colScan+2) * brightness);
+                    byte b = (byte)(*colScan * brightness);
+                    byte g = (byte)(*(colScan+1) * brightness);
+                    byte r = (byte)(*(colScan+2) * brightness);
+                    *scan = b;
+                    *(scan+1) = g;
+                    *(scan+2) = r;
+                    //*scan = (byte)(*colScan * brightness);
+                    //*(scan+1) = (byte)(*(colScan+1) * brightness);
+                    //*(scan+2) = (byte)(*(colScan+2) * brightness);
                 }
 
                 scan += data.Stride;
