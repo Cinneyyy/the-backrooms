@@ -20,6 +20,8 @@ public class Camera(float fovRadians, float maxDist, float angle = 0f)
         set {
             _angle = Utils.NormAngle(value);
             _forward = Vec2f.FromAngle(_angle);
+            _right = Vec2f.FromAngle(_angle - MathF.PI/2f);
+            _plane = Vec2f.PlaneFromFovFactor(forward, fovFactor);
         }
     }
     public float angleDeg

@@ -55,8 +55,7 @@ public unsafe class Renderer
         DrawSprites(data);
 
         for(int x = 0; x < virtRes.x; x++)
-            DrawVerticalStripe(data, x);
-            //DrawWallSegment(data, in x);
+            DrawWallSegment(data, x);
 
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
@@ -153,8 +152,7 @@ public unsafe class Renderer
                 continue;
 
             for(int x = x0; x < x1; x++)
-                DrawVerticalStripe(data, x);
-                //DrawWallSegment(data, in x);
+                DrawWallSegment(data, x);
 
             float dist01 = dist / camera.maxDist;
             if(dist01 >= 1f || dist01 <= 0f)
@@ -171,91 +169,13 @@ public unsafe class Renderer
         }
     }
 
-    private void DrawWallSegment(BitmapData data, in int x)
-    {
-        float baseAngle = camera.fov * (x / (virtRes.x-1f) - .5f);
-        float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
-        Vec2f dir = Vec2f.FromAngle(rayAngle);
-        Vec2i iPos = camera.pos.Floor();
-
-        Vec2f deltaDist = new(
-            dir.x == 0f ? float.MaxValue : MathF.Abs(1f / dir.x),
-            dir.y == 0f ? float.MaxValue : MathF.Abs(1f / dir.y));
-
-        Vec2f sideDist = new(
-            deltaDist.x * (dir.x < 0f ? (camera.pos.x - iPos.x) : (iPos.x + 1f - camera.pos.x)),
-            deltaDist.y * (dir.y < 0f ? (camera.pos.y - iPos.y) : (iPos.y + 1f - camera.pos.y)));
-
-        Vec2i step = new(Math.Sign(dir.x), Math.Sign(dir.y));
-
-        (Tile tile, bool vert) hit = (Tile.Empty, false);
-        while(hit.tile == Tile.Empty)
-        {
-            if(sideDist.x < sideDist.y)
-            {
-                sideDist.x += deltaDist.x;
-                iPos.x += step.x;
-                hit.vert = true;
-            }
-            else
-            {
-                sideDist.y += deltaDist.y;
-                iPos.y += step.y;
-                hit.vert = false;
-            }
-
-            if(!map.InBounds(iPos))
-                return;
-
-            hit.tile = map[iPos];
-        }
-
-        Vec2f hitPos = camera.pos + sideDist;
-        float euclideanDist = hit.vert ? sideDist.x - deltaDist.x : sideDist.y - deltaDist.y;
-        float dist = (camera.fixFisheyeEffect ? MathF.Cos(baseAngle) : 1f) * euclideanDist;
-        float dist01 = Utils.Clamp01(dist / camera.maxDist);
-
-        if(dist > camera.maxDist || dist == 0f || depthBuf[x] < dist01)
-            return;
-
-        depthBuf[x] = dist01;
-
-        float heightF = virtRes.y / dist / 2f;
-        float brightness = (hit.vert ? 1f : .75f) * GetDistanceFog(dist01);
-
-        // TODO: Better fix for fisheye effect
-        UnsafeGraphic tex = map.textures[(int)hit.tile];
-        float wallX = (hit.vert ? camera.pos.y + euclideanDist * dir.y : camera.pos.x + euclideanDist * dir.x) % 1f;
-        int texX = (wallX * (tex.data.Width-1)).Floor();
-        if(hit.vert && dir.x > 0f || !hit.vert && dir.y < 0f)
-            texX = tex.data.Width - texX - 1;
-
-        byte* texPtr = (byte*)tex.data.Scan0 + texX*3;
-
-        int height = heightF.Floor(),
-            y0 = Math.Max(0, virtCenter.y - height),
-            y1 = Math.Min(virtRes.y-1, virtCenter.y + height),
-            tMin = y0 - virtCenter.y + height,
-            tMax = (2f * heightF).Floor();
-        byte* outPtr = (byte*)data.Scan0 + x*3 + y0*data.Stride;
-        for(int y = y0, i = tMin; y < y1; y++, i++)
-        {
-            byte* texRow = texPtr + ((float)i / tMax * (tex.data.Height-1)).Floor() * tex.data.Stride;
-            *(outPtr) = (byte)(*(texRow) * brightness);
-            *(outPtr+1) = (byte)(*(texRow+1) * brightness);
-            *(outPtr+2) = (byte)(*(texRow+2) * brightness);
-            outPtr += data.Stride;
-        }
-    }
-
-    private void DrawVerticalStripe(BitmapData data, int x)
+    private void DrawWallSegment(BitmapData data, int x)
     {
         Vec2f dir;
         if(camera.fixFisheyeEffect)
         {
-            Vec2f plane = camera.plane;
             float screenX = 2f*x / (virtRes.x-1f) - 1f;
-            dir = camera.forward + plane * screenX;
+            dir = camera.forward - camera.plane * screenX;
         }
         else
         {
@@ -266,14 +186,14 @@ public unsafe class Renderer
         Vec2i mPos = camera.pos.Floor();
 
         Vec2f deltaDist = new(
-            dir.x == 0f ? float.PositiveInfinity : MathF.Abs(1f / dir.x),
-            dir.y == 0f ? float.PositiveInfinity : MathF.Abs(1f / dir.y));
+            dir.x == 0f ? float.MaxValue : MathF.Abs(1f / dir.x),
+            dir.y == 0f ? float.MaxValue : MathF.Abs(1f / dir.y));
 
         Vec2f sideDist = new(
             deltaDist.x * (dir.x < 0f ? (camera.pos.x - mPos.x) : (mPos.x + 1f - camera.pos.x)),
             deltaDist.y * (dir.y < 0f ? (camera.pos.y - mPos.y) : (mPos.y + 1f - camera.pos.y)));
 
-        Vec2i step = new(Math.Sign(dir.x), Math.Sign(dir.y));
+        Vec2i step = new(MathF.Sign(dir.x), MathF.Sign(dir.y));
 
         bool hit = false, vert = false;
 
@@ -299,8 +219,13 @@ public unsafe class Renderer
                 hit = true;
         }
 
-        float dist = vert ? (sideDist.x - deltaDist.y) : (sideDist.y - deltaDist.y);
+        Vec2f hitPos = camera.pos + sideDist;
+
+        float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
         float normDist = Utils.Clamp01(dist / camera.maxDist);
+
+        if(dist >= camera.maxDist || dist <= 0f)
+            return;
 
         float height = virtRes.y / dist;
         int halfHeight = (height / 2f).Floor();
@@ -319,19 +244,19 @@ public unsafe class Renderer
         float texPos = (y0 - virtCenter.y + halfHeight) * texStep;
         int texMask = tex.h-1;
 
-        byte* texScan = (byte*)data.Scan0 + y0*data.Stride + x*3;
+        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
 
         for(int y = y0; y < y1; y++)
         {
             int texY = (int)texPos & texMask;
             texPos += texStep;
-            byte* texCol = tex.scan0 + texY*tex.stride + 3*x;
+            byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
 
-            *texScan     = (byte)(*texCol     * brightness);
-            *(texScan+1) = (byte)(*(texCol+1) * brightness);
-            *(texScan+2) = (byte)(*(texCol+2) * brightness);
+            *scan     = (byte)(*texScan     * brightness);
+            *(scan+1) = (byte)(*(texScan+1) * brightness);
+            *(scan+2) = (byte)(*(texScan+2) * brightness);
 
-            texScan += data.Stride;
+            scan += data.Stride;
         }
     }
 

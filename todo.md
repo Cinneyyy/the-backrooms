@@ -16,7 +16,6 @@
 
 ---
 ## Bugfixes
-- Texture mapping in ff mode
 - Sprite rendering in ff mode
 - Ceiling/floor drawing
     -> Fog
