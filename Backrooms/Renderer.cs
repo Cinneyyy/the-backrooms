@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using Backrooms.PostProcessing;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Backrooms;
 
@@ -233,15 +232,11 @@ public unsafe class Renderer
         float locXF = (camSpace.toAngle/camera.fov + .5f) * virtRes.x - sizeF.x/2f;
 
         Vec2i size = sizeF.Floor();
+        Vec2i hSize = (sizeF/2f).Floor();
         int locX = locXF.Floor();
 
-        int x0 = locX - size.x/2,
-            x1 = locX + size.x/2,
-            xDiff = x1-x0,
-            unfixedX0 = x0;
-        x0 = Math.Max(x0, 0);
-        x1 = Math.Min(x1, virtRes.x-1);
-        int x0Change = x0 - unfixedX0;
+        int x0 = Math.Max(locX - hSize.x, 0),
+            x1 = Math.Min(locX + hSize.y, virtRes.x-1);
 
         if(x0 >= x1)
             return;
@@ -251,38 +246,29 @@ public unsafe class Renderer
             return;
 
         float brightness = GetDistanceFog(normDist);
-        int y0 = virtCenter.y - size.y/2,
-            y1 = virtCenter.y + size.y/2,
-            yDiff = y1-y0,
-            unfixedY0 = y0;
-        y0 = Math.Max(y0, 0);
-        y1 = Math.Min(y1, virtRes.y-1);
-        int y0Change = y0 - unfixedY0;
+        int y0 = Math.Max(virtCenter.y - hSize.y, 0),
+            y1 = Math.Min(virtCenter.y + hSize.y, virtRes.y-1);
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1-y0) * data.Stride;
 
+        Vec2f texOffset = new(hSize.x - locX, hSize.y - virtCenter.y);
+        Vec2f texMappingFactor = (spr.graphic.size - Vec2f.one) / size;
         for(int x = x0; x < x1; x++)
         {
-            int texX = Utils.Clamp((((float)x-x0+x0Change)/xDiff * (spr.graphic.w-1)).Floor(), 0, spr.graphic.w-1);
+            int texX = Utils.Clamp(((x + texOffset.x) * texMappingFactor.x).Floor(), 0, spr.graphic.wb);
             byte* texScan = spr.graphic.scan0 + texX*4;
 
             for(int y = y0; y < y1; y++)
             {
-                int texY = Utils.Clamp((((float)y-y0+y0Change)/yDiff * (spr.graphic.h-1)).Floor(), 0, spr.graphic.h-1);
+                int texY = Utils.Clamp(((y + texOffset.y) * texMappingFactor.y).Floor(), 0, spr.graphic.hb);
                 byte* colScan = texScan + texY*spr.graphic.stride;
 
                 if(*(colScan+3) > 0x80)
                 {
-                    byte b = (byte)(*colScan * brightness);
-                    byte g = (byte)(*(colScan+1) * brightness);
-                    byte r = (byte)(*(colScan+2) * brightness);
-                    *scan = b;
-                    *(scan+1) = g;
-                    *(scan+2) = r;
-                    //*scan = (byte)(*colScan * brightness);
-                    //*(scan+1) = (byte)(*(colScan+1) * brightness);
-                    //*(scan+2) = (byte)(*(colScan+2) * brightness);
+                    *scan = (byte)(*colScan * brightness);
+                    *(scan+1) = (byte)(*(colScan+1) * brightness);
+                    *(scan+2) = (byte)(*(colScan+2) * brightness);
                 }
 
                 scan += data.Stride;

@@ -59,7 +59,7 @@ public class Game
 
         window.tick += Tick;
 
-        fpsDisplay = new("?? fps", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
+        fpsDisplay = new("", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
         renderer.texts.Add(fpsDisplay);
         window.pulse += () => {
             fpsDisplay.text = fpsCounter.ToString("00 fps");
@@ -70,10 +70,14 @@ public class Game
         map.texturesStr = [null, "wall", "pillar"];
         map.floorTexStr = "floor";
         map.ceilTexStr = "ceiling";
+
+        PostProcessEffect lsdEffect = new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f, enabled: false);
+        renderer.postProcessEffects.Add(lsdEffect);
         //renderer.postProcessEffects.Add(new DistanceFog(Renderer.GetDistanceFog, renderer.depthBuf));
         //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
+        window.tick += dt => lsdEffect.enabled ^= input.KeyDown(Keys.L);
 
         renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), Resources.sprites["oli"]));
         olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {

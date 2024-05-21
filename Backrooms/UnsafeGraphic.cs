@@ -9,7 +9,7 @@ public unsafe class UnsafeGraphic : IDisposable
     public readonly BitmapData data;
     public readonly bool useAlpha;
     public readonly byte* scan0;
-    public readonly int stride, w, h;
+    public readonly int stride, w, h, wb, hb;
     public readonly Vec2i size;
 
     private readonly Bitmap bitmap;
@@ -24,6 +24,8 @@ public unsafe class UnsafeGraphic : IDisposable
         stride = data.Stride;
         w = data.Width;
         h = data.Height;
+        wb = w-1;
+        hb = h-1;
         size = new(w, h);
     }
 
@@ -40,6 +42,8 @@ public unsafe class UnsafeGraphic : IDisposable
         stride = data.Stride;
         w = data.Width;
         h = data.Width;
+        wb = w-1;
+        hb = h-1;
         size = new(w, h);
     }
 
