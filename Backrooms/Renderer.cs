@@ -53,12 +53,20 @@ public unsafe class Renderer
 
         //DrawFloorAndCeil(data);
 
-        //DrawSprites(data);
-
         for(int x = 0; x < virtRes.x; x++)
             DrawWallSegment(data, x);
 
-        DrawAllSprites(data);
+        {
+            sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
+            Vec2f dir = camera.forward;
+
+            if(camera.fixFisheyeEffect)
+                foreach(SpriteRenderer spr in sprites)
+                    DrawSpriteFisheyeFixed(data, spr);
+            else
+                foreach(SpriteRenderer spr in sprites)
+                    DrawSprite(data, spr);
+        }
 
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
@@ -204,115 +212,70 @@ public unsafe class Renderer
         }
     }
 
-
-    private void DrawSprites(BitmapData data)
+    private void DrawSprite(BitmapData data, SpriteRenderer spr)
     {
-        sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         Vec2f dir = camera.forward;
 
-        if(camera.fixFisheyeEffect)
-
-
-        foreach(SpriteRenderer spr in sprites)
-        {
-            Vec2f relPos = spr.pos - camera.pos;
-            Vec2f camSpace = new(
+        Vec2f relPos = spr.pos - camera.pos;
+        Vec2f camSpace = new(
                 relPos.x * dir.x + relPos.y * dir.y,
                 -relPos.x * dir.y + relPos.y * dir.x);
 
-            float dist = relPos.length;
-            if(dist == 0f)
-                continue;
+        float dist = relPos.length;
+        if(dist >= camera.maxDist || dist <= 0f)
+            return;
 
-            float sprAngle = camSpace.toAngle;
-            float hFov = camera.fov/2f;
+        Vec2f sizeF = new(virtRes.y / dist * spr.size.y);
+        sizeF.x *= spr.size.x/spr.size.y;
 
-            Vec2f sizeF = new(virtRes.y / dist * spr.size.y);
-            sizeF.x *= spr.size.x/spr.size.y;
+        if(sizeF.x <= 0f || sizeF.y <= 0f)
+            return;
 
-            if(sizeF.x <= 0f || sizeF.y <= 0f)
-                continue;
+        float locXF = (camSpace.toAngle/camera.fov + .5f) * virtRes.x - sizeF.x/2f;
 
-            Vec2f locF = new((sprAngle/camera.fov + .5f) * virtRes.x - sizeF.x/2f, (virtRes.y - sizeF.y) / 2f);
+        Vec2i size = sizeF.Floor();
+        int locX = locXF.Floor();
 
-            Vec2i size = sizeF.Round();
-            Vec2i loc = locF.Round();
+        int x0 = Math.Max(locX - size.x/2, 0),
+            x1 = Math.Min(locX + size.x/2, virtRes.x-1),
+            xDiff = x1-x0;
 
-            int x0 = Math.Max(0, loc.x), x1 = Math.Min(virtRes.x-1, loc.x + size.x);
+        if(x0 >= x1)
+            return;
 
-            if(x0 >= x1)
-                continue;
+        float normDist = dist / camera.maxDist;
+        if(normDist >= 1f || normDist <= 0f)
+            return;
 
-            for(int x = x0; x < x1; x++)
-                DrawWallSegment(data, x);
+        float brightness = GetDistanceFog(normDist);
+        int y0 = Math.Max(virtCenter.y - size.y/2, 0),
+            y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y-1),
+            yDiff = y1-y0;
 
-            float dist01 = dist / camera.maxDist;
-            if(dist01 >= 1f || dist01 <= 0f)
-                continue;
+        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
+        int backpaddle = yDiff * data.Stride;
 
-            float fog = GetDistanceFog(dist01);
-            DrawBitmapCutout24(data, spr.graphic.data, loc.x, loc.y, size.x, size.y, fog, fog, fog);
-
-            for(int x = x0; x < x1; x++)
-                depthBuf[x] = dist01;
-        }
-    }
-
-
-    private void DrawAllSprites(BitmapData data)
-    {
-        sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
-        Vec2f dir = camera.forward, plane = -camera.plane;
-
-        foreach(SpriteRenderer spr in sprites)
+        for(int x = x0; x < x1; x++)
         {
-            Vec2f relPos = spr.pos - camera.pos;
-            Vec2f transform = new Vec2f(dir.y*relPos.x - dir.x*relPos.y, plane.x*relPos.y - plane.y*relPos.x) / (dir.y*plane.x - dir.x*plane.y);
+            int texX = Utils.Clamp((((float)x-x0)/xDiff * (spr.graphic.w-1)).Floor(), 0, spr.graphic.w-1);
+            byte* texScan = spr.graphic.scan0 + texX*4;
 
-            if(transform.y >= camera.maxDist || transform.y <= 0)
-                continue;
-
-            float normDist = transform.y/camera.maxDist;
-
-            int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
-            Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();
-
-            int x0 = Math.Max(locX - size.x/2, 0),
-                x1 = Math.Min(locX + size.x/2, virtRes.x-1);
-            int y0 = Math.Max(virtCenter.y - size.y/2, 0),
-                y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y-1);
-            int yDiff = y1 - y0;
-
-            byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
-
-            for(int x = x0; x < x1; x++)
+            for(int y = y0; y < y1; y++)
             {
-                if(normDist > depthBuf[x])
+                int texY = Utils.Clamp((((float)y-y0)/yDiff * (spr.graphic.h-1)).Floor(), 0, spr.graphic.h-1);
+                byte* colScan = texScan + texY*spr.graphic.stride;
+
+                if(*(colScan+3) > 0x80)
                 {
-                    scan += 3;
-                    continue;
+                    *scan = (byte)(*colScan * brightness);
+                    *(scan+1) = (byte)(*(colScan+1) * brightness);
+                    *(scan+2) = (byte)(*(colScan+2) * brightness);
                 }
 
-                int texX = Utils.Clamp(((x - (locX - size.x/2f)) * spr.graphic.w / size.x).Floor(), 0, spr.graphic.w);
-                byte* texScan = (byte*)spr.graphic.data.Scan0 + 4*texX;
-
-                for(int y = y0; y < y1; y++)
-                {
-                    int texY = Utils.Clamp(((y - virtCenter.y + size.y/2f) * spr.graphic.h / size.y).Floor(), 0, spr.graphic.h);
-                    byte* colScan = texScan + texY*spr.graphic.data.Stride;
-
-                    if(*(colScan+3) > 0x80)
-                    {
-                        *scan = *colScan;
-                        *(scan+1) = *(colScan+1);
-                        *(scan+2) = *(colScan+2);
-                    }
-
-                    scan += data.Stride;
-                }
-
-                scan += 3 - yDiff*data.Stride;
+                scan += data.Stride;
             }
+
+            scan += 3 - backpaddle;
         }
     }
 
@@ -327,6 +290,7 @@ public unsafe class Renderer
             return;
 
         float normDist = transform.y/camera.maxDist;
+        float brightness = GetDistanceFog(normDist);
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();
@@ -335,8 +299,9 @@ public unsafe class Renderer
             x1 = Math.Min(locX + size.x/2, virtRes.x-1);
         int y0 = Math.Max(virtCenter.y - size.y/2, 0),
             y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y-1);
-        int yDiff = y1 - y0;
+
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
+        int backpaddle = (y1 - y0) * data.Stride;
 
         for(int x = x0; x < x1; x++)
         {
@@ -347,59 +312,25 @@ public unsafe class Renderer
             }
 
             int texX = Utils.Clamp(((x - (locX - size.x/2f)) * spr.graphic.w / size.x).Floor(), 0, spr.graphic.w);
-            byte* texScan = (byte*)spr.graphic.data.Scan0 + 4*texX;
+            byte* texScan = spr.graphic.scan0 + 4*texX;
 
             for(int y = y0; y < y1; y++)
             {
                 int texY = Utils.Clamp(((y - virtCenter.y + size.y/2f) * spr.graphic.h / size.y).Floor(), 0, spr.graphic.h);
-                byte* colScan = texScan + texY*spr.graphic.data.Stride;
+                byte* colScan = texScan + texY*spr.graphic.stride;
 
                 if(*(colScan+3) > 0x80)
                 {
-                    *scan = *colScan;
-                    *(scan+1) = *(colScan+1);
-                    *(scan+2) = *(colScan+2);
+                    *scan = (byte)(*colScan * brightness);
+                    *(scan+1) = (byte)(*(colScan+1) * brightness);
+                    *(scan+2) = (byte)(*(colScan+2) * brightness);
                 }
 
                 scan += data.Stride;
             }
 
-            scan += 3 - yDiff*data.Stride;
+            scan += 3 - backpaddle;
         }
-    }
-
-    private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMulR, float colMulG, float colMulB)
-    {
-        Assert(dstImage.PixelFormat == PixelFormat.Format24bppRgb && srcImage.PixelFormat == PixelFormat.Format32bppArgb, "Inputs of DrawBitmapCutout24 must have PixelFormat.Format24BppRgb and PixelFormat.Format32BppRgb respectively");
-
-        byte* dstPtr = (byte*)dstImage.Scan0 + dstImage.Stride * ly + 3 * lx;
-        byte* srcPtr = (byte*)srcImage.Scan0;
-
-        int dw = dstImage.Width, dh = dstImage.Height;
-        int sw = srcImage.Width, sh = srcImage.Height;
-
-        for(int y = 0; y < sy; y++)
-            if(y + ly is int dstY && dstY >= 0 && dstY < dh)
-            {
-                dstPtr = (byte*)dstImage.Scan0 + dstImage.Stride * dstY + 3 * lx;
-
-                for(int x = 0; x < sx; x++)
-                {
-                    if(x + lx is int dstX && dstX >= 0 && dstX < dw)
-                    {
-                        byte* uvPtr = srcPtr + (((float)y/sy * (sh-1)).Floor() * srcImage.Stride) + (((float)x/sx * (sw-1)).Floor() * 4);
-
-                        if(*(uvPtr+3) > 0x7f)
-                        {
-                            *dstPtr = (byte)(*uvPtr * colMulB);
-                            *(dstPtr+1) = (byte)(*(uvPtr+1) * colMulG);
-                            *(dstPtr+2) = (byte)(*(uvPtr+2) * colMulR);
-                        }
-                    }
-
-                    dstPtr += 3;
-                }
-            }
     }
 
 
