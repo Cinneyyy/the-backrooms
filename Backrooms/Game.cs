@@ -54,7 +54,7 @@ public class Game
         camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length);
         camera.pos = (Vec2f)map.size/2f;
         camera.angle = 270f * Utils.Deg2Rad;
-        camera.fixFisheyeEffect = false;
+        camera.fixFisheyeEffect = true;
 
         window.tick += Tick;
 

@@ -312,14 +312,14 @@ public unsafe class Renderer
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
         int texX = (wallX * (tex.w-1)).Floor();
-        if(vert && dir.x > 0 || !vert && dir.y < 0)
+        if(vert && dir.x > 0f || !vert && dir.y < 0f)
             texX = tex.w - texX - 1;
 
         float texStep = tex.h / height;
         float texPos = (y0 - virtCenter.y + halfHeight) * texStep;
         int texMask = tex.h-1;
 
-        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
+        byte* texScan = (byte*)data.Scan0 + y0*data.Stride + x*3;
 
         for(int y = y0; y < y1; y++)
         {
@@ -327,11 +327,11 @@ public unsafe class Renderer
             texPos += texStep;
             byte* texCol = tex.scan0 + texY*tex.stride + 3*x;
 
-            *scan = (byte)(*texCol * brightness);
-            *(scan+1) = (byte)(*(texCol+1) * brightness);
-            *(scan+2) = (byte)(*(texCol+2) * brightness);
+            *texScan     = (byte)(*texCol     * brightness);
+            *(texScan+1) = (byte)(*(texCol+1) * brightness);
+            *(texScan+2) = (byte)(*(texCol+2) * brightness);
 
-            scan += data.Stride;
+            texScan += data.Stride;
         }
     }
 
