@@ -51,9 +51,11 @@ public class Game
         renderer = window.renderer;
         input = window.input;
 
-        camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length, 270f * Utils.Deg2Rad);
-        camera.pos = (Vec2f)map.size/2f;
-        camera.fixFisheyeEffect = false;
+        camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length, 270f * Utils.Deg2Rad) {
+            maxDist = 20f,
+            pos = (Vec2f)map.size/2f,
+            fixFisheyeEffect = true
+        };
 
         window.tick += Tick;
 
@@ -73,7 +75,7 @@ public class Game
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
 
-        renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), true, Resources.sprites["oli"]));
+        renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), Resources.sprites["oli"]));
         olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {
             loop = true
         };
@@ -100,7 +102,7 @@ public class Game
                 if(id != mpHandler.ownClientId)
                 {
                     Image skin = skins[state.skinIdx];
-                    SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), true, skin);
+                    SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), skin);
                     renderer.sprites.Add(newPlayerRenderer);
                     playerRenderers.Add((id, newPlayerRenderer));
                 }
@@ -110,7 +112,7 @@ public class Game
             {
                 ClientState state = mpHandler.GetClientState(id);
                 Image skin = skins[state.skinIdx];
-                SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), true, skin);
+                SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), skin);
                 renderer.sprites.Add(newPlayerRenderer);
                 playerRenderers.Add((id, newPlayerRenderer));
             }
@@ -156,14 +158,13 @@ public class Game
             mpHandler.SendServerStateChange(StateKey.S_OlafPos);
         }
         mpHandler.SendClientStateChange(StateKey.C_Pos);
-        camera.maxDist = 30f;
     }
 
     public void ReloadSkins()
     {
         foreach(var (id, renderer) in playerRenderers)
             if(id != mpHandler.ownClientId)
-                renderer.SetImage(skins[mpHandler.GetClientState(id).skinIdx], true);
+                renderer.SetImage(skins[mpHandler.GetClientState(id).skinIdx]);
     }
 
 
@@ -212,6 +213,9 @@ public class Game
 
         if(input.KeyDown(Keys.E))
             mpHandler.SendClientRequest(RequestKey.C_MakeMeOlafTarget);
+
+        if(input.KeyDown(Keys.F))
+            camera.fixFisheyeEffect ^= true;
         #endregion
 
         Vec2f olafTarget = mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos;
