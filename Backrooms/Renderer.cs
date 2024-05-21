@@ -253,9 +253,11 @@ public unsafe class Renderer
         float brightness = GetDistanceFog(normDist);
         int y0 = virtCenter.y - size.y/2,
             y1 = virtCenter.y + size.y/2,
-            yDiff = y1-y0;
+            yDiff = y1-y0,
+            unfixedY0 = y0;
         y0 = Math.Max(y0, 0);
         y1 = Math.Min(y1, virtRes.y-1);
+        int y0Change = y0 - unfixedY0;
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1-y0) * data.Stride;
@@ -267,7 +269,7 @@ public unsafe class Renderer
 
             for(int y = y0; y < y1; y++)
             {
-                int texY = Utils.Clamp((((float)y-y0)/yDiff * (spr.graphic.h-1)).Floor(), 0, spr.graphic.h-1);
+                int texY = Utils.Clamp((((float)y-y0+y0Change)/yDiff * (spr.graphic.h-1)).Floor(), 0, spr.graphic.h-1);
                 byte* colScan = texScan + texY*spr.graphic.stride;
 
                 if(*(colScan+3) > 0x80)
