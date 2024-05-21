@@ -15,7 +15,7 @@ public unsafe class HDistortion(Func<float, float> distort, Color32? emptyCol = 
     {
         for(int y = 0; y < h; y++)
         {
-            int offset = (int)(distort(y / (h-1f)) * w);
+            int offset = (distort(y / (h-1f)) * w).Round();
             int pixOffset = -3 * offset;
             int absOffset = Math.Abs(offset);
             int x;

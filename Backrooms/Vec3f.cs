@@ -45,9 +45,9 @@ public record struct Vec3f(float x, float y, float z) : IEnumerable<float>
     readonly IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    public readonly Vec3i Round() => new((int)x, (int)y, (int)z);
-    public readonly Vec3i Ceil() => new((int)MathF.Ceiling(x), (int)MathF.Ceiling(y), (int)MathF.Ceiling(z));
-    public readonly Vec3i Floor() => new((int)MathF.Floor(x), (int)MathF.Floor(y), (int)MathF.Floor(z));
+    public readonly Vec3i Round() => new(x.Round(), y.Round(), z.Round());
+    public readonly Vec3i Ceil() => new(x.Ceil(), y.Ceil(), z.Ceil());
+    public readonly Vec3i Floor() => new(x.Floor(), y.Floor(), z.Floor());
 
 
     public static Vec3f Op(Vec3f a, Vec3f b, Func<float, float, float> op)
@@ -98,6 +98,6 @@ public record struct Vec3f(float x, float y, float z) : IEnumerable<float>
     public static explicit operator Vec2f(Vec3f v) => new(v.x, v.y);
     public static explicit operator Vec3f(Vec2f v) => new(v.x, v.y);
 
-    public static explicit operator Vec2i(Vec3f v) => new((int)v.x, (int)v.y);
+    public static explicit operator Vec2i(Vec3f v) => new(v.x.Round(), v.y.Round());
     public static explicit operator Vec3f(Vec2i v) => new(v.x, v.y);
 }

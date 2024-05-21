@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing.Imaging;
 using System.Linq;
 
 namespace Backrooms;
 
 public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 {
-    public LockedBitmap[] textures = [];
-    public LockedBitmap floorTex, ceilTex;
+    public UnsafeGraphic[] textures = [];
+    public UnsafeGraphic floorTex, ceilTex;
 
     private Tile[,] tiles = tiles;
     private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
@@ -22,11 +21,11 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     }
     public string floorTexStr
     {
-        set => floorTex = new(Resources.sprites[value], PixelFormat.Format24bppRgb);
+        set => floorTex = new(Resources.sprites[value], false);
     }
     public string ceilTexStr
     {
-        set => ceilTex = new(Resources.sprites[value], PixelFormat.Format24bppRgb);
+        set => ceilTex = new(Resources.sprites[value], false);
     }
 
 
@@ -89,12 +88,17 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 
     public void LoadTextures(params string[] textureIds)
         => textures = (from tId in textureIds
-                      select tId == null ? null : new LockedBitmap(Resources.sprites[tId], PixelFormat.Format24bppRgb))
+                      select tId == null ? null : new UnsafeGraphic(Resources.sprites[tId], false))
                       .ToArray();
+
+    public UnsafeGraphic TextureAt(int x, int y)
+        => textures[(int)this[x, y]];
+    public UnsafeGraphic TextureAt(Vec2i pos)
+        => textures[(int)this[pos]];
 
     public bool Intersects(Vec2f pt, out Tile tile)
     {
-        Vec2i idx = Round(pt);
+        Vec2i idx = pt.Floor();
 
         if(idx.x < 0 || idx.x >= _size.x || idx.y < 0 || idx.y >= _size.y)
         {
@@ -168,9 +172,6 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
            where predicate(this[neighbor])
            select neighbor;
 
-
-    public static Vec2i Round(Vec2f pt)
-        => pt.Round();
 
     public static bool IsEmptyTile(Tile tile)
         => tile == Tile.Empty;

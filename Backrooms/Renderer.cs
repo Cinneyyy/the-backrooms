@@ -33,7 +33,7 @@ public unsafe class Renderer
         downscaleFactor = (float)virtRes.y/physicalRes.y;
         upscaleFactor = (float)physicalRes.y/virtRes.y;
         float virtRatio = (float)virtRes.x / virtRes.y;
-        outputRes = new((int)(virtRatio * physicalRes.y), physicalRes.y);
+        outputRes = new((virtRatio * physicalRes.y).Floor(), physicalRes.y);
         outputLocation = new((physicalRes.x - outputRes.x) / 2, 0);
         depthBuf = new float[virtRes.x];
     }
@@ -55,7 +55,8 @@ public unsafe class Renderer
         DrawSprites(data);
 
         for(int x = 0; x < virtRes.x; x++)
-            DrawWallSegment(data, in x);
+            DrawVerticalStripe(data, x);
+            //DrawWallSegment(data, in x);
 
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
@@ -117,7 +118,7 @@ public unsafe class Renderer
 
     private void DrawSprites(BitmapData data)
     {
-        sprites.Sort((a, b) => (int)MathF.Round((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength));
+        sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         Vec2f camDir = camera.forward;
 
         foreach(SpriteRenderer spr in sprites)
@@ -152,7 +153,8 @@ public unsafe class Renderer
                 continue;
 
             for(int x = x0; x < x1; x++)
-                DrawWallSegment(data, in x);
+                DrawVerticalStripe(data, x);
+                //DrawWallSegment(data, in x);
 
             float dist01 = dist / camera.maxDist;
             if(dist01 >= 1f || dist01 <= 0f)
@@ -160,11 +162,12 @@ public unsafe class Renderer
 
             float fog = GetDistanceFog(dist01);
             if(spr.hasTransparency)
-                DrawBitmapCutout24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog);
+                DrawBitmapCutout24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog, fog, fog);
             else
-                DrawBitmap24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog);
+                DrawBitmap24(data, spr.lockedImage.data, loc.x, loc.y, size.x, size.y, fog, fog, fog);
 
-            FillDepthBufRange(x0, x1, dist01);
+            for(int x = x0; x < x1; x++)
+                depthBuf[x] = dist01;
         }
     }
 
@@ -173,7 +176,7 @@ public unsafe class Renderer
         float baseAngle = camera.fov * (x / (virtRes.x-1f) - .5f);
         float rayAngle = Utils.NormAngle(camera.angle + baseAngle);
         Vec2f dir = Vec2f.FromAngle(rayAngle);
-        Vec2i iPos = Map.Round(camera.pos);
+        Vec2i iPos = camera.pos.Floor();
 
         Vec2f deltaDist = new(
             dir.x == 0f ? float.MaxValue : MathF.Abs(1f / dir.x),
@@ -218,26 +221,26 @@ public unsafe class Renderer
         depthBuf[x] = dist01;
 
         float heightF = virtRes.y / dist / 2f;
-        float brightness = (hit.vert ? 1f : .75f) * GetDistanceFogUnclamped(dist01);
+        float brightness = (hit.vert ? 1f : .75f) * GetDistanceFog(dist01);
 
         // TODO: Better fix for fisheye effect
-        LockedBitmap tex = map.textures[(int)hit.tile];
+        UnsafeGraphic tex = map.textures[(int)hit.tile];
         float wallX = (hit.vert ? camera.pos.y + euclideanDist * dir.y : camera.pos.x + euclideanDist * dir.x) % 1f;
-        int texX = (int)(wallX * tex.data.Width);
+        int texX = (wallX * (tex.data.Width-1)).Floor();
         if(hit.vert && dir.x > 0f || !hit.vert && dir.y < 0f)
             texX = tex.data.Width - texX - 1;
 
         byte* texPtr = (byte*)tex.data.Scan0 + texX*3;
 
-        int height = (int)heightF,
+        int height = heightF.Floor(),
             y0 = Math.Max(0, virtCenter.y - height),
             y1 = Math.Min(virtRes.y-1, virtCenter.y + height),
             tMin = y0 - virtCenter.y + height,
-            tMax = (int)(2f * heightF);
+            tMax = (2f * heightF).Floor();
         byte* outPtr = (byte*)data.Scan0 + x*3 + y0*data.Stride;
         for(int y = y0, i = tMin; y < y1; y++, i++)
         {
-            byte* texRow = texPtr + (int)((float)i / tMax * tex.data.Height) * tex.data.Stride;
+            byte* texRow = texPtr + ((float)i / tMax * (tex.data.Height-1)).Floor() * tex.data.Stride;
             *(outPtr) = (byte)(*(texRow) * brightness);
             *(outPtr+1) = (byte)(*(texRow+1) * brightness);
             *(outPtr+2) = (byte)(*(texRow+2) * brightness);
@@ -245,25 +248,94 @@ public unsafe class Renderer
         }
     }
 
-    private void FillDepthBuf(int x, int w, float depth)
-        => FillDepthBufRange(x, x+w, depth);
-
-    private void FillDepthBufRange(int x0, int x1, float depth)
+    private void DrawVerticalStripe(BitmapData data, int x)
     {
-        x0 = Utils.Clamp(x0, 0, virtRes.x);
-        x1 = Utils.Clamp(x1, 0, virtRes.x);
-        for(int x = x0; x < x1; x++)
-            depthBuf[x] = depth;
+        Vec2f dir;
+        if(camera.fixFisheyeEffect)
+        {
+            Vec2f plane = camera.plane;
+            float screenX = 2f*x / (virtRes.x-1f) - 1f;
+            dir = camera.forward + plane * screenX;
+        }
+        else
+        {
+            float angle = camera.fov * (x / (virtRes.x-1f) - .5f);
+            dir = Vec2f.FromAngle(angle + camera.angle);
+        }
+
+        Vec2i mPos = camera.pos.Floor();
+
+        Vec2f deltaDist = new(
+            dir.x == 0f ? float.PositiveInfinity : MathF.Abs(1f / dir.x),
+            dir.y == 0f ? float.PositiveInfinity : MathF.Abs(1f / dir.y));
+
+        Vec2f sideDist = new(
+            deltaDist.x * (dir.x < 0f ? (camera.pos.x - mPos.x) : (mPos.x + 1f - camera.pos.x)),
+            deltaDist.y * (dir.y < 0f ? (camera.pos.y - mPos.y) : (mPos.y + 1f - camera.pos.y)));
+
+        Vec2i step = new(Math.Sign(dir.x), Math.Sign(dir.y));
+
+        bool hit = false, vert = false;
+
+        while(!hit)
+        {
+            if(sideDist.x < sideDist.y)
+            {
+                sideDist.x += deltaDist.x;
+                mPos.x += step.x;
+                vert = true;
+            }
+            else
+            {
+                sideDist.y += deltaDist.y;
+                mPos.y += step.y;
+                vert = false;
+            }
+
+            if(!map.InBounds(mPos))
+                return;
+
+            if(map[mPos] != Tile.Empty)
+                hit = true;
+        }
+
+        float dist = vert ? (sideDist.x - deltaDist.y) : (sideDist.y - deltaDist.y);
+        float normDist = Utils.Clamp01(dist / camera.maxDist);
+
+        float height = virtRes.y / dist;
+        int halfHeight = (height / 2f).Floor();
+        int y0 = Math.Max(virtCenter.y - halfHeight, 0),
+            y1 = Math.Min(virtCenter.y + halfHeight, virtRes.y-1);
+
+        float brightness = GetDistanceFog(normDist) * (vert ? 1f : .66f);
+
+        UnsafeGraphic tex = map.TextureAt(mPos);
+        float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
+        int texX = (wallX * (tex.w-1)).Floor();
+        if(vert && dir.x > 0 || !vert && dir.y < 0)
+            texX = tex.w - texX - 1;
+
+        float texStep = tex.h / height;
+        float texPos = (y0 - virtCenter.y + halfHeight) * texStep;
+        int texMask = tex.h-1;
+
+        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
+
+        for(int y = y0; y < y1; y++)
+        {
+            int texY = (int)texPos & texMask;
+            texPos += texStep;
+            byte* texCol = tex.scan0 + texY*tex.stride + 3*x;
+
+            *scan = (byte)(*texCol * brightness);
+            *(scan+1) = (byte)(*(texCol+1) * brightness);
+            *(scan+2) = (byte)(*(texCol+2) * brightness);
+
+            scan += data.Stride;
+        }
     }
 
-    private unsafe void SetPixel24(BitmapData data, int x, int y, Color32 col)
-    {
-        byte* ptr = (byte*)data.Scan0 + data.Stride * y + 3 * x;
-        *ptr = col.b;
-        *(ptr+1) = col.g;
-        *(ptr+2) = col.r;
-    }
-
+    #region Bitmap drawing
     private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy)
     {
         Assert(dstImage.PixelFormat == PixelFormat.Format24bppRgb && srcImage.PixelFormat == PixelFormat.Format24bppRgb, "Both input of DrawBitmap24 must have PixelFormat.Format24BppRgb");
@@ -283,7 +355,7 @@ public unsafe class Renderer
                 {
                     if(x + lx is int dstX && dstX >= 0 && dstX < dw)
                     {
-                        byte* uvPtr = srcPtr + ((int)((float)y/sy * (sh-1)) * srcImage.Stride) + ((int)((float)x/sx * (sw-1)) * 3);
+                        byte* uvPtr = srcPtr + (((float)y/sy * (sh-1)).Floor() * srcImage.Stride) + (((float)x/sx * (sw-1)).Floor() * 3);
                         *dstPtr = *uvPtr;
                         *(dstPtr+1) = *(uvPtr+1);
                         *(dstPtr+2) = *(uvPtr+2);
@@ -293,7 +365,7 @@ public unsafe class Renderer
                 }
             }
     }
-    private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, in float colMulR, in float colMulG, in float colMulB)
+    private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMulR, float colMulG, float colMulB)
     {
         Assert(dstImage.PixelFormat == PixelFormat.Format24bppRgb && srcImage.PixelFormat == PixelFormat.Format24bppRgb, "Both input of DrawBitmap24 must have PixelFormat.Format24BppRgb");
 
@@ -312,7 +384,7 @@ public unsafe class Renderer
                 {
                     if(x + lx is int dstX && dstX >= 0 && dstX < dw)
                     {
-                        byte* uvPtr = srcPtr + ((int)((float)y/sy * (sh-1)) * srcImage.Stride) + ((int)((float)x/sx * (sw-1)) * 3);
+                        byte* uvPtr = srcPtr + (((float)y/sy * (sh-1)).Floor() * srcImage.Stride) + (((float)x/sx * (sw-1)).Floor() * 3);
                         *dstPtr = (byte)(*uvPtr * colMulB);
                         *(dstPtr+1) = (byte)(*(uvPtr+1) * colMulG);
                         *(dstPtr+2) = (byte)(*(uvPtr+2) * colMulR);
@@ -322,8 +394,6 @@ public unsafe class Renderer
                 }
             }
     }
-    private unsafe void DrawBitmap24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMul = 1f)
-        => DrawBitmap24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
 
     private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy)
     {
@@ -344,7 +414,7 @@ public unsafe class Renderer
                 {
                     if(x + lx is int dstX && dstX >= 0 && dstX < dw)
                     {
-                        byte* uvPtr = srcPtr + ((int)((float)y/sy * (sh-1)) * srcImage.Stride) + ((int)((float)x/sx * (sw-1)) * 4);
+                        byte* uvPtr = srcPtr + (((float)y/sy * (sh-1)).Floor() * srcImage.Stride) + (((float)x/sx * (sw-1)).Floor() * 4);
 
                         if(*(uvPtr+3) > 0x7f)
                         {
@@ -358,7 +428,7 @@ public unsafe class Renderer
                 }
             }
     }
-    private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, in float colMulR, in float colMulG, in float colMulB)
+    private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMulR, float colMulG, float colMulB)
     {
         Assert(dstImage.PixelFormat == PixelFormat.Format24bppRgb && srcImage.PixelFormat == PixelFormat.Format32bppArgb, "Inputs of DrawBitmapCutout24 must have PixelFormat.Format24BppRgb and PixelFormat.Format32BppRgb respectively");
 
@@ -377,7 +447,7 @@ public unsafe class Renderer
                 {
                     if(x + lx is int dstX && dstX >= 0 && dstX < dw)
                     {
-                        byte* uvPtr = srcPtr + ((int)((float)y/sy * (sh-1)) * srcImage.Stride) + ((int)((float)x/sx * (sw-1)) * 4);
+                        byte* uvPtr = srcPtr + (((float)y/sy * (sh-1)).Floor() * srcImage.Stride) + (((float)x/sx * (sw-1)).Floor() * 4);
 
                         if(*(uvPtr+3) > 0x7f)
                         {
@@ -391,13 +461,9 @@ public unsafe class Renderer
                 }
             }
     }
-    private unsafe void DrawBitmapCutout24(BitmapData dstImage, BitmapData srcImage, int lx, int ly, int sx, int sy, float colMul = 1f)
-        => DrawBitmapCutout24(dstImage, srcImage, lx, ly, sx, sy, in colMul, in colMul, in colMul);
+    #endregion
 
-
-    public static float GetDistanceFogUnclamped(float dist01)
-        => .75f * Utils.Sqr(1f - dist01);
 
     public static float GetDistanceFog(float dist01)
-        => GetDistanceFogUnclamped(Utils.Clamp01(dist01));
+        => .75f * Utils.Sqr(1f - dist01);
 }

@@ -42,11 +42,11 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
         => this = normalized;
 
     public readonly Vec2i Round() 
-        => new((int)x, (int)y);
+        => new(x.Round(), y.Round());
     public readonly Vec2i Ceil() 
-        => new((int)MathF.Ceiling(x), (int)MathF.Ceiling(y));
+        => new(x.Ceil(), y.Ceil());
     public readonly Vec2i Floor() 
-        => new((int)MathF.Floor(x), (int)MathF.Floor(y));
+        => new(x.Floor(), y.Floor());
 
     public void Rotate(float radians)
         => this = Rotate(this, radians);
@@ -59,6 +59,16 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     readonly IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
+
+    public static Vec2f PlaneFromFov(Vec2f dir, float fov)
+        => new Vec2f(dir.y, -dir.x) * MathF.Tan(fov/2f);    
+    public static Vec2f PlaneFromFov(float angle, float fov)
+        => PlaneFromFov(FromAngle(angle), fov);
+
+    public static Vec2f PlaneFromFovFactor(Vec2f dir, float fovFactor)
+        => new Vec2f(dir.y, -dir.x) * fovFactor;
+    public static Vec2f PlaneFromFovFactor(float angle, float fovFactor)
+        => PlaneFromFovFactor(FromAngle(angle), fovFactor);
 
     public static float Dist(Vec2f a, Vec2f b)
         => (a - b).length;

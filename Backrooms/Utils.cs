@@ -124,4 +124,11 @@ public static class Utils
         => x*x*x;
     public static int Cube(int x)
         => x*x*x;
+
+    public static int Round(this float f)
+        => (int)MathF.Round(f);
+    public static int Floor(this float f)
+        => (int)f;
+    public static int Ceil(this float f)
+        => (int)MathF.Ceiling(f);
 }

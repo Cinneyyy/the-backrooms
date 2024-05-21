@@ -1,14 +1,16 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Drawing.Imaging;
 
 namespace Backrooms;
 
-public unsafe class UnsafeGraphic
+public unsafe class UnsafeGraphic : IDisposable
 {
     public readonly BitmapData data;
     public readonly bool useAlpha;
     public readonly byte* scan0;
     public readonly int stride, w, h;
+    public readonly Vec2i size;
 
     private readonly Bitmap bitmap;
 
@@ -22,7 +24,10 @@ public unsafe class UnsafeGraphic
         stride = data.Stride;
         w = data.Width;
         h = data.Height;
+        size = new(w, h);
     }
+
+    public UnsafeGraphic(Image img, bool useAlpha) : this(new(img), useAlpha) { }
 
     public UnsafeGraphic(BitmapData data)
     {
@@ -35,8 +40,21 @@ public unsafe class UnsafeGraphic
         stride = data.Stride;
         w = data.Width;
         h = data.Width;
+        size = new(w, h);
     }
 
+
+    /// <summary>Only call if the reference bitmap, if even passed in, is not used after this Dispose() call</summary>
+    public void Dispose()
+    {
+        if(bitmap is not null)
+        {
+            Unlock();
+            bitmap.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
+    }
 
     public void Unlock()
         => bitmap.UnlockBits(data);
@@ -44,6 +62,7 @@ public unsafe class UnsafeGraphic
         => bitmap.UnlockBits(data);
 
 
+    #region Image operations
     /// <summary>Only use for setting a single pixel, as it calculates the buffer offset each call!</summary>
     public void SetPixel(int x, int y, byte r, byte g, byte b)
     {
@@ -113,4 +132,5 @@ public unsafe class UnsafeGraphic
             scan += stride;
         }
     }
+    #endregion
 }
