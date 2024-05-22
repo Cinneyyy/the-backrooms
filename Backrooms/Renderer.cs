@@ -1,6 +1,4 @@
-﻿#define VERTICAL_WALL_DRAWING
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -50,12 +48,8 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-#if !VERTICAL_WALL_DRAWING
-        DrawFloorAndCeiling(data);
-#endif
-        
         for(int x = 0; x < virtRes.x; x++)
-            DrawWallSegment(data, x);
+            DrawColumn(data, x);
 
         sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         if(camera.fixFisheyeEffect)
@@ -79,7 +73,7 @@ public unsafe class Renderer
         return bitmap;
     }
 
-    private void DrawWallSegment(BitmapData data, int x)
+    private void DrawColumn(BitmapData data, int x)
     {
         Vec2f dir;
         if(camera.fixFisheyeEffect)
@@ -169,7 +163,6 @@ public unsafe class Renderer
         else
             scan += (y1-y0)*data.Stride;
 
-#if VERTICAL_WALL_DRAWING
         Vec2f floorWall;
         if(vert)
             floorWall = new(dir.x > 0 ? mPos.x : mPos.x + 1, mPos.y + wallX);
@@ -206,53 +199,6 @@ public unsafe class Renderer
 
             scan += data.Stride;
             ceilScan -= data.Stride;
-        }
-#endif
-    }
-
-    public void DrawFloorAndCeiling(BitmapData data)
-    {
-        for(int y = 0; y < virtCenter.y; y++)
-        {
-            Vec2f leftRay = camera.forward - camera.plane;
-            Vec2f rightRay = camera.forward + camera.plane;
-
-            int pix = y - virtCenter.y;
-            float rowDist = (float)virtCenter.y / pix;
-
-            float normDist = Utils.Clamp01(-rowDist / camera.maxDist);
-            if(normDist is >= 1f or <= 0f)
-                continue;
-
-            float fog = GetDistanceFog(-rowDist / camera.maxDist);
-            float floorBrightnss = map.floorLuminance * fog;
-            float ceilBrightness = map.ceilLuminance * fog;
-
-            Vec2f floor = -camera.pos + rowDist * leftRay;
-            Vec2f step = rowDist * (rightRay - leftRay) / virtRes.x;
-
-            byte* ceilScan = (byte*)data.Scan0 + y*data.Stride;
-            byte* floorScan = (byte*)data.Scan0 + (virtRes.y - y - 1)*data.Stride;
-
-            for(int x = 0; x < virtRes.x; x++)
-            {
-                Vec2i floorTexCoord = (floor % 1f * map.floorTex.bounds * map.floorTexScale).Floor() & map.floorTex.bounds;
-                Vec2i ceilTexCoord = (floor % 1f * map.ceilTex.bounds * map.ceilTexScale).Floor() & map.ceilTex.bounds;
-
-                floor += step;
-
-                (byte r, byte g, byte b) 
-                    floorCol = map.floorTex.GetPixelRgb(floorTexCoord.x, floorTexCoord.y),
-                    ceilCol = map.ceilTex.GetPixelRgb(ceilTexCoord.x, ceilTexCoord.y);
-
-                *floorScan++ = (byte)(floorCol.b * floorBrightnss);
-                *floorScan++ = (byte)(floorCol.g * floorBrightnss);
-                *floorScan++ = (byte)(floorCol.r * floorBrightnss);
-
-                *ceilScan++ = (byte)(ceilCol.b * ceilBrightness);
-                *ceilScan++ = (byte)(ceilCol.g * ceilBrightness);
-                *ceilScan++ = (byte)(ceilCol.r * ceilBrightness);
-            }
         }
     }
 
