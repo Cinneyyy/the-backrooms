@@ -16,10 +16,8 @@
 
 ---
 ## Bugfixes
-- Ceiling/floor drawing
-    -> Fog
-    -> Especially in non-ff mode
+- Ceiling/floor non-ff mode & different tile textures
 - Pathfinding shortcuts
+- Dijkstra's shortest path
 - Multiplayer
     -> Client disconnect handling
-- Dijkstra's shortest path

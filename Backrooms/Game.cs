@@ -70,7 +70,7 @@ public class Game
         map.texturesStr = [null, "wall", "pillar"];
         map.floorTexStr = "carpet";
         map.ceilTexStr = "ceiling";
-        map.floorTexScale = .2f;
+        map.floorTexScale = .1f;
         map.ceilTexScale = 3f;
         map.floorLuminance = .5f;
         map.ceilLuminance = .5f;
