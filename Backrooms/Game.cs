@@ -68,8 +68,12 @@ public class Game
 
         renderer.map = map;
         map.texturesStr = [null, "wall", "pillar"];
-        map.floorTexStr = "floor";
+        map.floorTexStr = "carpet";
         map.ceilTexStr = "ceiling";
+        map.floorTexScale = .2f;
+        map.ceilTexScale = 3f;
+        map.floorLuminance = .5f;
+        map.ceilLuminance = .5f;
 
         PostProcessEffect lsdEffect = new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f, enabled: false);
         renderer.postProcessEffects.Add(lsdEffect);

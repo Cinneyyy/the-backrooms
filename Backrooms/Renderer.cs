@@ -134,7 +134,7 @@ public unsafe class Renderer
         int y0 = Math.Max(virtCenter.y - halfHeight, 0),
             y1 = Math.Min(virtCenter.y + halfHeight, virtRes.y-1);
 
-        float brightness = GetDistanceFog(normDist) * (vert ? 1f : .66f);
+        float brightness = GetDistanceFog(normDist) * (vert ? 1f : .66f) * .75f;
 
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
@@ -172,18 +172,24 @@ public unsafe class Renderer
             int pix = y - virtCenter.y;
             float rowDist = (float)virtCenter.y / pix;
 
+            float normDist = Utils.Clamp01(-rowDist / camera.maxDist);
+            if(normDist is >= 1f or <= 0f)
+                continue;
+
+            float fog = GetDistanceFog(-rowDist / camera.maxDist);
+            float floorBrightnss = map.floorLuminance * fog;
+            float ceilBrightness = map.ceilLuminance * fog;
+
             Vec2f floor = -camera.pos + rowDist * leftRay;
             Vec2f step = rowDist * (rightRay - leftRay) / virtRes.x;
 
             byte* ceilScan = (byte*)data.Scan0 + y*data.Stride;
-            byte* floorScan = (byte*)data.Scan0 + (virtRes.y - 1 - y)*data.Stride;
+            byte* floorScan = (byte*)data.Scan0 + (virtRes.y - y - 1)*data.Stride;
 
             for(int x = 0; x < virtRes.x; x++)
             {
-                const float tex_scale = 2.5f;
-
-                Vec2i floorTexCoord = (floor % 1f * map.floorTex.bounds * tex_scale).Floor() & map.floorTex.bounds;
-                Vec2i ceilTexCoord = (floor % 1f * map.ceilTex.bounds * tex_scale).Floor() & map.ceilTex.bounds;
+                Vec2i floorTexCoord = (floor % 1f * map.floorTex.bounds * map.floorTexScale).Floor() & map.floorTex.bounds;
+                Vec2i ceilTexCoord = (floor % 1f * map.ceilTex.bounds * map.ceilTexScale).Floor() & map.ceilTex.bounds;
 
                 floor += step;
 
@@ -191,16 +197,13 @@ public unsafe class Renderer
                     floorCol = map.floorTex.GetPixelRgb(floorTexCoord.x, floorTexCoord.y),
                     ceilCol = map.ceilTex.GetPixelRgb(ceilTexCoord.x, ceilTexCoord.y);
 
-                float distance = rowDist / (float)Math.Cos(camera.fov * ((x - virtCenter.x) / (float)virtRes.x - 0.5f));
-                float brightness = GetDistanceFog(distance / camera.maxDist);
+                *floorScan++ = (byte)(floorCol.b * floorBrightnss);
+                *floorScan++ = (byte)(floorCol.g * floorBrightnss);
+                *floorScan++ = (byte)(floorCol.r * floorBrightnss);
 
-                *--floorScan = (byte)(floorCol.r * brightness);
-                *--floorScan = (byte)(floorCol.g * brightness);
-                *--floorScan = (byte)(floorCol.b * brightness);
-
-                *ceilScan++ = (byte)(ceilCol.b * brightness);
-                *ceilScan++ = (byte)(ceilCol.g * brightness);
-                *ceilScan++ = (byte)(ceilCol.r * brightness);
+                *ceilScan++ = (byte)(ceilCol.b * ceilBrightness);
+                *ceilScan++ = (byte)(ceilCol.g * ceilBrightness);
+                *ceilScan++ = (byte)(ceilCol.r * ceilBrightness);
             }
         }
     }

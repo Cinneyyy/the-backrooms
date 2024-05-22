@@ -9,6 +9,8 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 {
     public UnsafeGraphic[] textures = [];
     public UnsafeGraphic floorTex, ceilTex;
+    public float floorTexScale = 1f, ceilTexScale = 1f;
+    public float floorLuminance = .5f, ceilLuminance = .5f;
 
     private Tile[,] tiles = tiles;
     private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
