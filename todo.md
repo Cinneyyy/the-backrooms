@@ -16,7 +16,7 @@
 
 ---
 ## Bugfixes
-- Ceiling/floor non-ff mode & different tile textures
+- Ceiling/floor padding in first 1/2 rows
 - Pathfinding shortcuts
 - Dijkstra's shortest path
 - Multiplayer

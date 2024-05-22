@@ -44,7 +44,7 @@ public class Window : Form
 
         title = windowTitle;
         renderer = new(virtualResolution, Size, this);
-        input = new(renderer.physicalRes, (Vec2i)Location, lockCursor);
+        input = new(renderer.physRes, (Vec2i)Location, lockCursor);
         renderer.input = input;
         pictureBox = new() {
             Size = new(renderer.outputRes.x, renderer.outputRes.y),
@@ -56,6 +56,12 @@ public class Window : Form
             CompositingQuality = CompositingQuality.HighSpeed
         };
         Controls.Add(pictureBox);
+
+        renderer.dimensionsChanged += () => {
+            pictureBox.Size = new(renderer.outputRes.x, renderer.outputRes.y);
+            pictureBox.Location = new(renderer.outputLocation.x, renderer.outputLocation.y);
+            input.UpdateDimensions(renderer);
+        };
 
         // Add callbacks
         if(tick is not null)

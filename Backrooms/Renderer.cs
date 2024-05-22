@@ -8,10 +8,6 @@ namespace Backrooms;
 
 public unsafe class Renderer
 {
-    public readonly Vec2i virtRes, physicalRes;
-    public readonly Vec2i virtCenter, physicalCenter;
-    public readonly Vec2i outputRes, outputLocation;
-    public readonly float downscaleFactor, upscaleFactor;
     public Camera camera;
     public Input input;
     public Map map;
@@ -19,25 +15,47 @@ public unsafe class Renderer
     public readonly List<SpriteRenderer> sprites = [];
     public readonly List<TextElement> texts = [];
     public readonly List<PostProcessEffect> postProcessEffects = [];
-    public float[] depthBuf;
     public bool drawIfCursorOffscreen = true;
+    public float[] depthBuf;
+    public event Action dimensionsChanged;
 
 
-    public Renderer(Vec2i virtRes, Vec2i physicalRes, Window window)
+    public Vec2i virtRes { get; private set; }
+    public Vec2i physRes { get; private set; }
+    public Vec2i virtCenter { get; private set; }
+    public Vec2i physCenter { get; private set; }
+    public Vec2i outputRes { get; private set; }
+    public Vec2i outputLocation { get; private set; }
+    public float downscaleFactor { get; private set; }
+    public float upscaleFactor { get; private set; }
+
+
+    public Renderer(Vec2i virtRes, Vec2i physRes, Window window)
     {
-        this.virtRes = virtRes;
-        this.physicalRes = physicalRes;
         this.window = window;
-        virtCenter = virtRes/2;
-        physicalCenter = physicalRes/2;
-        downscaleFactor = (float)virtRes.y/physicalRes.y;
-        upscaleFactor = (float)physicalRes.y/virtRes.y;
-        float virtRatio = (float)virtRes.x / virtRes.y;
-        outputRes = new((virtRatio * physicalRes.y).Floor(), physicalRes.y);
-        outputLocation = new((physicalRes.x - outputRes.x) / 2, 0);
-        depthBuf = new float[virtRes.x];
+        UpdateResolution(virtRes, physRes);
     }
 
+
+    public void UpdateResolution(Vec2i virtRes, Vec2i physRes)
+    {
+        this.virtRes = virtRes;
+        this.physRes = physRes;
+
+        virtCenter = virtRes/2;
+        physCenter = physRes/2;
+
+        downscaleFactor = (float)virtRes.y/physRes.y;
+        upscaleFactor = (float)physRes.y/virtRes.y;
+
+        float virtRatio = (float)virtRes.x / virtRes.y;
+        outputRes = new((virtRatio * physRes.y).Floor(), physRes.y);
+        outputLocation = new((physRes.x - outputRes.x) / 2, 0);
+
+        depthBuf = new float[virtRes.x];
+
+        dimensionsChanged?.Invoke();
+    }
 
     public unsafe Bitmap Draw()
     {
@@ -137,7 +155,7 @@ public unsafe class Renderer
 
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
-        int texX = (wallX * (tex.w-1)).Floor();
+        int texX = (wallX * ((tex?.w ?? 1) - 1)).Floor();
         if(vert && dir.x > 0f || !vert && dir.y < 0f)
             texX = tex.w - texX - 1;
 

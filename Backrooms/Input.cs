@@ -8,7 +8,8 @@ public partial class Input(Vec2i screenRes, Vec2i screenLoc, bool lockCursor)
     public bool lockCursor = lockCursor;
 
     private readonly HashSet<Keys> additionPending = [], removalPending = [], keyState = [], lastKeyState = [];
-    private readonly Vec2i screenRes = screenRes, screenLoc = screenLoc, screenCenter = screenRes/2 + screenLoc;
+    private Vec2i screenRes = screenRes, screenCenter = screenRes/2 + screenLoc;
+    private readonly Vec2i screenLoc = screenLoc;
 
 
     public Vec2i mousePos { get; private set; }
@@ -25,6 +26,12 @@ public partial class Input(Vec2i screenRes, Vec2i screenLoc, bool lockCursor)
     public bool KeyUp(Keys key)
         => lastKeyState.Contains(key) && !keyState.Contains(key);
 
+
+    internal void UpdateDimensions(Renderer rend)
+    {
+        screenRes = rend.physRes;
+        screenCenter = rend.physCenter + screenLoc;
+    }
 
     internal void CB_OnKeyDown(Keys key)
     {
