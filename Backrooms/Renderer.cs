@@ -171,7 +171,6 @@ public unsafe class Renderer
 
             int pix = y - virtCenter.y;
             float rowDist = (float)virtCenter.y / pix;
-            float brightness = GetDistanceFog(rowDist);
 
             Vec2f floor = -camera.pos + rowDist * leftRay;
             Vec2f step = rowDist * (rightRay - leftRay) / virtRes.x;
@@ -192,13 +191,16 @@ public unsafe class Renderer
                     floorCol = map.floorTex.GetPixelRgb(floorTexCoord.x, floorTexCoord.y),
                     ceilCol = map.ceilTex.GetPixelRgb(ceilTexCoord.x, ceilTexCoord.y);
 
+                float distance = rowDist / (float)Math.Cos(camera.fov * ((x - virtCenter.x) / (float)virtRes.x - 0.5f));
+                float brightness = GetDistanceFog(distance / camera.maxDist);
+
                 *--floorScan = (byte)(floorCol.r * brightness);
                 *--floorScan = (byte)(floorCol.g * brightness);
                 *--floorScan = (byte)(floorCol.b * brightness);
 
-                *ceilScan++ = ceilCol.b;
-                *ceilScan++ = ceilCol.g;
-                *ceilScan++ = ceilCol.r;
+                *ceilScan++ = (byte)(ceilCol.b * brightness);
+                *ceilScan++ = (byte)(ceilCol.g * brightness);
+                *ceilScan++ = (byte)(ceilCol.r * brightness);
             }
         }
     }
