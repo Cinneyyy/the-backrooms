@@ -10,7 +10,7 @@ public unsafe class UnsafeGraphic : IDisposable
     public readonly bool useAlpha;
     public readonly byte* scan0;
     public readonly int stride, w, h, wb, hb;
-    public readonly Vec2i size;
+    public readonly Vec2i size, bounds;
 
     private readonly Bitmap bitmap;
 
@@ -27,6 +27,7 @@ public unsafe class UnsafeGraphic : IDisposable
         wb = w-1;
         hb = h-1;
         size = new(w, h);
+        bounds = new(wb, hb);
     }
 
     public UnsafeGraphic(Image img, bool useAlpha) : this(new(img), useAlpha) { }
@@ -45,6 +46,7 @@ public unsafe class UnsafeGraphic : IDisposable
         wb = w-1;
         hb = h-1;
         size = new(w, h);
+        bounds = new(wb, hb);
     }
 
 
@@ -67,7 +69,6 @@ public unsafe class UnsafeGraphic : IDisposable
 
 
     #region Image operations
-    /// <summary>Only use for setting a single pixel, as it calculates the buffer offset each call!</summary>
     public void SetPixel(int x, int y, byte r, byte g, byte b)
     {
         byte* scan = scan0 + y*stride + x*3;
@@ -75,7 +76,6 @@ public unsafe class UnsafeGraphic : IDisposable
         *++scan = g;
         *++scan = r;
     }
-    /// <summary>Only use for setting a single pixel, as it calculates the buffer offset each call!</summary>
     public void SetPixel(int x, int y, byte r, byte g, byte b, byte a)
     {
         byte* scan = scan0 + y*stride + x*4;
@@ -83,6 +83,17 @@ public unsafe class UnsafeGraphic : IDisposable
         *++scan = g;
         *++scan = r;
         *++scan = a;
+    }
+
+    public (byte r, byte g, byte b) GetPixelRgb(int x, int y)
+    {
+        byte* scan = scan0 + y*stride + x*3;
+        return (*(scan+2), *(scan+1), *scan);
+    }
+    public (byte r, byte g, byte b, byte a) GetPixelArgb(int x, int y)
+    {
+        byte* scan = scan0 + y*stride + x*4;
+        return (*(scan+2), *(scan+1), *scan, *(scan+3));
     }
 
     public void FillRow(int x0, int x1, int y, byte r, byte g, byte b)

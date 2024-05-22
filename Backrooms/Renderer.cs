@@ -41,8 +41,6 @@ public unsafe class Renderer
 
     public unsafe Bitmap Draw()
     {
-        // TODO: Floor & Ceiling, Fisheye fix for sprites (probably requires rewriting sprite renderer)
-
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
             return new(1, 1);
 
@@ -50,22 +48,18 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        //DrawFloorAndCeil(data);
-
+        DrawFloorAndCeiling(data);
+        
         for(int x = 0; x < virtRes.x; x++)
             DrawWallSegment(data, x);
 
-        {
-            sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
-            Vec2f dir = camera.forward;
-
-            if(camera.fixFisheyeEffect)
-                foreach(SpriteRenderer spr in sprites)
-                    DrawSpriteFisheyeFixed(data, spr);
-            else
-                foreach(SpriteRenderer spr in sprites)
-                    DrawSprite(data, spr);
-        }
+        sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
+        if(camera.fixFisheyeEffect)
+            foreach(SpriteRenderer spr in sprites)
+                DrawSpriteFisheyeFixed(data, spr);
+        else
+            foreach(SpriteRenderer spr in sprites)
+                DrawSprite(data, spr);
 
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
@@ -85,7 +79,7 @@ public unsafe class Renderer
     {
         Vec2f dir;
         if(camera.fixFisheyeEffect)
-            dir = camera.forward - camera.plane * (2f*x / (virtRes.x-1f) - 1f);
+            dir = camera.forward + camera.plane * (2f*x / (virtRes.x-1f) - 1f);
         else
             dir = Vec2f.FromAngle(camera.fov * (x / (virtRes.x-1f) - .5f) + camera.angle);
 
@@ -168,45 +162,43 @@ public unsafe class Renderer
         }
     }
 
-    // TODO: Floor rendering, ceiling moves and rotates wrong along with the camera, fisheye fix toggle, fog
-    public void DrawFloorAndCeil(BitmapData data)
+    public void DrawFloorAndCeiling(BitmapData data)
     {
-        BitmapData floorTex = map.floorTex.data, ceilTex = map.ceilTex.data;
-        Vec2i floorTexSize = map.floorTex.size, ceilTexSize = map.ceilTex.size;
-        Vec2i floorTexBounds = floorTexSize - Vec2i.one, ceilTexBounds = ceilTexSize - Vec2i.one;
-        Vec2f dir = Vec2f.FromAngle(camera.angle);
-        Vec2f plane = new Vec2f(-dir.y, dir.x) * camera.fovFactor;
-
-        byte* ceilScan = (byte*)data.Scan0;
-        byte* floorScan = (byte*)data.Scan0 + virtCenter.y * data.Stride;
-
         for(int y = 0; y < virtCenter.y; y++)
         {
-            Vec2f lDir = dir - plane, rDir = dir + plane;
+            Vec2f leftRay = camera.forward - camera.plane;
+            Vec2f rightRay = camera.forward + camera.plane;
 
-            float rowDist = (float)virtCenter.y / (virtCenter.y - y);
-            Vec2f rowDistVec = new(rowDist, -rowDist);
+            int pix = y - virtCenter.y;
+            float rowDist = (float)virtCenter.y / pix;
+            float brightness = GetDistanceFog(rowDist);
 
-            Vec2f floorStep = (rDir - lDir) * rowDistVec / virtRes.x;
-            Vec2f floor = camera.pos + (rowDistVec * lDir);
+            Vec2f floor = -camera.pos + rowDist * leftRay;
+            Vec2f step = rowDist * (rightRay - leftRay) / virtRes.x;
+
+            byte* ceilScan = (byte*)data.Scan0 + y*data.Stride;
+            byte* floorScan = (byte*)data.Scan0 + (virtRes.y - 1 - y)*data.Stride;
 
             for(int x = 0; x < virtRes.x; x++)
             {
-                Vec2i cell = floor.Round();
-                Vec2i ceilTexCoord = (2f * ceilTexSize * (floor - cell)).Round() & ceilTexBounds,
-                      floorTexCoord = (floorTexSize * (floor - cell)).Round() & floorTexBounds;
+                const float tex_scale = 2.5f;
 
-                byte* ceilColPtr = (byte*)ceilTex.Scan0 + ceilTexCoord.y * ceilTex.Stride + ceilTexCoord.x * 3,
-                      floorColPtr = (byte*)floorTex.Scan0 + floorTexCoord.y * floorTex.Stride + floorTexCoord.x * 3;
+                Vec2i floorTexCoord = (floor % 1f * map.floorTex.bounds * tex_scale).Floor() & map.floorTex.bounds;
+                Vec2i ceilTexCoord = (floor % 1f * map.ceilTex.bounds * tex_scale).Floor() & map.ceilTex.bounds;
 
-                floor += floorStep;
-                *ceilScan++ = *ceilColPtr++;
-                *ceilScan++ = *ceilColPtr++;
-                *ceilScan++ = *ceilColPtr;
+                floor += step;
 
-                //*floorScan++ = *floorColPtr++;
-                //*floorScan++ = *floorColPtr++;
-                //*floorScan++ = *floorColPtr;
+                (byte r, byte g, byte b) 
+                    floorCol = map.floorTex.GetPixelRgb(floorTexCoord.x, floorTexCoord.y),
+                    ceilCol = map.ceilTex.GetPixelRgb(ceilTexCoord.x, ceilTexCoord.y);
+
+                *--floorScan = (byte)(floorCol.r * brightness);
+                *--floorScan = (byte)(floorCol.g * brightness);
+                *--floorScan = (byte)(floorCol.b * brightness);
+
+                *ceilScan++ = ceilCol.b;
+                *ceilScan++ = ceilCol.g;
+                *ceilScan++ = ceilCol.r;
             }
         }
     }
@@ -229,14 +221,12 @@ public unsafe class Renderer
         if(sizeF.x <= 0f || sizeF.y <= 0f)
             return;
 
-        float locXF = (camSpace.toAngle/camera.fov + .5f) * virtRes.x - sizeF.x/2f;
-
         Vec2i size = sizeF.Floor();
-        Vec2i hSize = (sizeF/2f).Floor();
-        int locX = locXF.Floor();
+        Vec2i hSize = size/2;
+        int locX = ((camSpace.toAngle/camera.fov + .5f) * (virtRes.x-1) - sizeF.x/2f).Floor();
 
         int x0 = Math.Max(locX - hSize.x, 0),
-            x1 = Math.Min(locX + hSize.y, virtRes.x-1);
+            x1 = Math.Min(locX + hSize.x, virtRes.x);
 
         if(x0 >= x1)
             return;
@@ -247,15 +237,21 @@ public unsafe class Renderer
 
         float brightness = GetDistanceFog(normDist);
         int y0 = Math.Max(virtCenter.y - hSize.y, 0),
-            y1 = Math.Min(virtCenter.y + hSize.y, virtRes.y-1);
+            y1 = Math.Min(virtCenter.y + hSize.y, virtRes.y);
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1-y0) * data.Stride;
 
         Vec2f texOffset = new(hSize.x - locX, hSize.y - virtCenter.y);
-        Vec2f texMappingFactor = (spr.graphic.size - Vec2f.one) / size;
+        Vec2f texMappingFactor = (Vec2f)spr.graphic.bounds / size;
         for(int x = x0; x < x1; x++)
         {
+            if(normDist > depthBuf[x])
+            {
+                scan += 3;
+                continue;
+            }
+
             int texX = Utils.Clamp(((x + texOffset.x) * texMappingFactor.x).Floor(), 0, spr.graphic.wb);
             byte* texScan = spr.graphic.scan0 + texX*4;
 
@@ -280,7 +276,7 @@ public unsafe class Renderer
 
     private void DrawSpriteFisheyeFixed(BitmapData data, SpriteRenderer spr)
     {
-        Vec2f dir = camera.forward, plane = -camera.plane;
+        Vec2f dir = camera.forward, plane = camera.plane;
 
         Vec2f relPos = spr.pos - camera.pos;
         Vec2f transform = new Vec2f(dir.y*relPos.x - dir.x*relPos.y, plane.x*relPos.y - plane.y*relPos.x) / (dir.y*plane.x - dir.x*plane.y);
@@ -295,9 +291,10 @@ public unsafe class Renderer
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();
 
         int x0 = Math.Max(locX - size.x/2, 0),
-            x1 = Math.Min(locX + size.x/2, virtRes.x-1);
+            x1 = Math.Min(locX + size.x/2, virtRes.x);
+
         int y0 = Math.Max(virtCenter.y - size.y/2, 0),
-            y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y-1);
+            y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y);
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1 - y0) * data.Stride;
@@ -310,12 +307,12 @@ public unsafe class Renderer
                 continue;
             }
 
-            int texX = Utils.Clamp(((x - (locX - size.x/2f)) * spr.graphic.w / size.x).Floor(), 0, spr.graphic.w);
+            int texX = Utils.Clamp(((x - (locX - size.x/2f)) * spr.graphic.wb / size.x).Floor(), 0, spr.graphic.wb);
             byte* texScan = spr.graphic.scan0 + 4*texX;
 
             for(int y = y0; y < y1; y++)
             {
-                int texY = Utils.Clamp(((y - virtCenter.y + size.y/2f) * spr.graphic.h / size.y).Floor(), 0, spr.graphic.h);
+                int texY = Utils.Clamp(((y - virtCenter.y + size.y/2f) * spr.graphic.hb / size.y).Floor(), 0, spr.graphic.hb);
                 byte* colScan = texScan + texY*spr.graphic.stride;
 
                 if(*(colScan+3) > 0x80)

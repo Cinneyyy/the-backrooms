@@ -30,9 +30,9 @@ public abstract unsafe class PostProcessEffect(bool enabled = true)
         Exec((byte*)data.Scan0, refScan0, data.Stride, data.Width, data.Height);
     }
 
-    /// <summary>Only call from the outside if you know what you're doing!</summary>
+    /// <summary>Only call from the outside if you know what you're doing, this call ignores the <see cref="enabled"/> field</summary>
     public void ApplyUnsafe(byte* scan0, int stride, int w, int h) => Exec(scan0, stride, w, h);
-    /// <summary>Only call from the outside if you know what you're doing!</summary>
+    /// <summary>Only call from the outside if you know what you're doing, this call ignores the <see cref="enabled"/> field</summary>
     public void ApplyUnsafe(byte* scan0, byte* refScan0, int stride, int w, int h) => Exec(scan0, refScan0, stride, w, h);
 
 

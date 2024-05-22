@@ -60,12 +60,12 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
 
 
     public static Vec2f PlaneFromFov(Vec2f dir, float fov)
-        => new Vec2f(dir.y, -dir.x) * MathF.Tan(fov/2f);    
+        => new Vec2f(-dir.y, dir.x) * MathF.Tan(fov/2f);    
     public static Vec2f PlaneFromFov(float angle, float fov)
         => PlaneFromFov(FromAngle(angle), fov);
 
     public static Vec2f PlaneFromFovFactor(Vec2f dir, float fovFactor)
-        => new Vec2f(dir.y, -dir.x) * fovFactor;
+        => new Vec2f(-dir.y, dir.x) * fovFactor;
     public static Vec2f PlaneFromFovFactor(float angle, float fovFactor)
         => PlaneFromFovFactor(FromAngle(angle), fovFactor);
 
