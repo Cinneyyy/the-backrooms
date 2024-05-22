@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define VERTICAL_WALL_DRAWING
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -48,7 +50,9 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
+#if !VERTICAL_WALL_DRAWING
         DrawFloorAndCeiling(data);
+#endif
         
         for(int x = 0; x < virtRes.x; x++)
             DrawWallSegment(data, x);
@@ -124,8 +128,9 @@ public unsafe class Renderer
         float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
         float normDist = Utils.Clamp01(dist / camera.maxDist);
 
+        bool drawWall = true;
         if(depthBuf[x] <= normDist || dist >= camera.maxDist || dist <= 0f)
-            return;
+            drawWall = false;
 
         depthBuf[x] = normDist;
 
@@ -148,18 +153,61 @@ public unsafe class Renderer
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
 
-        for(int y = y0; y < y1; y++)
-        {
-            int texY = (int)texPos & texMask;
-            texPos += texStep;
-            byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
+        if(drawWall)
+            for(int y = y0; y < y1; y++)
+            {
+                int texY = (int)texPos & texMask;
+                texPos += texStep;
+                byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
 
-            *scan     = (byte)(*texScan     * brightness);
-            *(scan+1) = (byte)(*(texScan+1) * brightness);
-            *(scan+2) = (byte)(*(texScan+2) * brightness);
+                *scan     = (byte)(*texScan     * brightness);
+                *(scan+1) = (byte)(*(texScan+1) * brightness);
+                *(scan+2) = (byte)(*(texScan+2) * brightness);
+
+                scan += data.Stride;
+            }
+        else
+            scan += (y1-y0)*data.Stride;
+
+#if VERTICAL_WALL_DRAWING
+        Vec2f floorWall;
+        if(vert)
+            floorWall = new(dir.x > 0 ? mPos.x : mPos.x + 1, mPos.y + wallX);
+        else
+            floorWall = new(mPos.x + wallX, dir.y > 0 ? mPos.y : mPos.y + 1f);
+
+        float distWall = dist, distPlayer = 0f, currDist;
+        byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1)*data.Stride + x*3;
+
+        for(int y = y1+1; y < virtRes.y; y++)
+        {
+            currDist = virtRes.y / (2f * y - virtRes.y);
+            float weight = (currDist - distPlayer) / (distWall - distPlayer);
+
+            Vec2f currFloor = weight * floorWall + (Vec2f.one - new Vec2f(weight)) * camera.pos;
+
+            Vec2i floorTex = (currFloor * map.floorTex.size * map.floorTexScale).Round() % map.floorTex.size;
+            Vec2i ceilTex = (currFloor * map.ceilTex.size * map.ceilTexScale).Round() % map.ceilTex.size;
+
+            (byte r, byte g, byte b) floorCol = map.floorTex.GetPixelRgb(floorTex.x, floorTex.y);
+            (byte r, byte g, byte b) ceilCol = map.ceilTex.GetPixelRgb(ceilTex.x, ceilTex.y);
+
+            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - currFloor).length / camera.maxDist));
+            float floorBrightness = map.floorLuminance * fog;
+            float ceilBrightness = map.ceilLuminance * fog;
+
+            *scan = (byte)(floorCol.b * floorBrightness);
+            *(scan+1) = (byte)(floorCol.g * floorBrightness);
+            *(scan+2) = (byte)(floorCol.r * floorBrightness);
+
+            *ceilScan = (byte)(ceilCol.b * ceilBrightness);
+            *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
+            *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
 
             scan += data.Stride;
+            ceilScan -= data.Stride;
         }
+#endif
     }
 
     public void DrawFloorAndCeiling(BitmapData data)
