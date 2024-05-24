@@ -5,9 +5,6 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Threading.Tasks;
-using System.Threading.Channels;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Linq;
 
 namespace Backrooms;
 
@@ -121,32 +118,8 @@ public class Window : Form
                 DateTime now = DateTime.UtcNow;
                 deltaTime = (float)(now - lastFrame).TotalSeconds;
                 lastFrame = now;
-                tick?.Invoke(deltaTime);
 
-                if(input.KeyDown(Keys.O))
-                {
-                    var src =pictureBox.Image;
-                    Bitmap anim = new(src.Width, src.Height);
-                    Out(Renderer.changes.Sum(l => l.Count));
-                    foreach(int i in Renderer.order)
-                    {
-                        foreach(var (x, y, r, g, b) in Renderer.changes[i])
-                        {
-                            bool success = false;
-                            while(!success)
-                            {
-                                try
-                                {
-                                    anim.SetPixel(x, y, Color.FromArgb(r, g, b));
-                                    pictureBox.Image = anim;
-                                    Thread.Sleep(1);
-                                    success = true;
-                                }
-                                catch{ }
-                            }
-                        }
-                    }
-                }
+                tick?.Invoke(deltaTime);
 
                 Bitmap renderResult = renderer.Draw();
                 pictureBox.Image = renderResult;
