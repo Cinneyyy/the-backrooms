@@ -55,5 +55,5 @@ public class TextElement(string text, FontFamily fontFamily, float emSize, Color
     public override void DrawSafe(Graphics g)
         => g.DrawString(text, font, brush, new RectangleF(screenLocationF.x, screenLocationF.y, screenSizeF.x, screenSizeF.y), format);
 
-    public override unsafe void DrawUnsafe(byte* scan0, int stride, int w, int h) => throw new System.NotImplementedException();
+    public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h) => throw new System.NotImplementedException();
 }

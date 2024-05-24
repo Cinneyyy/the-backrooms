@@ -90,11 +90,16 @@ public unsafe class UnsafeGraphic : IDisposable
         byte* scan = scan0 + y*stride + x*3;
         return (*(scan+2), *(scan+1), *scan);
     }
-    public (byte r, byte g, byte b, byte a) GetPixelArgb(int x, int y)
+    public (byte r, byte g, byte b, byte a) GetPixelRgba(int x, int y)
     {
         byte* scan = scan0 + y*stride + x*4;
         return (*(scan+2), *(scan+1), *scan, *(scan+3));
     }
+
+    public (byte r, byte g, byte b) GetUvRgb(float x, float y)
+        => GetPixelRgb((int)(x * wb), (int)(y * hb));
+    public (byte r, byte g, byte b, byte a) GetUvRgba(float x, float y)
+        => GetPixelRgba((int)(x * wb), (int)(y * hb));
 
     public void FillRow(int x0, int x1, int y, byte r, byte g, byte b)
     {

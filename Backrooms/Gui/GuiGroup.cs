@@ -44,11 +44,11 @@ public class GuiGroup
         element.ReloadScreenDimensions();
     }
 
-    public unsafe void DrawUnsafeElements(byte* scan0, int stride, int w, int h)
+    public unsafe void DrawUnsafeElements(byte* scan, int stride, int w, int h)
     {
         foreach(GuiElement element in unsafeElements)
             if(element.enabled)
-                element.DrawUnsafe(scan0, stride, w, h);
+                element.DrawUnsafe(scan, stride, w, h);
     }
 
     public void DrawSafeElements(Graphics g)

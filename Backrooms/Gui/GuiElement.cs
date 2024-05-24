@@ -87,6 +87,6 @@ public abstract class GuiElement(Vec2f location, Vec2f size, Anchor anchor = Anc
     }
 
 
-    public unsafe abstract void DrawUnsafe(byte* scan0, int stride, int w, int h);
+    public unsafe abstract void DrawUnsafe(byte* scan, int stride, int w, int h);
     public abstract void DrawSafe(Graphics g);
 }
