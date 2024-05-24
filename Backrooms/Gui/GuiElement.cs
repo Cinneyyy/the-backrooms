@@ -65,13 +65,13 @@ public abstract class GuiElement(Vec2f location, Vec2f size, Anchor anchor = Anc
 
     public void ReloadScreenSize()
     {
-        screenSizeF = size * rend.virtRes;
+        screenSizeF = size * rend.virtRes.y;
         screenSize = screenSizeF.Floor();
     }
 
     public void ReloadScreenLocation()
     {
-        screenLocationF = location * rend.virtRes + group.screenAnchor - screenSizeF/2f * (Vec2f)(anchor switch {
+        screenLocationF = location * rend.virtRes + group.screenAnchor - screenSizeF * (Vec2f)(anchor switch {
             Anchor.C => new(.5f, .5f),
             Anchor.T => new(.5f, 0f),
             Anchor.B => new(.5f, 1f),

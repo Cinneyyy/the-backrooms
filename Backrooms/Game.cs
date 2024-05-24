@@ -52,7 +52,7 @@ public class Game
         renderer = window.renderer;
         input = window.input;
 
-        renderer.guiGroup.Add(new ImageElement("freddy_fazbear", Vec2f.half, new(.25f)));
+        renderer.guiGroup.Add(new ImageElement("freddy_fazbear", Vec2f.half, new(.5f)));
 
         camera = renderer.camera = new(90f * Utils.Deg2Rad, map.size.length, 270f * Utils.Deg2Rad) {
             maxDist = 20f,

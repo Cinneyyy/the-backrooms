@@ -28,9 +28,10 @@ public class ImageElement(UnsafeGraphic image, Vec2f location, Vec2f size, Ancho
 
                 if(color.a > 0x80)
                 {
-                    *(scan+j) = (byte)(color.b * bMul);
-                    *(scan+j+1) = (byte)(color.g * gMul);
-                    *(scan+j+2) = (byte)(color.r * rMul);
+                    int o = 3*j;
+                    *(scan + o) = (byte)(color.b * bMul);
+                    *(scan+1 + o) = (byte)(color.g * gMul);
+                    *(scan+2 + o) = (byte)(color.r * rMul);
                 }
             }
 
