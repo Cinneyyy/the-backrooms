@@ -60,7 +60,7 @@ public class Window : Form
         renderer.dimensionsChanged += () => {
             pictureBox.Size = new(renderer.outputRes.x, renderer.outputRes.y);
             pictureBox.Location = new(renderer.outputLocation.x, renderer.outputLocation.y);
-            input.UpdateDimensions(renderer);
+            input.OnUpdateDimensions(renderer);
         };
 
         // Add callbacks

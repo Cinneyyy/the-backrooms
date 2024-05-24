@@ -8,6 +8,7 @@ using Backrooms.Online;
 using System.Drawing;
 using Backrooms.Pathfinding;
 using Backrooms.PostProcessing;
+using Backrooms.Gui;
 
 namespace Backrooms;
 
@@ -59,8 +60,8 @@ public class Game
 
         window.tick += Tick;
 
-        fpsDisplay = new("", new(1f, 1f, 200f, 40f), FontFamily.GenericMonospace, 10f);
-        renderer.texts.Add(fpsDisplay);
+        fpsDisplay = new("", FontFamily.GenericMonospace, 10f, Color.White, renderer.guiGroup.screenStep, Vec2f.zero, Anchor.TL);
+        renderer.guiGroup.Add(fpsDisplay);
         window.pulse += () => {
             fpsDisplay.text = fpsCounter.ToString("00 fps");
             fpsCounter = 0;

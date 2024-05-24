@@ -16,7 +16,8 @@
 
 ---
 ## Bugfixes
-- Ceiling/floor padding in first 1/2 rows
+- Ceiling not drawing in 1st row
+- Ceiling/floor rendering **extremely** slow (~150fps -> ~60fps)
 - Pathfinding shortcuts
 - Dijkstra's shortest path
 - Multiplayer

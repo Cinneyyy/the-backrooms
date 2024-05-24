@@ -50,7 +50,7 @@ public class Client(int bufSize = 256, bool printDebug = false)
     {
         try
         {
-            Assert(packet.Length <= bufSize, $"Attempting to send packet of size {packet.Length} [bytes], while the max packet size is {bufSize} [bytes]");
+            ThrowIf(packet.Length > bufSize, $"Attempting to send packet of size {packet.Length} [bytes], while the max packet size is {bufSize} [bytes]");
 
             PrintIf(printDebug, $"Sending packet of size {packet.Length} [bytes] to server");
             remoteClient.GetStream().Write(packet, 0, packet.Length);

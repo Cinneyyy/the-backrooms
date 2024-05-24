@@ -102,6 +102,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public static Vec2f operator %(Vec2f a, Vec2f b) => new(a.x % b.x, a.y % b.y);
 
     public static Vec2f operator *(float a, Vec2f b) => new(a * b.x, a * b.y);
+    public static Vec2f operator /(float a, Vec2f b) => new(a / b.x, a / b.y);
+    public static Vec2f operator %(float a, Vec2f b) => new(a % b.x, a % b.y);
     public static Vec2f operator *(Vec2f a, float b) => new(a.x * b, a.y * b);
     public static Vec2f operator /(Vec2f a, float b) => new(a.x / b, a.y / b);
     public static Vec2f operator %(Vec2f a, float b) => new(a.x % b, a.y % b);

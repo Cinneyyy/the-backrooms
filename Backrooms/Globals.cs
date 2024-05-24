@@ -14,10 +14,19 @@ public static class Globals
     public static void OutErr(Exception exc, ConsoleColor color = ConsoleColor.Red)
         => Out(exc, color);
 
-    public static void Assert(bool assertion, string assertionFailedMsg, ConsoleColor color = ConsoleColor.Red)
+    public static void Assert(bool assertion, string assertionFailedMsg, ConsoleColor color = ConsoleColor.Yellow)
     {
         if(!assertion)
             Out(assertionFailedMsg, color);
+    }
+
+    public static void ThrowIf(bool predicate, string message, ConsoleColor color = ConsoleColor.Red)
+    {
+        if(predicate)
+        {
+            Out(message, color);
+            throw new(message);
+        }
     }
 
     public static void OutIf(bool condition, object msg, ConsoleColor color = ConsoleColor.Gray)

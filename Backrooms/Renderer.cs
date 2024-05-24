@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using Backrooms.Gui;
 using Backrooms.PostProcessing;
 
 namespace Backrooms;
@@ -13,11 +14,11 @@ public unsafe class Renderer
     public Map map;
     public Window window;
     public readonly List<SpriteRenderer> sprites = [];
-    public readonly List<TextElement> texts = [];
     public readonly List<PostProcessEffect> postProcessEffects = [];
     public bool drawIfCursorOffscreen = true;
     public float[] depthBuf;
     public event Action dimensionsChanged;
+    public GuiGroup guiGroup;
 
 
     public Vec2i virtRes { get; private set; }
@@ -33,6 +34,7 @@ public unsafe class Renderer
     public Renderer(Vec2i virtRes, Vec2i physRes, Window window)
     {
         this.window = window;
+        guiGroup = new(this);
         UpdateResolution(virtRes, physRes);
     }
 
@@ -80,13 +82,12 @@ public unsafe class Renderer
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
 
+        guiGroup.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
+
         bitmap.UnlockBits(data);
 
-        if(texts is not [])
-            using(Graphics g = Graphics.FromImage(bitmap))
-                foreach(TextElement t in texts)
-                    if(t.enabled)
-                        g.DrawString(t.text, t.font, Brushes.White, t.rect);
+        using(Graphics g = Graphics.FromImage(bitmap))
+            guiGroup.DrawSafeElements(g);
 
         return bitmap;
     }
@@ -151,7 +152,7 @@ public unsafe class Renderer
         int y0 = Math.Max(virtCenter.y - halfHeight, 0),
             y1 = Math.Min(virtCenter.y + halfHeight, virtRes.y-1);
 
-        float brightness = GetDistanceFog(normDist) * (vert ? 1f : .66f) * .75f;
+        float brightness = GetDistanceFog(normDist) * (vert ? .75f : .5f);
 
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
@@ -166,7 +167,7 @@ public unsafe class Renderer
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
 
         if(drawWall)
-            for(int y = y0; y < y1; y++)
+            for(int y = y0; y <= y1; y++)
             {
                 int texY = (int)texPos & texMask;
                 texPos += texStep;
@@ -179,7 +180,7 @@ public unsafe class Renderer
                 scan += data.Stride;
             }
         else
-            scan += (y1-y0)*data.Stride;
+            scan += (y1-y0+1)*data.Stride;
 
         Vec2f floorWall;
         if(vert)
@@ -188,7 +189,7 @@ public unsafe class Renderer
             floorWall = new(mPos.x + wallX, dir.y > 0 ? mPos.y : mPos.y + 1f);
 
         float distWall = dist, distPlayer = 0f, currDist;
-        byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1)*data.Stride + x*3;
+        byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1-1)*data.Stride + x*3;
 
         for(int y = y1+1; y < virtRes.y; y++)
         {

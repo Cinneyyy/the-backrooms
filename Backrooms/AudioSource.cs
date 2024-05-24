@@ -11,12 +11,12 @@ public class AudioSource : IDisposable
     private readonly WaveOutEvent device;
 
 
+    public PlaybackState state => device.PlaybackState;
     public float volume
     {
         get => device.Volume;
         set => device.Volume = Utils.Clamp(value, 0f, 1f);
     }
-    public PlaybackState state => device.PlaybackState;
     public float time
     {
         get => (float)stream.CurrentTime.TotalSeconds;
