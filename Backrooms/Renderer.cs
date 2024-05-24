@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
+using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.PostProcessing;
@@ -21,7 +25,6 @@ public unsafe class Renderer
     public event Action dimensionsChanged;
     public GuiGroup guiGroup;
     public bool useParallelRendering = true;
-
 
     public Vec2i virtRes { get; private set; }
     public Vec2i physRes { get; private set; }
@@ -61,6 +64,8 @@ public unsafe class Renderer
         dimensionsChanged?.Invoke();
     }
 
+    public static List<(int x, int y, byte r, byte g, byte b)>[] changes;
+    public static int[] order;
     public unsafe Bitmap Draw()
     {
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
@@ -70,11 +75,40 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        if(useParallelRendering)
-            Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
+        if(input.KeyDown(System.Windows.Forms.Keys.P))
+        {
+            int[] order = new int[virtRes.x];
+            int currIdx = 0;
+            List<(int x, int y, byte r, byte g, byte b)>[] arrOfChanges = new List<(int x, int y, byte r, byte g, byte b)>[virtRes.x];
+            if(useParallelRendering)
+                Parallel.For(0, virtRes.x, x => { 
+                    List<(int x, int y, byte r, byte g, byte b)> localChanges = new(virtRes.y);
+                    DrawColumn(data, x, localChanges);
+                    arrOfChanges[x] = localChanges;
+                    order[currIdx++] = x;
+                });
+            else
+                for(int x = 0; x < virtRes.x; x++)
+                {
+                    List<(int x, int y, byte r, byte g, byte b)> localChanges = new(virtRes.y);
+                    DrawColumn(data, x, localChanges);
+                    arrOfChanges[x] = localChanges;
+                    order[currIdx++] = x;
+                }
+
+            changes = arrOfChanges;
+            Renderer.order = order;
+        }
+
+        else if(useParallelRendering)
+            Parallel.For(0, virtRes.x, x => {
+                DrawColumn(data, x, null);
+            });
         else
             for(int x = 0; x < virtRes.x; x++)
-                DrawColumn(data, x);
+            {
+                DrawColumn(data, x, null);
+            }
 
         sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         if(camera.fixFisheyeEffect)
@@ -97,9 +131,10 @@ public unsafe class Renderer
         return bitmap;
     }
 
-    private void DrawColumn(BitmapData data, int x)
+    private void DrawColumn(BitmapData data, int x, List<(int x, int y, byte r, byte g, byte b)> changes)
     {
         Vec2f dir;
+
         if(camera.fixFisheyeEffect)
             dir = camera.forward + camera.plane * (2f*x / (virtRes.x-1f) - 1f);
         else
@@ -178,9 +213,11 @@ public unsafe class Renderer
                 texPos += texStep;
                 byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
 
-                *scan     = (byte)(*texScan     * brightness);
+                *scan = (byte)(*texScan     * brightness);
                 *(scan+1) = (byte)(*(texScan+1) * brightness);
                 *(scan+2) = (byte)(*(texScan+2) * brightness);
+
+                changes?.Add((x, y, *(scan+2), *(scan+1), *scan));
 
                 scan += data.Stride;
             }
@@ -218,6 +255,8 @@ public unsafe class Renderer
                 *scan = (byte)(floorCol.b * floorBrightness);
                 *(scan+1) = (byte)(floorCol.g * floorBrightness);
                 *(scan+2) = (byte)(floorCol.r * floorBrightness);
+
+                changes?.Add((x, y, *(scan+2), *(scan+1), *scan));
             }
 
             if(*ceilScan == 0)
@@ -225,6 +264,8 @@ public unsafe class Renderer
                 *ceilScan = (byte)(ceilCol.b * ceilBrightness);
                 *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
                 *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
+
+                changes?.Add((x, virtRes.y-y, *(ceilScan+2), *(ceilScan+1), *ceilScan));
             }
 
             scan += data.Stride;
