@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.PostProcessing;
 
@@ -19,6 +20,7 @@ public unsafe class Renderer
     public float[] depthBuf;
     public event Action dimensionsChanged;
     public GuiGroup guiGroup;
+    public bool useParallelRendering = true;
 
 
     public Vec2i virtRes { get; private set; }
@@ -68,8 +70,11 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        for(int x = 0; x < virtRes.x; x++)
-            DrawColumn(data, x);
+        if(useParallelRendering)
+            Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
+        else
+            for(int x = 0; x < virtRes.x; x++)
+                DrawColumn(data, x);
 
         sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         if(camera.fixFisheyeEffect)
@@ -208,9 +213,12 @@ public unsafe class Renderer
             float floorBrightness = map.floorLuminance * fog;
             float ceilBrightness = map.ceilLuminance * fog;
 
-            *scan = (byte)(floorCol.b * floorBrightness);
-            *(scan+1) = (byte)(floorCol.g * floorBrightness);
-            *(scan+2) = (byte)(floorCol.r * floorBrightness);
+            if(y != virtRes.y)
+            {
+                *scan = (byte)(floorCol.b * floorBrightness);
+                *(scan+1) = (byte)(floorCol.g * floorBrightness);
+                *(scan+2) = (byte)(floorCol.r * floorBrightness);
+            }
 
             if(*ceilScan == 0)
             {
