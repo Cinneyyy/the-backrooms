@@ -149,8 +149,8 @@ public unsafe class Renderer
 
         float height = virtRes.y / dist;
         int halfHeight = (height / 2f).Floor();
-        int y0 = Math.Max(virtCenter.y - halfHeight, 0),
-            y1 = Math.Min(virtCenter.y + halfHeight, virtRes.y-1);
+        int y0 = Utils.Clamp(virtCenter.y - halfHeight, 0, virtRes.y-1),
+            y1 = Utils.Clamp(virtCenter.y + halfHeight, 0, virtRes.y-1);
 
         float brightness = GetDistanceFog(normDist) * (vert ? .75f : .5f);
 
@@ -191,7 +191,7 @@ public unsafe class Renderer
         float distWall = dist, distPlayer = 0f, currDist;
         byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1-1)*data.Stride + x*3;
 
-        for(int y = y1+1; y < virtRes.y; y++)
+        for(int y = y1+1; y <= virtRes.y; y++)
         {
             currDist = virtRes.y / (2f * y - virtRes.y);
             float weight = (currDist - distPlayer) / (distWall - distPlayer);
@@ -212,9 +212,12 @@ public unsafe class Renderer
             *(scan+1) = (byte)(floorCol.g * floorBrightness);
             *(scan+2) = (byte)(floorCol.r * floorBrightness);
 
-            *ceilScan = (byte)(ceilCol.b * ceilBrightness);
-            *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
-            *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
+            if(*ceilScan == 0)
+            {
+                *ceilScan = (byte)(ceilCol.b * ceilBrightness);
+                *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
+                *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
+            }
 
             scan += data.Stride;
             ceilScan -= data.Stride;
