@@ -225,6 +225,9 @@ public class Game
 
         if(input.KeyDown(Keys.F))
             camera.fixFisheyeEffect ^= true;
+
+        if(input.KeyDown(Keys.C))
+            DevConsole.Restore();
         #endregion
 
         Vec2f olafTarget = mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos;

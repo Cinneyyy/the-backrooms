@@ -94,6 +94,9 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public static Vec2f Lerp(Vec2f a, Vec2f b, float t) 
         => new(Utils.Lerp(a.x, b.x, t), Utils.Lerp(a.y, b.y, t));
 
+    public static Vec2f Parse(string x, string y)
+        => new(float.Parse(x), float.Parse(y));
+
 
     public static Vec2f operator +(Vec2f a, Vec2f b) => new(a.x + b.x, a.y + b.y);
     public static Vec2f operator -(Vec2f a, Vec2f b) => new(a.x - b.x, a.y - b.y);

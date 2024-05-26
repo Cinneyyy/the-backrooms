@@ -59,8 +59,8 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
         => GetEnumerator();
 
 
-    public static Vec2i Op(Vec2i a, Vec2i b, Func<int, int, int> op)
-        => new(op(a.x, b.x), op(a.y, b.y));
+    public static Vec2i Parse(string x, string y)
+        => new(int.Parse(x), int.Parse(y));
 
 
     public static Vec2i operator +(Vec2i a, Vec2i b) => new(a.x + b.x, a.y + b.y);

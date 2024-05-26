@@ -13,8 +13,10 @@ public class Window : Form
     public Thread renderThread;
     public Renderer renderer;
     public Input input;
+    public DevConsole console;
     public event Action<float> tick;
     public event Action pulse;
+    public event Action onWindowVisible;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly Stopwatch timeElapsedSw;
@@ -32,6 +34,8 @@ public class Window : Form
 
     public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, Action<Window> load = null, Action<float> tick = null)
     {
+        DevConsole.Hide();
+
         // Initialize
         DoubleBuffered = true;
         BackColor = Color.Black;
@@ -41,11 +45,13 @@ public class Window : Form
         WindowState = FormWindowState.Maximized;
         Location = Screen.FromPoint(Cursor.Position).WorkingArea.Location;
         SetIcon(iconManifest);
-
         title = windowTitle;
+
         renderer = new(virtualResolution, Size, this);
         input = new(renderer.physRes, (Vec2i)Location, lockCursor);
         renderer.input = input;
+        console = new(this, () => Visible);
+
         pictureBox = new() {
             Size = new(renderer.outputRes.x, renderer.outputRes.y),
             Location = new(renderer.outputLocation.x, renderer.outputLocation.y),
@@ -74,22 +80,18 @@ public class Window : Form
 
         // Start pulse timer
         pulseThread = new(() => {
-            while(!Visible)
-                Thread.Sleep(1);
+            async void invoke()
+                => await Task.Run(pulse);
 
             while(Visible)
             {
                 Thread.Sleep(1000);
-
-                async void invoke()
-                    => await Task.Run(pulse);
-
                 invoke();
             }
         }) {
             IsBackground = true
         };
-        pulseThread.Start();
+        onWindowVisible += pulseThread.Start;
 
         // Start processes
         load?.Invoke(this);
@@ -110,9 +112,10 @@ public class Window : Form
         while(!Visible)
             Thread.Sleep(1);
 
+        onWindowVisible();
+
         DateTime lastFrame = DateTime.UtcNow;
         while(Visible)
-        {
             try
             {
                 DateTime now = DateTime.UtcNow;
@@ -130,6 +133,5 @@ public class Window : Form
                 Console.WriteLine($"{exc.GetType()} in Draw(), Window.cs:\n{exc}");
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
-        }
     }
 }
