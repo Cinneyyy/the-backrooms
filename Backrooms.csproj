@@ -8,14 +8,14 @@
     <UseWindowsForms>true</UseWindowsForms>
     <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
     <AssemblyName>backrooms-game</AssemblyName>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace></RootNamespace>
     <ErrorReport>prompt</ErrorReport>
-    <IncludeSymbols>False</IncludeSymbols>
+    <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <Optimize>True</Optimize>
+    <Optimize>false</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

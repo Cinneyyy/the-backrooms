@@ -26,17 +26,13 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
 
     public int this[int idx]
     {
-        readonly get => idx switch {
-            0 => x,
-            1 => y,
-            _ => throw new()
-        };
+        readonly get => new int[2] {x, y} [idx];
         set {
             switch(idx)
             {
                 case 0: x = value; break;
                 case 1: y = value; break;
-                default: throw new();
+                default: throw new IndexOutOfRangeException();
             }
         }
     }

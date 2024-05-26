@@ -7,7 +7,7 @@ namespace Backrooms;
 
 public partial class DevConsole
 {
-    public readonly record struct Cmd(string[] identifiers, Action<string[]> invoke);
+    public readonly record struct Cmd(string[] identifiers, Action<string[]> invoke, string syntax);
 
     public enum WindowMode
     {
@@ -92,7 +92,7 @@ public partial class DevConsole
                     throw new("The set_resolution command takes in either 1 or 2 overloads!");
 
                 win.renderer.UpdateResolution(Vec2i.Parse(xStr, yStr), win.renderer.physRes);
-            })
+            }, "SET_RESOLUTION <width[x:/]height> // <width height> // <[*/] factor>")
         ];
     }
 
