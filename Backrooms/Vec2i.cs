@@ -26,7 +26,7 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
 
     public int this[int idx]
     {
-        readonly get => new int[2] {x, y} [idx];
+        readonly get => new int[2] { x, y } [idx];
         set {
             switch(idx)
             {

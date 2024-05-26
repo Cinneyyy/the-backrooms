@@ -34,7 +34,7 @@ public class Window : Form
 
     public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, Action<Window> load = null, Action<float> tick = null)
     {
-        //DevConsole.Hide();
+        DevConsole.Hide();
 
         // Initialize
         DoubleBuffered = true;
