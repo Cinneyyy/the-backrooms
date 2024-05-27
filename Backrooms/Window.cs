@@ -92,6 +92,8 @@ public class Window : Form
         this.tick += _ => input.Tick();
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
+        pictureBox.MouseDown += (_, args) => input.CB_OnCursorDown(args.Button);
+        pictureBox.MouseUp += (_, args) => input.CB_OnCursorUp(args.Button);
         FormClosed += (_, args) => {
             Application.Exit();
             Environment.Exit((int)args.CloseReason);

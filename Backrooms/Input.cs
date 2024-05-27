@@ -8,6 +8,7 @@ public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
     public bool lockCursor = lockCursor;
 
     private readonly HashSet<Keys> additionPending = [], removalPending = [], keyState = [], lastKeyState = [];
+    private readonly HashSet<MouseButtons> additionPendingMb = [], removalPendingMb = [], mbState = [], lastMbState = [];
     private readonly Vec2i screenLoc = screenLoc;
     private readonly Renderer rend = rend;
     private Vec2i screenRes = rend.physRes, screenCenter = rend.physCenter + screenLoc;
@@ -24,12 +25,17 @@ public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
 
     public bool KeyHelt(Keys key)
         => keyState.Contains(key);
-
     public bool KeyDown(Keys key)
         => !lastKeyState.Contains(key) && keyState.Contains(key);
-
     public bool KeyUp(Keys key)
         => lastKeyState.Contains(key) && !keyState.Contains(key);
+
+    public bool MbHelt(MouseButtons mb)
+        => mbState.Contains(mb);
+    public bool MbDown(MouseButtons mb)
+        => !lastMbState.Contains(mb) && mbState.Contains(mb);
+    public bool MbUp(MouseButtons mb)
+        => lastMbState.Contains(mb) && !mbState.Contains(mb);
 
 
     internal void OnUpdateDimensions(Renderer rend)
@@ -43,26 +49,44 @@ public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
         if(!keyState.Contains(key))
             additionPending.Add(key);
     }
-
     internal void CB_OnKeyUp(Keys key)
     {
         if(keyState.Contains(key))
             removalPending.Add(key);
     }
 
+    internal void CB_OnCursorDown(MouseButtons mb)
+    {
+        if(!mbState.Contains(mb))
+            additionPendingMb.Add(mb);
+    }
+    internal void CB_OnCursorUp(MouseButtons mb)
+    {
+        if(mbState.Contains(mb))
+            removalPendingMb.Add(mb);
+    }
+
     internal void Tick()
     {
         lastKeyState.Clear();
+        lastMbState.Clear();
         lastKeyState.UnionWith(keyState);
+        lastMbState.UnionWith(mbState);
 
         foreach(Keys key in removalPending)
             keyState.Remove(key);
-
         foreach(Keys key in additionPending)
             keyState.Add(key);
 
+        foreach(MouseButtons mb in removalPendingMb)
+            mbState.Remove(mb);
+        foreach(MouseButtons mb in additionPendingMb)
+            mbState.Add(mb);
+
         additionPending.Clear();
+        additionPendingMb.Clear();
         removalPending.Clear();
+        removalPendingMb.Clear();
 
         if(lockCursor)
         {

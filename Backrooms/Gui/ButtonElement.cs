@@ -10,7 +10,7 @@ public class ButtonElement(string name, string text, FontFamily font, float font
     public readonly TextElement textElem = new($"{name}_text", text, font, fontSize, textColor, Anchor.Center, location, size, anchor);
     public readonly RectSolidColorElement backgroundElem = new($"{name}_background", colors.normal, location, size, anchor);
     public ColorBlock colors = colors;
-    public Keys key = Keys.Space;
+    public MouseButtons button = MouseButtons.Left;
     public event Action onClick = onClick;
 
     private Vec2f sizeCollFactor;
@@ -31,13 +31,13 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
         if(isHovering)
         {
-            if(input.KeyDown(key))
+            if(input.MbDown(button))
             {
                 Out($"Invoked button '{name}' (From group '{group.name}')");
                 onClick?.Invoke();
             }
 
-            backgroundElem.color = input.KeyHelt(key) ? colors.select : colors.hover;
+            backgroundElem.color = input.MbHelt(button) ? colors.select : colors.hover;
         }
         else
             backgroundElem.color = colors.normal;
