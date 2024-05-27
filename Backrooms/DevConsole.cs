@@ -52,6 +52,7 @@ public partial class DevConsole
 
                 string[] args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+                // Execute next tick, as to avoid race conditions
                 nextTick = () => {
                     Cmd cmd;
 
@@ -161,7 +162,7 @@ public partial class DevConsole
                 cam.fov = rawValue;
                 Out($"Set FOV to {cam.fov :0.00} ({cam.fov/MathF.PI :0.00}pi ;; {cam.fov*Utils.Rad2Deg :0.00}°)");
             }, 
-            "FOV <value[°|deg|pi|rad|]>", [1]),
+            "FOV <value[°|pi|deg|rad|]>", [1]),
 
             new(["hide", "close", "hide_console", "close_console"], args => Hide(), 
             "HIDE", [0]),

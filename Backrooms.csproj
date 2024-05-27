@@ -10,12 +10,6 @@
     <AssemblyName>backrooms-game</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace></RootNamespace>
-    <ErrorReport>prompt</ErrorReport>
-    <IncludeSymbols>false</IncludeSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <Optimize>false</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

@@ -10,7 +10,6 @@ namespace Backrooms;
 
 public class Window : Form
 {
-    public Thread renderThread;
     public Renderer renderer;
     public Input input;
     public DevConsole console;
@@ -52,6 +51,7 @@ public class Window : Form
         renderer.input = input;
         console = new(this, () => Visible);
 
+        CheckForIllegalCrossThreadCalls = false;
         pictureBox = new() {
             Size = new(renderer.outputRes.x, renderer.outputRes.y),
             Location = new(renderer.outputLocation.x, renderer.outputLocation.y),
@@ -59,14 +59,15 @@ public class Window : Form
             InterpolationMode = InterpolationMode.NearestNeighbor,
             SmoothingMode = SmoothingMode.None,
             PixelOffsetMode = PixelOffsetMode.Half,
-            CompositingQuality = CompositingQuality.HighSpeed
+            CompositingQuality = CompositingQuality.HighSpeed,
+            Image = new Bitmap(1, 1)
         };
         Controls.Add(pictureBox);
 
         renderer.dimensionsChanged += () => {
+            input.OnUpdateDimensions(renderer);
             pictureBox.Size = new(renderer.outputRes.x, renderer.outputRes.y);
             pictureBox.Location = new(renderer.outputLocation.x, renderer.outputLocation.y);
-            input.OnUpdateDimensions(renderer);
         };
 
         // Add callbacks
@@ -96,8 +97,8 @@ public class Window : Form
         // Start processes
         load?.Invoke(this);
         (timeElapsedSw = new()).Start();
-        (renderThread = new(Draw)).Start();
-        Application.Run(this);
+        new Thread(() => Application.Run(this)).Start();
+        BeginGameLoop();
     }
 
 
@@ -107,7 +108,7 @@ public class Window : Form
             Icon = Resources.icons[manifest];
     }
 
-    public void Draw()
+    public void BeginGameLoop()
     {
         while(!Visible)
             Thread.Sleep(1);
@@ -124,8 +125,11 @@ public class Window : Form
 
                 tick?.Invoke(deltaTime);
 
-                Bitmap renderResult = renderer.Draw();
+                Bitmap renderResult = renderer.Draw(); 
+
+                Image lastImg = pictureBox.Image;
                 pictureBox.Image = renderResult;
+                lastImg.Dispose();
             }
             catch(Exception exc)
             {

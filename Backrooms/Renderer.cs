@@ -49,13 +49,18 @@ public unsafe class Renderer
         virtCenter = virtRes/2;
         physCenter = physRes/2;
 
-        downscaleFactor = (float)virtRes.y/physRes.y;
-        upscaleFactor = (float)physRes.y/virtRes.y;
+        downscaleFactor = MathF.Min((float)virtRes.x/physRes.x, (float)virtRes.y/physRes.y);
+        upscaleFactor = 1f / downscaleFactor;
 
         float virtRatio = (float)virtRes.x / virtRes.y;
-        outputRes = new((virtRatio * physRes.y).Floor(), physRes.y);
-        outputLocation = new((physRes.x - outputRes.x) / 2, 0);
+        float physRatio = (float)physRes.x / physRes.y;
 
+        if(physRatio > virtRatio)
+            outputRes = new((int)(physRes.y * virtRatio), physRes.y);
+        else
+            outputRes = new(physRes.x, (int)(physRes.x / virtRatio));
+
+        outputLocation = (physRes - outputRes) / 2;
         depthBuf = new float[virtRes.x];
 
         dimensionsChanged?.Invoke();

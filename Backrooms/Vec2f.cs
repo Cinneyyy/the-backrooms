@@ -13,7 +13,7 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public static readonly Vec2f one = new(1f), negOne = -one;
     public static readonly Vec2f half = new(.5f), negHalf = -half;
     public static readonly Vec2f inf = new(float.PositiveInfinity), negInf = new(float.NegativeInfinity);
-    public static readonly Vec2f min = new(float.MinValue), max = new(float.MaxValue);
+    public static readonly Vec2f minValue = new(float.MinValue), maxValue = new(float.MaxValue);
     public static readonly Vec2f right = new(1f, 0f), left = -right;
     public static readonly Vec2f up = new(0f, 1f), down = -up;
     public static readonly Vec2f[] directions = [ up, down, left, right ];
@@ -23,6 +23,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public readonly float length => MathF.Sqrt(sqrLength);
     public readonly Vec2f normalized => sqrLength == 0f ? zero : this / length;
     public readonly float toAngle => MathF.Atan2(y, x);
+    public readonly float min => MathF.Min(x, y);
+    public readonly float max => MathF.Max(x, y);
 
 
     public Vec2f(float xy) : this(xy, xy) { }

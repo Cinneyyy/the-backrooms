@@ -11,7 +11,7 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
 
     public static readonly Vec2i zero = new(0);
     public static readonly Vec2i one = new(1), negOne = -one;
-    public static readonly Vec2i min = new(int.MinValue), max = new(int.MaxValue);
+    public static readonly Vec2i minValue = new(int.MinValue), maxValue = new(int.MaxValue);
     public static readonly Vec2i right = new(1, 0), left = -right;
     public static readonly Vec2i up = new(0, 1), down = -up;
     public static readonly Vec2i[] directions = [up, down, left, right];
@@ -19,6 +19,8 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
 
     public readonly int sqrLength => x*x + y*y;
     public readonly float length => MathF.Sqrt(sqrLength);
+    public readonly int min => Math.Min(x, y);
+    public readonly int max => Math.Max(x, y);
 
 
     public Vec2i(int xy) : this(xy, xy) { }
