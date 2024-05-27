@@ -13,7 +13,6 @@
 
 ---
 ## Bugfixes
-- Text not scaling with resolution
 - Multiplayer
     -> Client disconnect handling
 - Ceiling/floor rendering is **extremely** slow (~150fps -> ~60fps in debug mode)

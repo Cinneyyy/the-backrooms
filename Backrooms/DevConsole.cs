@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using static Backrooms.DevConsole;
+using Backrooms.Gui;
 
 namespace Backrooms;
 
@@ -98,6 +98,12 @@ public partial class DevConsole
             "HELP [<command>]", [0, 1]),
 
             new(["resolution", "res", "set_resolution", "set_res"], args => {
+                if(args[0] is "query" or "q" or "?")
+                {
+                    Out($"The current resolution is {win.renderer.virtRes.ToString("{0}x{1}")}");
+                    return;
+                }
+                
                 string xStr, yStr;
                 
                 if(args.Length == 1)
@@ -133,6 +139,12 @@ public partial class DevConsole
             new(["fov", "set_fov", "field_of_view", "set_field_of_view"], args => {
                 args[0] = args[0].ToLower();
 
+                if(args[0] is "query" or "q" or "?")
+                {
+                    Out($"The current fov value is {win.renderer.camera.fov} ({win.renderer.camera.fov/MathF.PI :0.00}pi ;; {win.renderer.camera.fov*Utils.Rad2Deg :0.00}°)");
+                    return;
+                }
+
                 string valueStr;
                 int unit = 0; // radians, degrees, raw value
                 if(args[0][^1] == '°')
@@ -163,7 +175,7 @@ public partial class DevConsole
                 Camera cam = win.renderer.camera;
                 cam.fov = rawValue;
                 Out($"Set FOV to {cam.fov :0.00} ({cam.fov/MathF.PI :0.00}pi ;; {cam.fov*Utils.Rad2Deg :0.00}°)");
-            }, 
+            },
             "FOV <value[°|pi|deg|rad|]>", [1]),
 
             new(["hide", "close", "hide_console", "close_console"], args => Hide(), 
@@ -177,6 +189,8 @@ public partial class DevConsole
 
             new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
             "FISHEYE_FIX <enabled>", [0, 1]),
+
+            new(["ta"], args => (win.renderer.guiGroup.GetElement("fps") as TextElement).textAnchor = Enum.Parse<Anchor>(args[0], true), "", [1])
         ];
     }
 
@@ -225,6 +239,9 @@ public partial class DevConsole
                 break;
             case "switch" or "s" or "~" or "!" or "^": 
                 target ^= true; 
+                break;
+            case "q" or "query" or "?":
+                Out($"The current value is {target}");
                 break;
             default:
                 if(throwExcIfFailed)

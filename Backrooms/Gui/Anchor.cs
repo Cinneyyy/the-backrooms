@@ -1,16 +1,18 @@
-﻿namespace Backrooms.Gui;
+﻿using System;
+
+namespace Backrooms.Gui;
 
 public enum Anchor : byte
 {
-    Center,
-    Top,
-    Bottom,
-    Left,
-    Right,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
+    Center = 0,
+    Top = 1,
+    Bottom = 2,
+    Left = 4,
+    Right = 8,
+    TopLeft = Top | Left,
+    TopRight = Top | Right,
+    BottomLeft = Bottom | Left,
+    BottomRight = Bottom | Right,
 
     C = Center,
     T = Top,
@@ -20,5 +22,8 @@ public enum Anchor : byte
     TL = TopLeft,
     TR = TopRight,
     BL = BottomLeft,
-    BR = BottomRight
+    BR = BottomRight,
+
+    VMask = Top | Bottom,
+    HMask = Left | Right,
 }

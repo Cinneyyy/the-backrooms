@@ -111,7 +111,8 @@ public class Window : Form
             Icon = Resources.icons[manifest];
     }
 
-    public void BeginGameLoop()
+
+    private void BeginGameLoop()
     {
         while(!Visible)
             Thread.Sleep(1);

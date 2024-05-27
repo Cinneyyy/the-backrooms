@@ -41,6 +41,7 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>
 
 
     public readonly override string ToString() => $"({x}; {y})";
+    public readonly string ToString(string format) => string.Format(format, x, y);
 
     public readonly void Deconstruct(out int x, out int y)
     {
