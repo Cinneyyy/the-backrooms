@@ -132,4 +132,7 @@ public static class Utils
         => (int)f;
     public static int Ceil(this float f)
         => (int)MathF.Ceiling(f);
+
+    public static bool InsideRect(Vec2f loc, Vec2f size, Vec2f pt)
+        => pt.x > loc.x - size.x/2f && pt.x < loc.x + size.x/2f && pt.y > loc.y - size.y/2f && pt.y < loc.y + size.y/2f;
 }

@@ -3,17 +3,22 @@ using System.Windows.Forms;
 
 namespace Backrooms;
 
-public partial class Input(Vec2i screenRes, Vec2i screenLoc, bool lockCursor)
+public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
 {
     public bool lockCursor = lockCursor;
 
     private readonly HashSet<Keys> additionPending = [], removalPending = [], keyState = [], lastKeyState = [];
     private readonly Vec2i screenLoc = screenLoc;
-    private Vec2i screenRes = screenRes, screenCenter = screenRes/2 + screenLoc;
+    private readonly Renderer rend = rend;
+    private Vec2i screenRes = rend.physRes, screenCenter = rend.physCenter + screenLoc;
 
 
     public Vec2i mousePos { get; private set; }
     public Vec2i mouseDelta { get; private set; }
+    public Vec2i virtMousePos { get; private set; }
+    public Vec2i virtMouseDelta { get; private set; }
+    public Vec2f normMousePos { get; private set; }
+    public Vec2f normMouseDelta { get; private set; }
     public bool cursorOffScreen => mousePos.x < screenLoc.x || mousePos.y < screenLoc.y || mousePos.x >= screenLoc.x + screenRes.x || mousePos.y >= screenLoc.y + screenRes.y;
 
 
@@ -69,5 +74,10 @@ public partial class Input(Vec2i screenRes, Vec2i screenLoc, bool lockCursor)
             mouseDelta = mousePos - Cursor.Position;
             mousePos = Cursor.Position;
         }
+
+        virtMousePos = (Vec2i)((mousePos - screenLoc) * rend.downscaleFactor);
+        virtMouseDelta = (Vec2i)(virtMouseDelta * rend.downscaleFactor);
+        normMousePos = (Vec2f)virtMousePos/rend.virtRes;
+        normMouseDelta = (Vec2f)virtMouseDelta/rend.virtRes;
     }
 }

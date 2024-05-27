@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Backrooms.Gui;
 
 namespace Backrooms;
 
-public partial class DevConsole
+public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 {
     public readonly record struct Cmd(string[] identifiers, Action<string[]> invoke, string syntax, int[] argCounts);
 
@@ -79,7 +80,7 @@ public partial class DevConsole
             IsBackground = true
         };
 
-        win.onWindowVisible += thread.Start;
+        win.Shown += (_, _) => thread.Start();
 
         cmds = [
             new(["help", "?", "cmd_list", "cmds", "commands", "command_list"], args => {
@@ -181,16 +182,14 @@ public partial class DevConsole
             new(["hide", "close", "hide_console", "close_console"], args => Hide(), 
             "HIDE", [0]),
 
-            new(["fps_display", "fps", "show_fps"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.guiGroup.GetElement("fps").enabled), 
+            new(["fps_display", "fps", "show_fps"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.FindGuiGroup("hud").FindElement("fps").enabled), 
             "SHOW_FPS <enabled>", [0, 1]),
 
             new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.useParallelRendering), 
             "PARALLEL_RENDER <enabled>", [0, 1]),
 
             new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
-            "FISHEYE_FIX <enabled>", [0, 1]),
-
-            new(["ta"], args => (win.renderer.guiGroup.GetElement("fps") as TextElement).textAnchor = Enum.Parse<Anchor>(args[0], true), "", [1])
+            "FISHEYE_FIX <enabled>", [0, 1])
         ];
     }
 
@@ -200,6 +199,13 @@ public partial class DevConsole
         Array.Resize(ref cmds, cmds.Length+1);
         cmds[^1] = cmd;
     }
+
+    public IEnumerator<Cmd> GetEnumerator()
+    {
+        foreach(Cmd cmd in cmds)
+            yield return cmd;
+    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 
     private void Tick(float dt)

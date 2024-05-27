@@ -15,6 +15,12 @@
 
   <ItemGroup>
     <None Remove="Resources\Audio\scholz_speech_1.mp3" />
+    <None Remove="Resources\Fonts\cascadia_code.ttf" />
+    <None Remove="Resources\Fonts\cascadia_mono.ttf" />
+    <None Remove="Resources\Fonts\consolas.TTF" />
+    <None Remove="Resources\Fonts\kongtext.ttf" />
+    <None Remove="Resources\Fonts\ponderosa.ttf" />
+    <None Remove="Resources\Fonts\ticketing.ttf" />
     <None Remove="Resources\oli_appicon.ico" />
     <None Remove="Resources\Textures\carpet.jpg" />
     <None Remove="Resources\Textures\ceiling.png" />
@@ -32,6 +38,12 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Audio\scholz_speech_1.mp3" />
+    <EmbeddedResource Include="Resources\Fonts\cascadia_code.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\cascadia_mono.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\consolas.TTF" />
+    <EmbeddedResource Include="Resources\Fonts\kongtext.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\ponderosa.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\ticketing.ttf" />
     <EmbeddedResource Include="Resources\oli_appicon.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>

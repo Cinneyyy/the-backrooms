@@ -5,6 +5,7 @@ using System.Drawing.Imaging;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.PostProcessing;
+using System.Linq;
 
 namespace Backrooms;
 
@@ -16,10 +17,10 @@ public unsafe class Renderer
     public Window window;
     public readonly List<SpriteRenderer> sprites = [];
     public readonly List<PostProcessEffect> postProcessEffects = [];
+    public readonly List<GuiGroup> guiGroups = [];
     public bool drawIfCursorOffscreen = true;
     public float[] depthBuf;
     public event Action dimensionsChanged;
-    public GuiGroup guiGroup;
     public bool useParallelRendering = true;
 
 
@@ -31,15 +32,21 @@ public unsafe class Renderer
     public Vec2i outputLocation { get; private set; }
     public float downscaleFactor { get; private set; }
     public float upscaleFactor { get; private set; }
+    public float virtRatio { get; private set; }
+    public float physRatio { get; private set; }
 
 
     public Renderer(Vec2i virtRes, Vec2i physRes, Window window)
     {
         this.window = window;
-        guiGroup = new(this);
         UpdateResolution(virtRes, physRes);
     }
 
+
+    public GuiGroup FindGuiGroup(string name)
+        => (from g in guiGroups
+            where g.name == name
+            select g).FirstOrDefault();
 
     public void UpdateResolution(Vec2i virtRes, Vec2i physRes)
     {
@@ -52,8 +59,8 @@ public unsafe class Renderer
         downscaleFactor = MathF.Min((float)virtRes.x/physRes.x, (float)virtRes.y/physRes.y);
         upscaleFactor = 1f / downscaleFactor;
 
-        float virtRatio = (float)virtRes.x / virtRes.y;
-        float physRatio = (float)physRes.x / physRes.y;
+        virtRatio = (float)virtRes.x / virtRes.y;
+        physRatio = (float)physRes.x / physRes.y;
 
         if(physRatio > virtRatio)
             outputRes = new((int)(physRes.y * virtRatio), physRes.y);
@@ -92,12 +99,14 @@ public unsafe class Renderer
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
 
-        guiGroup.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
+        foreach(GuiGroup group in guiGroups)
+            group.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
 
         bitmap.UnlockBits(data);
 
         using(Graphics g = Graphics.FromImage(bitmap))
-            guiGroup.DrawSafeElements(g);
+            foreach(GuiGroup group in guiGroups)
+                group.DrawSafeElements(g);
 
         return bitmap;
     }

@@ -15,11 +15,11 @@ public class Window : Form
     public DevConsole console;
     public event Action<float> tick;
     public event Action pulse;
-    public event Action onWindowVisible;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
     private readonly Thread pulseThread;
+    private bool _cursorVisible;
 
 
     public string title
@@ -29,6 +29,21 @@ public class Window : Form
     }
     public float timeElapsed => (float)(DateTime.UtcNow - startTime).TotalSeconds;
     public float deltaTime { get; private set; }
+    public bool cursorVisible
+    {
+        get => _cursorVisible;
+        set {
+            if(!Visible)
+                return;
+
+            if(value && !_cursorVisible)
+                Cursor.Show();
+            else if(!value && _cursorVisible)
+                Cursor.Hide();
+
+            _cursorVisible = value;
+        }
+    }
 
 
     public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, Action<Window> load = null, Action<float> tick = null)
@@ -48,7 +63,7 @@ public class Window : Form
         startTime = DateTime.UtcNow;
 
         renderer = new(virtualResolution, Size, this);
-        input = new(renderer.physRes, (Vec2i)Location, lockCursor);
+        input = new(renderer, (Vec2i)Location, lockCursor);
         renderer.input = input;
         console = new(this, () => Visible);
 
@@ -81,7 +96,7 @@ public class Window : Form
             Application.Exit();
             Environment.Exit((int)args.CloseReason);
         };
-        Shown += (_, _) => Cursor.Hide();
+        Shown += (_, _) => cursorVisible = false;
 
         // Start pulse timer
         pulseThread = new(() => {
@@ -96,7 +111,7 @@ public class Window : Form
         }) {
             IsBackground = true
         };
-        onWindowVisible += pulseThread.Start;
+        Shown += (_, _) => pulseThread.Start();
 
         // Start processes
         load?.Invoke(this);
@@ -116,8 +131,6 @@ public class Window : Form
     {
         while(!Visible)
             Thread.Sleep(1);
-
-        onWindowVisible();
 
         DateTime lastFrame = DateTime.UtcNow;
         while(Visible)

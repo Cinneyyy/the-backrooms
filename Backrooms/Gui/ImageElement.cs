@@ -9,6 +9,7 @@ public class ImageElement(string name, UnsafeGraphic image, Vec2f location, Vec2
 
 
     public override bool isUnsafe => true;
+    public override bool isSafe => false;
 
 
     public ImageElement(string name, string spriteId, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, new UnsafeGraphic(Resources.sprites[spriteId], true), location, size, anchor) { }

@@ -24,6 +24,7 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
 
 
     public override bool isUnsafe => false;
+    public override bool isSafe => true;
     public Color color
     {
         get => _color;
@@ -62,13 +63,13 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         SizeF measured = g.MeasureString(text, font, drawRect.Size, format);
 
         PointF loc = new(drawRect.X + (textAnchor & Anchor.HMask) switch {
-                Anchor.Left => drawRect.Width - measured.Width,
-                Anchor.Right => 0f,
+                Anchor.Left => 0f,
+                Anchor.Right => drawRect.Width - measured.Width,
                 Anchor.Center => drawRect.Width/2 - measured.Width/2f,
                 _ => throw new($"Invalid anchor ;; {textAnchor} ;; {(int)textAnchor}")
             }, drawRect.Y + (textAnchor & Anchor.VMask) switch{
-                Anchor.Top => drawRect.Height - measured.Height,
-                Anchor.Bottom => 0f,
+                Anchor.Top => 0f,
+                Anchor.Bottom => drawRect.Height - measured.Height,
                 Anchor.Center => drawRect.Height/2f - measured.Height/2f,
                 _ => throw new($"Invalid anchor ;; {textAnchor} ;; {(int)textAnchor}")
             });

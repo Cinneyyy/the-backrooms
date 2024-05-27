@@ -60,12 +60,25 @@ public class Game
 
         window.tick += Tick;
 
-        fpsDisplay = new("fps", "", FontFamily.GenericMonospace, 17.5f, Color.White, Anchor.TopLeft, Vec2f.zero, Vec2f.zero, Anchor.C);
-        renderer.guiGroup.Add(fpsDisplay);
+        fpsDisplay = new("fps", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Anchor.TopLeft, Vec2f.zero, Vec2f.zero);
+        renderer.guiGroups.Add(new(renderer, "hud") {
+            fpsDisplay
+        });
         window.pulse += () => {
-            fpsDisplay.text = fpsCounter.ToString("00 fps");
+            fpsDisplay.text = $"{fpsCounter} fps";
             fpsCounter = 0;
         };
+
+        Color baseColor = Color.FromArgb(0);//Color.FromArgb(146, 150, 11);
+        ColorBlock guiColors = new(Color.FromArgb(75, baseColor), Color.FromArgb(150, baseColor), Color.FromArgb(220, baseColor), 0f);
+        GuiGroup mainMenu = new(renderer, "main_menu") {
+            new TextElement("title", "The Backrooms", Resources.fonts["cascadia_code"], 30f, Color.Yellow, Anchor.C, new(.5f, .2f), Vec2f.zero),
+            new ButtonElement("start", "Start", Resources.fonts["cascadia_code"], 15f, Color.Yellow, guiColors, null, new(.5f, .4f), new(.35f, .1f)),
+            new ButtonElement("settings", "Settings", Resources.fonts["cascadia_code"], 15f, Color.Yellow, guiColors, null, new(.5f, .525f), new(.35f, .1f)),
+        };
+        mainMenu.FindElement<ButtonElement>("start").onClick += () => mainMenu.enabled = false;
+
+        renderer.guiGroups.Add(mainMenu);
 
         renderer.map = map;
         map.texturesStr = [null, "wall", "pillar"];

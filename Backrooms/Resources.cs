@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing;
+using System.Drawing.Text;
 using System.IO;
 using System.Reflection;
 using NAudio.Wave;
@@ -22,6 +23,7 @@ public static class Resources
     public static readonly Dictionary<string, Image> sprites = [];
     public static readonly Dictionary<string, Icon> icons = [];
     public static readonly Dictionary<string, WaveStream> audios = [];
+    public static readonly Dictionary<string, FontFamily> fonts = [];
     public static readonly bool finishedInit;
 
     private static readonly StringDictionary manifests = [];
@@ -51,6 +53,22 @@ public static class Resources
             switch(type)
             {
                 case ResType.Image: sprites.Add(name, Image.FromStream(stream)); break;
+                case ResType.Font:
+                    using(MemoryStream memStream = new())
+                    {
+                        stream.CopyTo(memStream);
+                        PrivateFontCollection fontColl = new();
+                        byte[] fontData = memStream.ToArray();
+
+                        unsafe
+                        {
+                            fixed(byte* dataPtr = fontData)
+                                fontColl.AddMemoryFont((nint)dataPtr, fontData.Length);
+                        }
+
+                        fonts.Add(name, fontColl.Families[0]);
+                    }
+                    break;
                 case ResType.Icon: icons.Add(name, new(stream)); break;
                 case ResType.Audio: audios.Add(name, ext switch {
                     ".mp3" => new Mp3FileReader(stream),

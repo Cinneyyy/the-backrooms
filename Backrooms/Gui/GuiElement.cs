@@ -42,6 +42,7 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
         }
     }
     public abstract bool isUnsafe { get; }
+    public abstract bool isSafe { get; }
 
 
     public GuiElement(string name, Vec2f location, Vec2f size, GuiGroup group) : this(name, location, size)
@@ -91,6 +92,7 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
 
     public unsafe abstract void DrawUnsafe(byte* scan, int stride, int w, int h);
     public abstract void DrawSafe(Graphics g);
+    public virtual void OnAddedToGroup() { }
 
 
     protected virtual void ScreenDimensionsChanged() { }
