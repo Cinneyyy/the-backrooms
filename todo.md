@@ -13,7 +13,8 @@
 
 ---
 ## Bugfixes
-- Ceiling/floor rendering **extremely** slow (~150fps -> ~60fps in debug mode)
+- Renderer does not scale properly at different ratios
+- Ceiling/floor rendering is **extremely** slow (~150fps -> ~60fps in debug mode)
 - Pathfinding shortcuts
 - Dijkstra's shortest path
 - Multiplayer
