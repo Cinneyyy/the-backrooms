@@ -69,7 +69,7 @@ public class GuiGroup
     private void ReloadScreenDimensions()
     {
         screenStep = 1f / (Vec2f)rend.virtRes;
-        foreach(GuiElement e in unsafeElements)
+        foreach(GuiElement e in unsafeElements.Concat(safeElements))
             e.ReloadScreenDimensions();
     }
 }

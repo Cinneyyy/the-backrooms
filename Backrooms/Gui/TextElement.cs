@@ -4,7 +4,7 @@ namespace Backrooms.Gui;
 
 public class TextElement(string name, string text, FontFamily fontFamily, float emSize, Color color, StringFormat format, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
-    private const GraphicsUnit GRAPHICS_UNIT = GraphicsUnit.Pixel;
+    private const GraphicsUnit GRAPHICS_UNIT = GraphicsUnit.Millimeter;
 
     public string text = text;
     public StringFormat format = format;
@@ -28,6 +28,7 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         get => _color;
         set {
             _color = value;
+            brush.Dispose();
             brush = new SolidBrush(_color);
         }
     }
@@ -36,7 +37,8 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         get => _emSize;
         set {
             _emSize = value;
-            font = new(fontFamily, value, GRAPHICS_UNIT);
+            font.Dispose();
+            font = new(fontFamily, value / group.rend.downscaleFactor, GRAPHICS_UNIT);
         }
     }
     public FontFamily fontFamily
@@ -44,7 +46,8 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         get => _fontFamily;
         set {
             _fontFamily = value;
-            font = new(value, emSize, GRAPHICS_UNIT);
+            font.Dispose();
+            font = new(value, emSize * group.rend.downscaleFactor, GRAPHICS_UNIT);
         }
     }
 
@@ -56,4 +59,11 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         => g.DrawString(text, font, brush, new RectangleF(screenLocationF.x, screenLocationF.y, screenSizeF.x, screenSizeF.y), format);
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h) => throw new System.NotImplementedException();
+
+
+    protected override void ScreenDimensionsChanged() 
+    {
+        font.Dispose();
+        font = new(fontFamily, emSize * rend.downscaleFactor, GRAPHICS_UNIT);
+    }
 }

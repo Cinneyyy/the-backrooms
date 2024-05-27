@@ -13,7 +13,6 @@
 
 ---
 ## Bugfixes
-- Renderer does not scale properly at different ratios
 - Text not scaling with resolution
 - Multiplayer
     -> Client disconnect handling

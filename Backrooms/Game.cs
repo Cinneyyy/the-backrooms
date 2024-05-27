@@ -60,7 +60,7 @@ public class Game
 
         window.tick += Tick;
 
-        fpsDisplay = new("fps", "", FontFamily.GenericMonospace, 10f, Color.White, renderer.guiGroup.screenStep, Vec2f.zero, Anchor.TL);
+        fpsDisplay = new("fps", "", FontFamily.GenericMonospace, 17.5f, Color.White, renderer.guiGroup.screenStep, Vec2f.zero, Anchor.TR);
         renderer.guiGroup.Add(fpsDisplay);
         window.pulse += () => {
             fpsDisplay.text = fpsCounter.ToString("00 fps");

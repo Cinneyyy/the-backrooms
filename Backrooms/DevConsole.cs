@@ -75,7 +75,9 @@ public partial class DevConsole
                     cmd.invoke(args[1..]);
                 };
             }
-        });
+        }) {
+            IsBackground = true
+        };
 
         win.onWindowVisible += thread.Start;
 

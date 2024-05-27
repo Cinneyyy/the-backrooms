@@ -18,7 +18,7 @@ public class Window : Form
     public event Action onWindowVisible;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
-    private readonly Stopwatch timeElapsedSw;
+    private readonly DateTime startTime;
     private readonly Thread pulseThread;
 
 
@@ -27,7 +27,7 @@ public class Window : Form
         get => Text;
         set => Text = value;
     }
-    public float timeElapsed => (float)timeElapsedSw.Elapsed.TotalSeconds;
+    public float timeElapsed => (float)(DateTime.UtcNow - startTime).TotalSeconds;
     public float deltaTime { get; private set; }
 
 
@@ -45,6 +45,7 @@ public class Window : Form
         Location = Screen.FromPoint(Cursor.Position).WorkingArea.Location;
         SetIcon(iconManifest);
         title = windowTitle;
+        startTime = DateTime.UtcNow;
 
         renderer = new(virtualResolution, Size, this);
         input = new(renderer.physRes, (Vec2i)Location, lockCursor);
@@ -76,7 +77,10 @@ public class Window : Form
         this.tick += _ => input.Tick();
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
-        FormClosed += (_, _) => Environment.Exit(0);
+        FormClosed += (_, args) => {
+            Application.Exit();
+            Environment.Exit((int)args.CloseReason);
+        };
         Shown += (_, _) => Cursor.Hide();
 
         // Start pulse timer
@@ -96,7 +100,6 @@ public class Window : Form
 
         // Start processes
         load?.Invoke(this);
-        (timeElapsedSw = new()).Start();
         new Thread(() => Application.Run(this)).Start();
         BeginGameLoop();
     }

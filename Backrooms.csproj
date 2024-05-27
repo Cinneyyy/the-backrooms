@@ -10,6 +10,7 @@
     <AssemblyName>backrooms-game</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace></RootNamespace>
+    <StartupObject>Backrooms.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

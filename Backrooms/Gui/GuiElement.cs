@@ -62,6 +62,7 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
         // Size before location, because size is involved in location calculation via anchor
         ReloadScreenSize();
         ReloadScreenLocation();
+        ScreenDimensionsChanged();
     }
 
     public void ReloadScreenSize()
@@ -90,4 +91,7 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
 
     public unsafe abstract void DrawUnsafe(byte* scan, int stride, int w, int h);
     public abstract void DrawSafe(Graphics g);
+
+
+    protected virtual void ScreenDimensionsChanged() { }
 }
