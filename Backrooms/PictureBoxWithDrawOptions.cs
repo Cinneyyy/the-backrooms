@@ -25,9 +25,7 @@ public class PictureBoxWithDrawOptions : PictureBox
         }
         catch(InvalidOperationException exc)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"InvalidOperationException in Draw(), PictureBoxWithDrawOptions.cs:\n{exc}");
-            Console.ForegroundColor = ConsoleColor.Gray;
+            Out($"InvalidOperationException in Draw(), PictureBoxWithDrawOptions.cs:\n{exc}", ConsoleColor.Red);
         }
     }
 }

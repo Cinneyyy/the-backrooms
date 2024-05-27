@@ -87,11 +87,15 @@ public unsafe class UnsafeGraphic : IDisposable
 
     public (byte r, byte g, byte b) GetPixelRgb(int x, int y)
     {
+        x = Utils.Clamp(x, 0, wb);
+        y = Utils.Clamp(y, 0, hb);
         byte* scan = scan0 + y*stride + x*3;
         return (*(scan+2), *(scan+1), *scan);
     }
     public (byte r, byte g, byte b, byte a) GetPixelRgba(int x, int y)
     {
+        x = Utils.Clamp(x, 0, wb);
+        y = Utils.Clamp(y, 0, hb);
         byte* scan = scan0 + y*stride + x*4;
         return (*(scan+2), *(scan+1), *scan, *(scan+3));
     }
