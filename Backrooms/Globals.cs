@@ -12,7 +12,11 @@ public static class Globals
     }
 
     public static void OutErr(Exception exc, ConsoleColor color = ConsoleColor.Red)
+#if DEBUG
         => Out(exc, color);
+#else
+        => Out($"{exc.GetType().Name}: {exc.Message}", color);
+#endif
 
     public static void Assert(bool assertion, string assertionFailedMsg, ConsoleColor color = ConsoleColor.Yellow)
     {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Backrooms.Gui;
 
@@ -57,6 +58,12 @@ public class GuiGroup
             if(element.enabled)
                 element.DrawSafe(g);
     }
+
+    public GuiElement GetUnsafeElement(Index idx) => unsafeElements[idx];
+    public GuiElement GetSafeElement(Index idx) => safeElements[idx];
+    public GuiElement GetElement(string name) => (from e in safeElements.Concat(unsafeElements)
+                                                 where e.name == name
+                                                 select e).FirstOrDefault();
 
 
     private void ReloadScreenDimensions()

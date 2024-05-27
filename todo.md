@@ -2,11 +2,8 @@
 
 ---
 ## Features
-- Developer Console
 - Main Menu
     -> Singleplayer/Multiplayer
-- Settings
-    -> Fisheye-fix (ff) toggle, resolution, fps-cap, ...
 - Post processing effects
 - More varied enemies & enemy AI
 - Actual gameplay

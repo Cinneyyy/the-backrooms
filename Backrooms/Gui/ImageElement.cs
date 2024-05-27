@@ -2,7 +2,7 @@
 
 namespace Backrooms.Gui;
 
-public class ImageElement(UnsafeGraphic image, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(location, size, anchor)
+public class ImageElement(string name, UnsafeGraphic image, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     public UnsafeGraphic image = image;
     public float rMul = 1f, gMul = 1f, bMul = 1f;
@@ -11,7 +11,7 @@ public class ImageElement(UnsafeGraphic image, Vec2f location, Vec2f size, Ancho
     public override bool isUnsafe => true;
 
 
-    public ImageElement(string spriteId, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(new UnsafeGraphic(Resources.sprites[spriteId], true), location, size, anchor) { }
+    public ImageElement(string name, string spriteId, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, new UnsafeGraphic(Resources.sprites[spriteId], true), location, size, anchor) { }
 
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h)

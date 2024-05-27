@@ -2,12 +2,13 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using static Backrooms.DevConsole;
 
 namespace Backrooms;
 
 public partial class DevConsole
 {
-    public readonly record struct Cmd(string[] identifiers, Action<string[]> invoke, string syntax);
+    public readonly record struct Cmd(string[] identifiers, Action<string[]> invoke, string syntax, int[] argCounts);
 
     public enum WindowMode
     {
@@ -51,20 +52,48 @@ public partial class DevConsole
 
                 string[] args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                try
-                {
-                    nextTick = () => (cmds.Where(cmd => cmd.identifiers.Contains(args[0]))?.First() ?? throw new($"The command '{args[0]}' does not seem to exist")).invoke(args[1..]);
-                }
-                catch(Exception exc)
-                {
-                    Out(exc, ConsoleColor.Red);
-                }
+                nextTick = () => {
+                    Cmd cmd;
+
+                    try
+                    {
+                        cmd = cmds.Where(cmd => cmd.identifiers.Contains(args[0].ToLower())).First();
+
+                        if(!cmd.argCounts.Contains(args.Length-1))
+                            throw new ArgumentException($"The {args[0].ToUpper()} command does not take in {args.Length-1} argument{(args.Length-1 != 1 ? "s" : "")}");
+                    }
+                    catch(ArgumentException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        throw new($"The command '{args[0]}' does not seem to exist");
+                    }
+
+                    cmd.invoke(args[1..]);
+                };
             }
         });
 
         win.onWindowVisible += thread.Start;
 
         cmds = [
+            new(["help", "?", "cmd_list", "cmds", "commands", "command_list"], args => {
+                if(args.Length == 1)
+                {
+                    Cmd cmd = cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First();
+                    Out($"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                }
+                else if(args.Length == 0)
+                {
+                    Out("-- List of commands --");
+                    foreach(Cmd cmd in cmds)
+                        Out($"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                }
+            }, 
+            "HELP [<command>]", [0, 1]),
+
             new(["resolution", "res", "set_resolution", "set_res"], args => {
                 string xStr, yStr;
                 
@@ -82,6 +111,7 @@ public partial class DevConsole
                         Vec2i physRes = win.renderer.physRes;
                         Vec2i virtRes = args[0] == "/" ? (physRes / fac) : (physRes * fac);
                         win.renderer.UpdateResolution(virtRes, physRes);
+                        Out($"Set virtual resolution to {virtRes}");
                         return;
                     }
 
@@ -89,10 +119,61 @@ public partial class DevConsole
                     yStr = args[1];
                 }
                 else
-                    throw new("The set_resolution command takes in either 1 or 2 overloads!");
+                    return;
 
-                win.renderer.UpdateResolution(Vec2i.Parse(xStr, yStr), win.renderer.physRes);
-            }, "SET_RESOLUTION <width[x:/]height> // <width height> // <[*/] factor>")
+                Vec2i res = Vec2i.Parse(xStr, yStr);
+                win.renderer.UpdateResolution(res, win.renderer.physRes);
+                Out($"Set virtual resolution to {res}");
+            }, 
+            "SET_RESOLUTION [<width[x|:|/]height> | <width height> | <[*|/] factor>]", [1, 2]),
+
+            new(["fov", "set_fov", "field_of_view", "set_field_of_view"], args => {
+                args[0] = args[0].ToLower();
+
+                string valueStr;
+                int unit = 0; // radians, degrees, raw value
+                if(args[0][^1] == '°')
+                {
+                    valueStr = args[0][..^1];
+                    unit = 1;
+                }
+                else if(args[0].EndsWith("pi"))
+                {
+                    valueStr = args[0][..^2];
+                    unit = 0;
+                }
+                else if(args[0].EndsWith("deg") || args[0].EndsWith("rad"))
+                {
+                    valueStr = args[0][..^3];
+                    unit = args[0][^1] == 'g' ? 1 : 0;
+                }
+                else
+                {
+                    valueStr = args[0];
+                    unit = 2;
+                }
+
+                float rawValue = float.Parse(valueStr);
+                if(unit == 0) rawValue *= MathF.PI;
+                else if(unit == 1) rawValue *= Utils.Deg2Rad;
+
+                Camera cam = win.renderer.camera;
+                cam.fov = rawValue;
+                Out($"Set FOV to {cam.fov :0.00} ({cam.fov/MathF.PI :0.00}pi ;; {cam.fov*Utils.Rad2Deg :0.00}°)");
+            }, 
+            "FOV <value[°|deg|pi|rad|]>", [1]),
+
+            new(["hide", "close", "hide_console", "close_console"], args => Hide(), 
+            "HIDE", [0]),
+
+            new(["fps_display", "fps", "show_fps"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.guiGroup.GetElement("fps").enabled), 
+            "SHOW_FPS <enabled>", [0, 1]),
+
+            new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.useParallelRendering), 
+            "PARALLEL_RENDER <enabled>", [0, 1]),
+
+            new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
+            "FISHEYE_FIX <enabled>", [0, 1]),
         ];
     }
 
@@ -110,21 +191,24 @@ public partial class DevConsole
             try
             {
                 nextTick();
-                nextTick = null;
             }
             catch(Exception exc)
             {
-                Out(exc.Message, ConsoleColor.Red);
+                Out($"{exc.GetType().Name}: {exc.Message}", ConsoleColor.Red);
+            }
+            finally
+            {
+                nextTick = null;
+                Console.ForegroundColor = ConsoleColor.Gray;
             }
     }
 
 
-    /// <summary>Returns: successful?, target: actual result</summary>
-    public static void ParseBool(string strVal, ref bool target, bool throwExcIfFailed)
+    public static void ParseBool(string strVal, ref bool target, bool throwExcIfFailed = true)
     {
         if(string.IsNullOrWhiteSpace(strVal))
             if(throwExcIfFailed) 
-                throw new("Invalid input for ParseBool (null/whitspace)");
+                throw new ArgumentException("Invalid input for ParseBool (null/whitspace)");
             else 
                 return;
 

@@ -2,10 +2,11 @@
 
 namespace Backrooms.Gui;
 
-public abstract class GuiElement(Vec2f location, Vec2f size, Anchor anchor = Anchor.C)
+public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor = Anchor.C)
 {
     public GuiGroup group;
     public bool enabled = true;
+    public string name = name;
 
     private Vec2f _location = location, _size = size;
     private Anchor _anchor = anchor;
@@ -43,13 +44,13 @@ public abstract class GuiElement(Vec2f location, Vec2f size, Anchor anchor = Anc
     public abstract bool isUnsafe { get; }
 
 
-    public GuiElement(Vec2f location, Vec2f size, GuiGroup group) : this(location, size)
+    public GuiElement(string name, Vec2f location, Vec2f size, GuiGroup group) : this(name, location, size)
     {
         this.group = group;
         ReloadScreenDimensions();
     }
 
-    public GuiElement(Vec2f location, Vec2f size, Anchor anchor, GuiGroup group) : this(location, size, anchor)
+    public GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor, GuiGroup group) : this(name, location, size, anchor)
     {
         this.group = group;
         ReloadScreenDimensions();

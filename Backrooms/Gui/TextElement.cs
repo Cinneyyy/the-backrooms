@@ -2,7 +2,7 @@
 
 namespace Backrooms.Gui;
 
-public class TextElement(string text, FontFamily fontFamily, float emSize, Color color, StringFormat format, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(location, size, anchor)
+public class TextElement(string name, string text, FontFamily fontFamily, float emSize, Color color, StringFormat format, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     private const GraphicsUnit GRAPHICS_UNIT = GraphicsUnit.Pixel;
 
@@ -49,7 +49,7 @@ public class TextElement(string text, FontFamily fontFamily, float emSize, Color
     }
 
 
-    public TextElement(string text, FontFamily fontFamily, float emSize, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(text, fontFamily, emSize, color, defaultFormat, location, size, anchor) { }
+    public TextElement(string name, string text, FontFamily fontFamily, float emSize, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, text, fontFamily, emSize, color, defaultFormat, location, size, anchor) { }
 
 
     public override void DrawSafe(Graphics g)
