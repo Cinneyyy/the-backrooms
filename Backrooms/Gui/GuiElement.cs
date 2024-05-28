@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 namespace Backrooms.Gui;
 
@@ -74,7 +75,7 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
 
     public void ReloadScreenLocation()
     {
-        screenLocationF = location * rend.virtRes + group.screenAnchor - screenSizeF * (Vec2f)(anchor switch {
+        screenLocationF = location * group.screenFactor + group.screenOffset + group.screenAnchor - screenSizeF * (Vec2f)(anchor switch {
             Anchor.C => new(.5f, .5f),
             Anchor.T => new(.5f, 0f),
             Anchor.B => new(.5f, 1f),
@@ -90,9 +91,10 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
     }
 
 
-    public unsafe abstract void DrawUnsafe(byte* scan, int stride, int w, int h);
-    public abstract void DrawSafe(Graphics g);
+    public unsafe virtual void DrawUnsafe(byte* scan, int stride, int w, int h) => throw new NotImplementedException("DrawUnsafe has not been implemented");
+    public virtual void DrawSafe(Graphics g) => throw new NotImplementedException("DrawSafe has not been implemented");
     public virtual void OnAddedToGroup() { }
+    public virtual void OnRemovedFromGroup() { }
 
 
     protected virtual void ScreenDimensionsChanged() { }

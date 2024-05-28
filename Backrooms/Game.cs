@@ -47,7 +47,7 @@ public class Game
     private int fpsCounter;
 
 
-    public Game(Window window, bool host, string ip, int port, int skinIdx)
+    public Game(Window window)
     {
         this.window = window;
         renderer = window.renderer;
@@ -62,7 +62,7 @@ public class Game
         window.tick += Tick;
 
         fpsDisplay = new("fps", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Anchor.TopLeft, Vec2f.zero, Vec2f.zero);
-        renderer.guiGroups.Add(new(renderer, "hud") {
+        renderer.guiGroups.Add(new(renderer, "hud", true) {
             fpsDisplay
         });
         window.pulse += () => {
@@ -111,7 +111,7 @@ public class Game
             mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
 
             mpHandler.onFinishConnect += () => {
-                mpHandler.ownClientState.skinIdx = skinIdx;
+                mpHandler.ownClientState.skinIdx = 0;
                 mpHandler.SendClientStateChange(StateKey.C_Skin);
                 mpHandler.SendClientRequest(RequestKey.C_UpdateSkin);
 
@@ -199,7 +199,7 @@ public class Game
             input.lockCursor ^= true;
 
         if(input.KeyDown(Keys.Escape))
-            Environment.Exit(0);
+            Window.Exit();
 
         if(input.KeyDown(Keys.F3))
             Debugger.Break();

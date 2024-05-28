@@ -13,16 +13,11 @@ public class ButtonElement(string name, string text, FontFamily font, float font
     public MouseButtons button = MouseButtons.Left;
     public event Action onClick = onClick;
 
-    private Vec2f sizeCollFactor;
     private Input input;
 
 
-    public override bool isUnsafe => true;
-    public override bool isSafe => true;
-
-
-    public override void DrawSafe(Graphics g) => textElem.DrawSafe(g);
-    public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h) => backgroundElem.DrawUnsafe(scan, stride, w, h);
+    public override bool isUnsafe => false;
+    public override bool isSafe => false;
 
 
     private void Tick(float dt)
@@ -30,15 +25,12 @@ public class ButtonElement(string name, string text, FontFamily font, float font
         if(!enabled || !group.enabled)
             return;
 
-        bool isHovering = Utils.InsideRect(location, size * sizeCollFactor, input.normMousePos);
+        bool isHovering = Utils.InsideRect(location, size * group.sizeRatioFactor, input.normMousePos);
 
         if(isHovering)
         {
             if(input.MbDown(button))
-            {
-                Out($"Invoked button '{name}' (From group '{group.name}')");
                 onClick?.Invoke();
-            }
 
             backgroundElem.color = input.MbHelt(button) ? colors.select : colors.hover;
         }
@@ -49,17 +41,18 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     public override void OnAddedToGroup()
     {
-        rend.window.tick += Tick;
         input = rend.input;
-        textElem.group = group;
-        backgroundElem.group = group;
+        rend.window.tick += Tick;
+
+        group.Add(textElem);
+        group.Add(backgroundElem);
     }
 
-
-    protected override void ScreenDimensionsChanged()
+    public override void OnRemovedFromGroup()
     {
-        sizeCollFactor = new Vec2f(1f / rend.virtRatio, 1f);
-        textElem.ReloadScreenDimensions();
-        backgroundElem.ReloadScreenDimensions();
+        rend.window.tick -= Tick;
+
+        group.Remove(textElem);
+        group.Remove(backgroundElem);
     }
 }

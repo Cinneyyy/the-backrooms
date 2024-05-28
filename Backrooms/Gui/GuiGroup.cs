@@ -11,6 +11,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Renderer rend;
     public string name;
     public bool enabled;
+    public bool calculateLocationUsingWidth;
 
     private readonly List<GuiElement> unsafeElements = [], safeElements = [];
     private Vec2f _screenAnchor;
@@ -25,14 +26,19 @@ public class GuiGroup : IEnumerable<GuiElement>
             ReloadScreenDimensions();
         }
     }
+    public Vec2f sizeRatioFactor { get; private set; }
+    public Vec2f screenFactor { get; private set; }
+    public Vec2f screenOffset { get; private set; }
 
 
-    public GuiGroup(Renderer rend, string name, bool enabled = true)
+    public GuiGroup(Renderer rend, string name, bool locationUsingWidth, bool enabled = true)
     {
         this.rend = rend;
         this.name = name;
         this.enabled = enabled;
+        calculateLocationUsingWidth = locationUsingWidth;
 
+        ReloadScreenDimensions();
         rend.dimensionsChanged += ReloadScreenDimensions;
     }
 
@@ -54,6 +60,8 @@ public class GuiGroup : IEnumerable<GuiElement>
 
         if(element.isUnsafe) unsafeElements.Remove(element);
         if(element.isSafe) safeElements.Remove(element);
+
+        element.OnRemovedFromGroup();
     }
 
     public unsafe void DrawUnsafeElements(byte* scan, int stride, int w, int h)
@@ -93,7 +101,10 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     private void ReloadScreenDimensions()
     {
+        sizeRatioFactor = new Vec2f(1f / rend.virtRatio, 1f);
         screenStep = 1f / (Vec2f)rend.virtRes;
+        (screenFactor, screenOffset) = calculateLocationUsingWidth ? (rend.virtRes, Vec2f.zero) : (new(rend.virtRes.y), new((rend.virtRes.x - rend.virtRes.y)/2f, 0f));
+
         foreach(GuiElement e in unsafeElements.Concat(safeElements))
             e.ReloadScreenDimensions();
     }

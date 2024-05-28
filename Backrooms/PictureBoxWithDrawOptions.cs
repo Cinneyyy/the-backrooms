@@ -23,9 +23,9 @@ public class PictureBoxWithDrawOptions : PictureBox
 
             base.OnPaint(paintEventArgs);
         }
-        catch(InvalidOperationException exc)
+        catch(Exception exc)
         {
-            Out($"InvalidOperationException in Draw(), PictureBoxWithDrawOptions.cs:\n{exc}", ConsoleColor.Red);
+            Out(exc, ConsoleColor.Red);
         }
     }
 }

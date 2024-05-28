@@ -2,8 +2,7 @@
 
 ---
 ## Features
-- Main Menu
-    -> Singleplayer/Multiplayer
+- Finish up main menu
 - Actual gameplay
     -> Objectives
 - More varied enemies & enemy AI

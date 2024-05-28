@@ -90,10 +90,7 @@ public class Window : Form
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
         pictureBox.MouseDown += (_, args) => input.CB_OnCursorDown(args.Button);
         pictureBox.MouseUp += (_, args) => input.CB_OnCursorUp(args.Button);
-        FormClosed += (_, args) => {
-            Application.Exit();
-            Environment.Exit((int)args.CloseReason);
-        };
+        FormClosed += (_, args) => Exit((int)args.CloseReason);
 
         _cursorVisible = true;
         if(hideCursor)
@@ -101,6 +98,8 @@ public class Window : Form
 
         // Start pulse timer
         pulseThread = new(() => {
+            AppDomain.CurrentDomain.UnhandledException += (_, _) => DevConsole.Restore();
+
             async void invoke()
                 => await Task.Run(pulse);
 
@@ -116,7 +115,10 @@ public class Window : Form
 
         // Start processes
         load?.Invoke(this);
-        new Thread(() => Application.Run(this)).Start();
+        new Thread(() => {
+            AppDomain.CurrentDomain.UnhandledException += (_, _) => DevConsole.Restore();
+            Application.Run(this);
+        }).Start();
         BeginGameLoop();
     }
 
@@ -130,6 +132,8 @@ public class Window : Form
 
     private void BeginGameLoop()
     {
+        AppDomain.CurrentDomain.UnhandledException += (_, _) => DevConsole.Restore();
+
         while(!Visible)
             Thread.Sleep(1);
 
@@ -155,5 +159,13 @@ public class Window : Form
                 Console.WriteLine($"{exc.GetType()} in Draw(), Window.cs:\n{exc}");
                 Console.ForegroundColor = ConsoleColor.Gray;
             }
+    }
+
+
+    public static void Exit(int exitCode = 0)
+    {
+        DevConsole.Restore();
+        Application.Exit();
+        Environment.Exit(exitCode);
     }
 }

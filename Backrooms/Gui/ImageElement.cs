@@ -1,18 +1,19 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 namespace Backrooms.Gui;
 
-public class ImageElement(string name, UnsafeGraphic image, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
+public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     public UnsafeGraphic image = image;
-    public float rMul = 1f, gMul = 1f, bMul = 1f;
+    public float rMul = color.R/255f, gMul = color.G/255f, bMul = color.B/255f;
 
 
     public override bool isUnsafe => true;
     public override bool isSafe => false;
 
 
-    public ImageElement(string name, string spriteId, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, new UnsafeGraphic(Resources.sprites[spriteId], true), location, size, anchor) { }
+    public ImageElement(string name, string spriteId, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, new UnsafeGraphic(Resources.sprites[spriteId], true), color, location, size, anchor) { }
 
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h)
@@ -21,9 +22,12 @@ public class ImageElement(string name, UnsafeGraphic image, Vec2f location, Vec2
 
         scan += screenLocation.y * stride + screenLocation.x * 3;
 
-        for(int i = 0; i < screenSize.y; i++)
+        int maxY = Math.Min(screenSize.y, rend.virtRes.y - screenLocation.y);
+        int maxX = Math.Min(screenSize.x, rend.virtRes.x - screenLocation.x);
+
+        for(int i = 0; i < maxY; i++)
         {
-            for(int j = 0; j < screenSize.x; j++)
+            for(int j = 0; j < maxX; j++)
             {
                 (byte r, byte g, byte b, byte a) color = image.GetUvRgba(j / (screenSizeF.x-1f), i / (screenSizeF.y-1f));
 

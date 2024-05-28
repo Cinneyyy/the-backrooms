@@ -30,7 +30,7 @@ public unsafe class UnsafeGraphic : IDisposable
         bounds = new(wb, hb);
     }
 
-    public UnsafeGraphic(Image img, bool useAlpha) : this(new(img), useAlpha) { }
+    public UnsafeGraphic(Image img, bool useAlpha) : this(new Bitmap(img), useAlpha) { }
 
     public UnsafeGraphic(BitmapData data)
     {
@@ -48,6 +48,8 @@ public unsafe class UnsafeGraphic : IDisposable
         size = new(w, h);
         bounds = new(wb, hb);
     }
+
+    public UnsafeGraphic(string spriteId, bool useAlpha = true) : this(Resources.sprites[spriteId], useAlpha) { }
 
 
     /// <summary>Only call if the reference bitmap, if even passed in, is not used after this Dispose() call</summary>
