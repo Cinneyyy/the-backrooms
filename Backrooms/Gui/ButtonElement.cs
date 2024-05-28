@@ -27,6 +27,9 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     private void Tick(float dt)
     {
+        if(!enabled || !group.enabled)
+            return;
+
         bool isHovering = Utils.InsideRect(location, size * sizeCollFactor, input.normMousePos);
 
         if(isHovering)

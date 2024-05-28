@@ -89,4 +89,7 @@ public static class Resources
 
     public static Stream GetStream(string resourceName)
         => assembly.GetManifestResourceStream(manifests[resourceName]);
+
+    public static Stream GetManifestStream(string manifest)
+        => assembly.GetManifestResourceStream(manifest);
 }

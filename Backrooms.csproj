@@ -24,7 +24,9 @@
     <None Remove="Resources\oli_appicon.ico" />
     <None Remove="Resources\Textures\carpet.jpg" />
     <None Remove="Resources\Textures\ceiling.png" />
+    <None Remove="Resources\Textures\empty.png" />
     <None Remove="Resources\Textures\floor.png" />
+    <None Remove="Resources\Textures\nocursor.cur" />
     <None Remove="Resources\Textures\oli.png" />
     <None Remove="Resources\Textures\pillar.png" />
     <None Remove="Resources\Textures\Skins\entity.png" />
@@ -49,7 +51,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\Textures\carpet.jpg" />
     <EmbeddedResource Include="Resources\Textures\ceiling.png" />
+    <EmbeddedResource Include="Resources\Textures\empty.png" />
     <EmbeddedResource Include="Resources\Textures\floor.png" />
+    <EmbeddedResource Include="Resources\Textures\nocursor.cur" />
     <EmbeddedResource Include="Resources\Textures\oli.png" />
     <EmbeddedResource Include="Resources\Textures\pillar.png" />
     <EmbeddedResource Include="Resources\Textures\Skins\entity.png" />

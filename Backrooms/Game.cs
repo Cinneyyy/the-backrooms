@@ -32,6 +32,7 @@ public class Game
     public SpriteRenderer olafScholz;
     public AudioSource olafScholzAudio;
     public float olafSpeed = .75f;
+    public StartMenu startMenu;
     public MPHandler mpHandler;
     public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
     public PathfindingEntity olafPathfinder;
@@ -69,16 +70,7 @@ public class Game
             fpsCounter = 0;
         };
 
-        Color baseColor = Color.FromArgb(0);//Color.FromArgb(146, 150, 11);
-        ColorBlock guiColors = new(Color.FromArgb(75, baseColor), Color.FromArgb(150, baseColor), Color.FromArgb(220, baseColor), 0f);
-        GuiGroup mainMenu = new(renderer, "main_menu") {
-            new TextElement("title", "The Backrooms", Resources.fonts["cascadia_code"], 30f, Color.Yellow, Anchor.C, new(.5f, .2f), Vec2f.zero),
-            new ButtonElement("start", "Start", Resources.fonts["cascadia_code"], 15f, Color.Yellow, guiColors, null, new(.5f, .4f), new(.35f, .1f)),
-            new ButtonElement("settings", "Settings", Resources.fonts["cascadia_code"], 15f, Color.Yellow, guiColors, null, new(.5f, .525f), new(.35f, .1f)),
-        };
-        mainMenu.FindElement<ButtonElement>("start").onClick += () => mainMenu.enabled = false;
-
-        renderer.guiGroups.Add(mainMenu);
+        startMenu = new(window, this);
 
         renderer.map = map;
         map.texturesStr = [null, "wall", "pillar"];
@@ -104,40 +96,45 @@ public class Game
         //olafScholzAudio.Play();
 
         olafPathfinding = new(map, new BreadthFirstSearch());
-        window.pulse += () => olafPathfinding.FindPath(olafScholz.pos, mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos);
+        window.pulse += () => { 
+            if(mpHandler is not null)
+                olafPathfinding.FindPath(olafScholz.pos, mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos);
+        };
         //olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
         //window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
 
-        mpHandler = new(this, host, ip, port, 512, printDebug: false);
-        mpHandler.Start();
+        startMenu.mpHandlerInitialized += mpHandler => {
+            this.mpHandler = mpHandler;
 
-        mpHandler.serverState.olafPos = map.size/2f;
-        mpHandler.serverState.olafTarget = 1;
-        mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
+            mpHandler.serverState.olafPos = map.size/2f;
+            mpHandler.serverState.olafTarget = 1;
+            mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
 
-        mpHandler.onFinishConnect += () => {
-            mpHandler.ownClientState.skinIdx = skinIdx;
-            mpHandler.SendClientStateChange(StateKey.C_Skin);
-            mpHandler.SendClientRequest(RequestKey.C_UpdateSkin);
+            mpHandler.onFinishConnect += () => {
+                mpHandler.ownClientState.skinIdx = skinIdx;
+                mpHandler.SendClientStateChange(StateKey.C_Skin);
+                mpHandler.SendClientRequest(RequestKey.C_UpdateSkin);
 
-            foreach(var (id, state) in mpHandler.clientStates)
+                foreach(var (id, state) in mpHandler.clientStates)
+                    if(id != mpHandler.ownClientId)
+                    {
+                        Image skin = skins[state.skinIdx];
+                        SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), skin);
+                        renderer.sprites.Add(newPlayerRenderer);
+                        playerRenderers.Add((id, newPlayerRenderer));
+                    }
+            };
+
+            mpHandler.onPlayerConnect += id => {
                 if(id != mpHandler.ownClientId)
                 {
+                    ClientState state = mpHandler.GetClientState(id);
                     Image skin = skins[state.skinIdx];
                     SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), skin);
                     renderer.sprites.Add(newPlayerRenderer);
                     playerRenderers.Add((id, newPlayerRenderer));
                 }
-        };
-        mpHandler.onPlayerConnect += id => {
-            if(id != mpHandler.ownClientId)
-            {
-                ClientState state = mpHandler.GetClientState(id);
-                Image skin = skins[state.skinIdx];
-                SpriteRenderer newPlayerRenderer = new(state.pos, new((float)skin.Width/skin.Height, 1f), skin);
-                renderer.sprites.Add(newPlayerRenderer);
-                playerRenderers.Add((id, newPlayerRenderer));
-            }
+            };
         };
     }
 
@@ -173,13 +170,17 @@ public class Game
                 camera.pos = map.size/2f;
             }
         camera.pos += Vec2f.half;
-        mpHandler.ownClientState.pos = camera.pos;
-        if(mpHandler.isHost)
+
+        if(mpHandler is not null)
         {
-            mpHandler.serverState.olafPos = olafScholz.pos = camera.pos;
-            mpHandler.SendServerStateChange(StateKey.S_OlafPos);
+            mpHandler.ownClientState.pos = camera.pos;
+            if(mpHandler.isHost)
+            {
+                mpHandler.serverState.olafPos = olafScholz.pos = camera.pos;
+                mpHandler.SendServerStateChange(StateKey.S_OlafPos);
+            }
+            mpHandler.SendClientStateChange(StateKey.C_Pos);
         }
-        mpHandler.SendClientStateChange(StateKey.C_Pos);
     }
 
     public void ReloadSkins()
@@ -194,7 +195,22 @@ public class Game
     {
         fpsCounter++;
 
-        if(!mpHandler.ready)
+        if(input.KeyDown(Keys.F1))
+            input.lockCursor ^= true;
+
+        if(input.KeyDown(Keys.Escape))
+            Environment.Exit(0);
+
+        if(input.KeyDown(Keys.F3))
+            Debugger.Break();
+
+        if(input.KeyDown(Keys.F))
+            camera.fixFisheyeEffect ^= true;
+
+        if(input.KeyDown(Keys.C))
+            DevConsole.Restore();
+
+        if(mpHandler is null || !mpHandler.ready)
             return;
 
         #region Input
@@ -224,23 +240,9 @@ public class Game
                 mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
             }
 
-        if(input.KeyDown(Keys.F1))
-            input.lockCursor ^= true;
-
-        if(input.KeyDown(Keys.Escape))
-            Environment.Exit(0);
-
-        if(input.KeyDown(Keys.F3))
-            Debugger.Break();
 
         if(input.KeyDown(Keys.E))
             mpHandler.SendClientRequest(RequestKey.C_MakeMeOlafTarget);
-
-        if(input.KeyDown(Keys.F))
-            camera.fixFisheyeEffect ^= true;
-
-        if(input.KeyDown(Keys.C))
-            DevConsole.Restore();
         #endregion
 
         Vec2f olafTarget = mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos;

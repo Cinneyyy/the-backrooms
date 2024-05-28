@@ -33,20 +33,16 @@ public class Window : Form
     {
         get => _cursorVisible;
         set {
-            if(!Visible)
+            if(!Visible || (_cursorVisible == value))
                 return;
 
-            if(value && !_cursorVisible)
-                Cursor.Show();
-            else if(!value && _cursorVisible)
-                Cursor.Hide();
-
+            pictureBox.Cursor = value ? Cursors.Default : new(Resources.GetManifestStream("Resources.Textures.nocursor.cur"));
             _cursorVisible = value;
         }
     }
 
 
-    public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, Action<Window> load = null, Action<float> tick = null)
+    public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, bool hideCursor, Action<Window> load = null, Action<float> tick = null)
     {
         DevConsole.Hide();
 
@@ -98,7 +94,10 @@ public class Window : Form
             Application.Exit();
             Environment.Exit((int)args.CloseReason);
         };
-        Shown += (_, _) => cursorVisible = false;
+
+        _cursorVisible = true;
+        if(hideCursor)
+            Shown += (_, _) => cursorVisible = false;
 
         // Start pulse timer
         pulseThread = new(() => {

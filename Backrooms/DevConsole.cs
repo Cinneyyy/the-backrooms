@@ -98,6 +98,9 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             }, 
             "HELP [<command>]", [0, 1]),
 
+            new(["aliases", "alias"], args => Out($"Aliases of the {args[0].ToUpper()} command: {cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First().identifiers.FormatStr(", ", id => id.ToUpper())}"),
+            "ALIASES <cmd>", [1]),
+
             new(["resolution", "res", "set_resolution", "set_res"], args => {
                 if(args[0] is "query" or "q" or "?")
                 {
@@ -189,7 +192,14 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "PARALLEL_RENDER <enabled>", [0, 1]),
 
             new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
-            "FISHEYE_FIX <enabled>", [0, 1])
+            "FISHEYE_FIX <enabled>", [0, 1]),
+
+            new(["cursor", "cursor_visible", "show_cursor"], args => {
+                bool val = win.cursorVisible;
+                ParseBool(args.ElementAtOrDefault(0) ?? "^", ref val);
+                win.cursorVisible = val;
+            },
+            "CURSOR_VISIBLE <enabled>", [0, 1])
         ];
     }
 

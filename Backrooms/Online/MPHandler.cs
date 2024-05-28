@@ -137,7 +137,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
     }
 
     /// <summary>
-    /// Layout of serialized welcome packet ([..] == 1 byte, {..} == x times, *** == Already implemented in surrounding statement): <br />
+    /// Layout of serialized welcome packet ([..] == 1 byte, {..} (* x) == x times, *** == Already implemented in surrounding statement): <br />
     /// <code>
     /// [PacketType.WelcomePacket as byte]
     /// [Own client ID]

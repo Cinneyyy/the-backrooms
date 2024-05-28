@@ -135,4 +135,29 @@ public static class Utils
 
     public static bool InsideRect(Vec2f loc, Vec2f size, Vec2f pt)
         => pt.x > loc.x - size.x/2f && pt.x < loc.x + size.x/2f && pt.y > loc.y - size.y/2f && pt.y < loc.y + size.y/2f;
+
+    public static void Shuffle<T>(this IList<T> list, Random rand)
+    {
+        for(int i = list.Count-1; i > 0; i--)
+        {
+            int k = rand.Next(i + 1);
+            (list[i], list[k]) = (list[k], list[i]);
+        }
+    }
+
+    public static Vec2f ToVec2f(this Dir dir)
+        => Vec2f.FromAngle(dir.ToAngle());
+
+    public static float ToAngle(this Dir dir)
+        => dir switch {
+            Dir.North => 90f,
+            Dir.South => 270f,
+            Dir.East => 0f,
+            Dir.West => 180f,
+            Dir.NE => 45f,
+            Dir.NW => 90f + 45f,
+            Dir.SW => 180f + 45f,
+            Dir.SE => 270f + 45f,
+            _ => throw new("Invalid dirction")
+        } * Deg2Rad;
 }

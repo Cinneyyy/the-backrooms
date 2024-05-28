@@ -19,6 +19,6 @@ internal class Program
         string skinStr = Console.ReadLine();
         int skinIdx = string.IsNullOrWhiteSpace(skinStr) ? 0 : Convert.ToInt32(skinStr) - 1;
 
-        Window window = new(new(1920/6, 1080/6), "The Backrooms", "oli_appicon", false, w => _ = new Game(w, host, ip, port, skinIdx));
+        Window window = new(new(1920/6, 1080/6), "The Backrooms", "oli_appicon", false, false, w => _ = new Game(w, host, ip, port, skinIdx));
     }
 }
