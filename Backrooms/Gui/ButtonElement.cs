@@ -6,7 +6,6 @@ namespace Backrooms.Gui;
 
 public class ButtonElement(string name, string text, FontFamily font, float fontSize, Color textColor, ColorBlock colors, Action onClick, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
-
     public readonly TextElement textElem = new($"{name}_text", text, font, fontSize, textColor, Anchor.Center, location, size, anchor);
     public readonly RectSolidColorElement backgroundElem = new($"{name}_background", colors.normal, location, size, anchor);
     public ColorBlock colors = colors;
@@ -22,7 +21,7 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     private void Tick(float dt)
     {
-        if(!enabled || !group.enabled)
+        if(!enabled)
             return;
 
         bool isHovering = Utils.InsideRect(location, size * group.sizeRatioFactor, input.normMousePos);
@@ -42,7 +41,7 @@ public class ButtonElement(string name, string text, FontFamily font, float font
     public override void OnAddedToGroup()
     {
         input = rend.input;
-        rend.window.tick += Tick;
+        group.groupEnabledTick += Tick;
 
         group.Add(textElem);
         group.Add(backgroundElem);
@@ -50,7 +49,7 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     public override void OnRemovedFromGroup()
     {
-        rend.window.tick -= Tick;
+        group.groupEnabledTick -= Tick;
 
         group.Remove(textElem);
         group.Remove(backgroundElem);

@@ -27,7 +27,7 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     public override void OnAddedToGroup()
     {
         input = rend.input;
-        rend.window.tick += Tick;
+        group.groupEnabledTick += Tick;
 
         group.Add(textElem);
         group.Add(backgroundElem);
@@ -38,7 +38,7 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
 
     public override void OnRemovedFromGroup()
     {
-        rend.window.tick -= Tick;
+        group.groupEnabledTick -= Tick;
 
         group.Remove(textElem);
         group.Remove(backgroundElem);

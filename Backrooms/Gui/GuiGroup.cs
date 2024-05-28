@@ -12,6 +12,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     public string name;
     public bool enabled;
     public bool calculateLocationUsingWidth;
+    public event Action<float> persistentTick, groupEnabledTick;
 
     private readonly List<GuiElement> unsafeElements = [], safeElements = [];
     private Vec2f _screenAnchor;
@@ -30,6 +31,8 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Vec2f screenFactor { get; private set; }
     public Vec2f screenOffset { get; private set; }
 
+    private IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
+
 
     public GuiGroup(Renderer rend, string name, bool locationUsingWidth, bool enabled = true)
     {
@@ -37,6 +40,7 @@ public class GuiGroup : IEnumerable<GuiElement>
         this.name = name;
         this.enabled = enabled;
         calculateLocationUsingWidth = locationUsingWidth;
+        rend.window.tick += Tick;
 
         ReloadScreenDimensions();
         rend.dimensionsChanged += ReloadScreenDimensions;
@@ -90,12 +94,12 @@ public class GuiGroup : IEnumerable<GuiElement>
     public GuiElement GetSafeElement(Index idx) => safeElements[idx];
     public T GetSafeElement<T>(Index idx) where T : GuiElement => GetSafeElement(idx) as T;
 
-    public GuiElement FindElement(string name) => (from e in unsafeElements.Concat(safeElements)
+    public GuiElement FindElement(string name) => (from e in allElements
                                                    where e.name == name
                                                    select e).FirstOrDefault();
     public T FindElement<T>(string name) where T : GuiElement => FindElement(name) as T;
 
-    public IEnumerator<GuiElement> GetEnumerator() => unsafeElements.Concat(safeElements).GetEnumerator();
+    public IEnumerator<GuiElement> GetEnumerator() => allElements.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
 
@@ -105,7 +109,15 @@ public class GuiGroup : IEnumerable<GuiElement>
         screenStep = 1f / (Vec2f)rend.virtRes;
         (screenFactor, screenOffset) = calculateLocationUsingWidth ? (rend.virtRes, Vec2f.zero) : (new(rend.virtRes.y), new((rend.virtRes.x - rend.virtRes.y)/2f, 0f));
 
-        foreach(GuiElement e in unsafeElements.Concat(safeElements))
+        foreach(GuiElement e in allElements)
             e.ReloadScreenDimensions();
+    }
+
+    private void Tick(float dt)
+    {
+        persistentTick?.Invoke(dt);
+
+        if(enabled)
+            groupEnabledTick?.Invoke(dt);
     }
 }
