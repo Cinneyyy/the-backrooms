@@ -20,7 +20,7 @@ public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f l
     {
         Assert(image.useAlpha, "ImageElement.image has to use 32-bit format!");
 
-        scan += screenLocation.y * stride + screenLocation.x * 3;
+        scan += Math.Max(screenLocation.y, 0) * stride + Math.Max(screenLocation.x, 0) * 3;
 
         int maxY = Math.Min(screenSize.y, rend.virtRes.y - screenLocation.y);
         int maxX = Math.Min(screenSize.x, rend.virtRes.x - screenLocation.x);

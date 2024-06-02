@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Drawing;
 using Backrooms.Gui;
 using Backrooms.Online;
@@ -38,12 +38,15 @@ public class StartMenu
             new ButtonElement("quit", "Quit", font, 15f, Color.Yellow, colors, () => Window.Exit(), new(.5f, .775f), new(.4f, .1f)),
         };
 
+        Vec2i hd = new(1920, 1080);
+        Vec2i[] resolutions = [hd/10, hd/8, hd/6, hd/4, hd/2, hd];
         settingsScreen = new(rend, "sm_settings", false, false) {
             new TextElement("title", "Settings", font, 25f, Color.Yellow, Anchor.C, new(.5f, .2f), Vec2f.zero),
 
             new CheckboxElement("show_fps", "Show FPS", font, 15f, Color.Yellow, colors, "checkmark", .8f, true, b => rend.FindGuiGroup("hud").FindElement("fps").enabled = b, new(.5f, .4f), new(.65f, .065f)),
             new CheckboxElement("fix_fisheye", "Fix Fisheye", font, 15f, Color.Yellow, colors, "checkmark", .8f, true, b => rend.camera.fixFisheyeEffect = b, new(.5f, .5f), new(.65f, .065f)),
             new CheckboxElement("dev_console", "Dev Console", font, 15f, Color.Yellow, colors, "checkmark", .8f, false, b => DevConsole.ShowWindow(b ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide), new(.5f, .6f), new(.65f, .065f)),
+            new ValueSelectorElement("resolution", (from r in resolutions select $"{r.x}x{r.y}").ToArray(), 0, Color.Yellow, font, 15f, colors, "up_arrow", .8f, i => rend.UpdateResolution(resolutions[i], rend.physRes), new(.5f, .7f), new(.65f, .065f), Anchor.C),
             
             new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, CloseSettings, new(.5f, .85f), new(.2f, .1f)),
         };

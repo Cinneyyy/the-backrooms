@@ -2,8 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Backrooms.Gui;
 
 namespace Backrooms;
 
@@ -178,14 +181,14 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
                 Camera cam = win.renderer.camera;
                 cam.fov = rawValue;
-                Out($"Set FOV to {cam.fov :0.00} ({cam.fov/MathF.PI :0.00}pi ;; {cam.fov*Utils.Rad2Deg :0.00}°)");
+                Out($"Set FOV to {cam.fov:0.00} ({cam.fov/MathF.PI:0.00}pi ;; {cam.fov*Utils.Rad2Deg:0.00}°)");
             },
             "FOV <value[°|pi|deg|rad|]>", [1]),
 
             new(["hide", "close", "hide_console", "close_console"], args => Hide(), 
             "HIDE", [0]),
 
-            new(["fps_display", "fps", "show_fps"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.FindGuiGroup("hud").FindElement("fps").enabled), 
+            new(["fps_display", "fps", "show_fps"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", win.renderer.FindGuiGroup("hud").FindElement("fps"), e => e.enabled), 
             "SHOW_FPS <enabled>", [0, 1]),
 
             new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.useParallelRendering), 
@@ -194,11 +197,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
             "FISHEYE_FIX <enabled>", [0, 1]),
 
-            new(["cursor", "cursor_visible", "show_cursor"], args => {
-                bool val = win.cursorVisible;
-                ParseBool(args.ElementAtOrDefault(0) ?? "^", ref val);
-                win.cursorVisible = val;
-            },
+            new(["cursor", "cursor_visible", "show_cursor"], args => ParseBool(args[0], win, w => w.cursorVisible),
             "CURSOR_VISIBLE <enabled>", [0, 1])
         ];
     }
@@ -265,6 +264,20 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 else
                     break;
         }
+    }
+    public static void ParseBool(string strVal, Func<bool> get, Action<bool> set, bool throwExcIfFailed = true)
+    {
+        bool value = get();
+        ParseBool(strVal, ref value, throwExcIfFailed);
+        set(value);
+    }
+    public static void ParseBool<T>(string strVal, T target, Expression<Func<T, bool>> outExpr, bool throwExcIfFailed = true)
+    {
+        MemberExpression expr = outExpr.Body as MemberExpression;
+        PropertyInfo prop = expr.Member as PropertyInfo;
+        bool value = (bool)prop.GetValue(target);
+        ParseBool(strVal, ref value, throwExcIfFailed);
+        prop.SetValue(target, value);
     }
 
     public static nint PostMessage(ConsoleKey key, uint msg = 0x100u) 

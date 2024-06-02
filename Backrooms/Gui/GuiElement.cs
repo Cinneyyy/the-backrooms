@@ -6,11 +6,11 @@ namespace Backrooms.Gui;
 public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor = Anchor.C)
 {
     public GuiGroup group;
-    public bool enabled = true;
     public string name = name;
 
     private Vec2f _location = location, _size = size;
     private Anchor _anchor = anchor;
+    private bool _enabled = true;
 
 
     public Renderer rend => group.rend;
@@ -44,6 +44,22 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
     }
     public abstract bool isUnsafe { get; }
     public abstract bool isSafe { get; }
+    public bool enabled
+    {
+        get => _enabled;
+        set {
+            if(_enabled == value)
+                return;
+
+            _enabled = value;
+            OnToggle();
+
+            if(value)
+                OnEnable();
+            else
+                OnDisable();
+        }
+    }
 
 
     public GuiElement(string name, Vec2f location, Vec2f size, GuiGroup group) : this(name, location, size)
@@ -98,4 +114,7 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
 
 
     protected virtual void ScreenDimensionsChanged() { }
+    protected virtual void OnEnable() { }
+    protected virtual void OnDisable() { }
+    protected virtual void OnToggle() { }
 }

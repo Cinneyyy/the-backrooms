@@ -15,6 +15,7 @@ public class Window : Form
     public DevConsole console;
     public event Action<float> tick;
     public event Action pulse;
+    public readonly Screen screen;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
@@ -47,13 +48,14 @@ public class Window : Form
         DevConsole.Hide();
 
         // Initialize
+        screen = Screen.FromPoint(Cursor.Position);
         DoubleBuffered = true;
         BackColor = Color.Black;
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.None;
-        Size = Screen.PrimaryScreen.Bounds.Size;
+        Size = screen.Bounds.Size;
         WindowState = FormWindowState.Maximized;
-        Location = Screen.FromPoint(Cursor.Position).WorkingArea.Location;
+        Location = screen.WorkingArea.Location;
         SetIcon(iconManifest);
         title = windowTitle;
         startTime = DateTime.UtcNow;

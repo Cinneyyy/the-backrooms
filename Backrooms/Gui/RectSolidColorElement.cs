@@ -15,12 +15,13 @@ public class RectSolidColorElement(string name, Color color, Vec2f location, Vec
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h)
     {
-        scan += screenLocation.y * stride + screenLocation.x * 3;
-        float alpha = color.A/255f;
-        float r = Utils.Sqr(color.R/255f), g = Utils.Sqr(color.G/255f), b = Utils.Sqr(color.B/255f);
+        scan += Math.Max(screenLocation.y, 0) * stride + Math.Max(screenLocation.x, 0) * 3;
 
         int maxY = Math.Min(screenSize.y, rend.virtRes.y - screenLocation.y);
         int maxX = Math.Min(screenSize.x, rend.virtRes.x - screenLocation.x);
+
+        float alpha = color.A/255f;
+        float r = Utils.Sqr(color.R/255f), g = Utils.Sqr(color.G/255f), b = Utils.Sqr(color.B/255f);
 
         for(int i = 0; i < maxY; i++)
         {

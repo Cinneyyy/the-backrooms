@@ -24,7 +24,7 @@ public class ButtonElement(string name, string text, FontFamily font, float font
         if(!enabled)
             return;
 
-        bool isHovering = Utils.InsideRect(location, size * group.sizeRatioFactor, input.normMousePos);
+        bool isHovering = input.ContainsNormCursorCentered(location, size * group.sizeRatioFactor);
 
         if(isHovering)
         {
@@ -53,5 +53,12 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
         group.Remove(textElem);
         group.Remove(backgroundElem);
+    }
+
+
+    protected override void OnToggle()
+    {
+        textElem.enabled = enabled;
+        backgroundElem.enabled = enabled;
     }
 }

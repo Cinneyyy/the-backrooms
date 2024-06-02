@@ -11,14 +11,23 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     public readonly ImageElement checkmarkElem = new($"{name}_checkmark", checkmark, color, new(), new(size.y * checkmarkSize), Anchor.C) {
         enabled = isOn
     };
-    public bool isOn = isOn;
     public MouseButtons button = MouseButtons.Left;
 
     private Input input;
+    private bool _isOn = isOn;
 
 
     public override bool isSafe => false;
     public override bool isUnsafe => false;
+    public bool isOn
+    {
+        get => _isOn;
+        set {
+            _isOn = value;
+            checkmarkElem.enabled = value;
+            valueChanged?.Invoke(value);
+        }
+    }
 
 
     public CheckboxElement(string name, string text, FontFamily font, float textSize, Color textColor, ColorBlock colors, string checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, text, font, textSize, textColor, colors, new UnsafeGraphic(checkmark), checkmarkSize, isOn, valueChanged, location, size, anchor) { }
@@ -46,25 +55,24 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     }
 
 
+    protected override void OnToggle()
+    {
+        textElem.enabled = enabled;
+        checkmarkElem.enabled = enabled;
+        backgroundElem.enabled = enabled;
+    }
+
+
     private void Tick(float dt)
     {
-        if(!enabled || !group.enabled)
+        if(!enabled)
             return;
 
-        bool isHovering = Utils.InsideRect(backgroundElem.screenLocation + backgroundElem.screenSize/2, backgroundElem.screenSize, input.virtMousePos);
+        bool isHovering = input.ContainsCursorCentered(backgroundElem.screenLocation + backgroundElem.screenSize/2, backgroundElem.screenSize);
 
         if(isHovering)
-        {
-            if(input.MbDown(button))
-            {
-                isOn ^= true;
-                checkmarkElem.enabled = isOn;
-                valueChanged?.Invoke(isOn);
-            }
+            isOn ^= input.MbDown(button);
 
-            backgroundElem.color = input.MbHelt(button) ? colors.select : colors.hover;
-        }
-        else
-            backgroundElem.color = colors.normal;
+        backgroundElem.color = !isHovering ? colors.normal : (input.MbHelt(button) ? colors.select : colors.hover);
     }
 }

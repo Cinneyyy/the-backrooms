@@ -25,6 +25,10 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
     public readonly float toAngle => MathF.Atan2(y, x);
     public readonly float min => MathF.Min(x, y);
     public readonly float max => MathF.Max(x, y);
+    public readonly float xyRatio => x/y;
+    public readonly float yxRatio => y/x;
+    public readonly float xyDelta => x-y;
+    public readonly float yxDelta => y-x;
 
 
     public Vec2f(float xy) : this(xy, xy) { }

@@ -37,6 +37,16 @@ public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
     public bool MbUp(MouseButtons mb)
         => lastMbState.Contains(mb) && !mbState.Contains(mb);
 
+    public bool ContainsCursor(Vec2f loc, Vec2f size)
+        => Utils.InsideRect(loc, size, virtMousePos);
+    public bool ContainsCursorCentered(Vec2f loc, Vec2f size)
+        => Utils.InsideRectCentered(loc, size, virtMousePos);
+
+    public bool ContainsNormCursor(Vec2f loc, Vec2f size)
+        => Utils.InsideRect(loc, size, normMousePos);
+    public bool ContainsNormCursorCentered(Vec2f loc, Vec2f size)
+        => Utils.InsideRectCentered(loc, size, normMousePos);
+
 
     internal void OnUpdateDimensions(Renderer rend)
     {

@@ -134,7 +134,9 @@ public static class Utils
         => (int)MathF.Ceiling(f);
 
     public static bool InsideRect(Vec2f loc, Vec2f size, Vec2f pt)
-        => pt.x > loc.x - size.x/2f && pt.x < loc.x + size.x/2f && pt.y > loc.y - size.y/2f && pt.y < loc.y + size.y/2f;
+        => loc.x <= pt.x && loc.y <= pt.y && loc.x + size.x >= pt.x && loc.y + size.y >= pt.y;
+    public static bool InsideRectCentered(Vec2f loc, Vec2f size, Vec2f pt)
+        => loc.x - size.x/2f <= pt.x && loc.x + size.x/2f >= pt.x && loc.y - size.y/2f <= pt.y && loc.y + size.y/2f >= pt.y;
 
     public static void Shuffle<T>(this IList<T> list, Random rand)
     {
