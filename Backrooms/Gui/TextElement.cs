@@ -40,7 +40,7 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         set {
             _emSize = value;
             font.Dispose();
-            font = new(fontFamily, value / group.rend.downscaleFactor, GRAPHICS_UNIT);
+            font = new(fontFamily, value / group.rend.singleDownscaleFactor, GRAPHICS_UNIT);
         }
     }
     public FontFamily fontFamily
@@ -49,7 +49,7 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
         set {
             _fontFamily = value;
             font.Dispose();
-            font = new(value, emSize * group.rend.downscaleFactor, GRAPHICS_UNIT);
+            font = new(value, emSize * group.rend.singleDownscaleFactor, GRAPHICS_UNIT);
         }
     }
 
@@ -83,6 +83,6 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
     protected override void ScreenDimensionsChanged() 
     {
         font.Dispose();
-        font = new(fontFamily, emSize * rend.downscaleFactor, GRAPHICS_UNIT);
+        font = new(fontFamily, emSize * rend.singleDownscaleFactor, GRAPHICS_UNIT);
     }
 }

@@ -123,9 +123,9 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 {
                     if(args[0] is "/" or "*")
                     {
-                        int fac = int.Parse((args[1]));
+                        float fac = float.Parse((args[1]));
                         Vec2i physRes = win.renderer.physRes;
-                        Vec2i virtRes = args[0] == "/" ? (physRes / fac) : (physRes * fac);
+                        Vec2i virtRes = (args[0] == "/" ? (physRes / fac) : (physRes * fac)).Round();
                         win.renderer.UpdateResolution(virtRes, physRes);
                         Out($"Set virtual resolution to {virtRes}");
                         return;

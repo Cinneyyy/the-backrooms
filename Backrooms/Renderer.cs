@@ -30,8 +30,10 @@ public unsafe class Renderer
     public Vec2i physCenter { get; private set; }
     public Vec2i outputRes { get; private set; }
     public Vec2i outputLocation { get; private set; }
-    public float downscaleFactor { get; private set; }
-    public float upscaleFactor { get; private set; }
+    public Vec2f downscaleFactor { get; private set; }
+    public Vec2f upscaleFactor { get; private set; }
+    public float singleDownscaleFactor { get; private set; }
+    public float singleUpscaleFactor { get; private set; }
     public float virtRatio { get; private set; }
     public float physRatio { get; private set; }
 
@@ -56,8 +58,11 @@ public unsafe class Renderer
         virtCenter = virtRes/2;
         physCenter = physRes/2;
 
-        downscaleFactor = MathF.Min((float)virtRes.x/physRes.x, (float)virtRes.y/physRes.y);
+        downscaleFactor = (Vec2f)virtRes / physRes;
         upscaleFactor = 1f / downscaleFactor;
+
+        singleDownscaleFactor = downscaleFactor.min;
+        singleUpscaleFactor = 1f / singleDownscaleFactor;
 
         virtRatio = (float)virtRes.x / virtRes.y;
         physRatio = (float)physRes.x / physRes.y;

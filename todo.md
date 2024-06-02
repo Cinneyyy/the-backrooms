@@ -12,6 +12,7 @@
 
 ---
 ## Bugfixes
+- GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
 - Multiplayer
     -> Client disconnect handling
 - Ceiling/floor rendering is **extremely** slow (~150fps -> ~60fps in debug mode)

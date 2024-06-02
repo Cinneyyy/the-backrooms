@@ -17,7 +17,7 @@ public class StartMenu
     private readonly Renderer rend;
     private readonly FontFamily font;
     private readonly Game game;
-    private Coroutine backgroundSequenceCoroutine;
+    private readonly Coroutine backgroundSequenceCoroutine;
 
     public readonly GuiGroup startScreen, settingsScreen;
 
@@ -49,7 +49,7 @@ public class StartMenu
             new CheckboxElement("show_fps", "Show FPS", font, 15f, Color.Yellow, colors, "checkmark", .8f, true, b => rend.FindGuiGroup("hud").FindElement("fps").enabled = b, new(.5f, .4f), new(.65f, .065f)),
             new CheckboxElement("fix_fisheye", "Fix Fisheye", font, 15f, Color.Yellow, colors, "checkmark", .8f, true, b => rend.camera.fixFisheyeEffect = b, new(.5f, .5f), new(.65f, .065f)),
             new CheckboxElement("dev_console", "Dev Console", font, 15f, Color.Yellow, colors, "checkmark", .8f, false, b => DevConsole.ShowWindow(b ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide), new(.5f, .6f), new(.65f, .065f)),
-            new ValueSelectorElement("resolution", (from r in resolutions select $"{r.x}x{r.y}").ToArray(), 0, Color.Yellow, font, 15f, colors, "up_arrow", .8f, i => rend.UpdateResolution(resolutions[i], rend.physRes), new(.5f, .7f), new(.65f, .065f), Anchor.C),
+            new ValueSelectorElement("resolution", (from r in resolutions select $"{r.x}x{r.y}").ToArray(), 2, Color.Yellow, font, 15f, colors, "up_arrow", .8f, i => rend.UpdateResolution(resolutions[i], rend.physRes), new(.5f, .7f), new(.65f, .065f), Anchor.C),
             
             new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, CloseSettings, new(.5f, .85f), new(.2f, .1f)),
         };
@@ -57,49 +57,18 @@ public class StartMenu
         rend.guiGroups.Add(startScreen);
         rend.guiGroups.Add(settingsScreen);
 
-        IEnumerator background_sequence()
-        {
-            Camera cam = rend.camera;
-            Map map = rend.map;
-
-            game.GenerateMap(0);
-            cam.pos = cam.pos.Floor() + Vec2f.half;
-
-            while(true)
-            {
-                Vec2i offset = (Utils.Rad2Deg * cam.angle) switch {
-                    (>= 0f and < 45f) or (< 360f and >= 315f) => Vec2i.right,
-                    >= 45f and < 135f => Vec2i.up,
-                    >= 135f and < 225f => Vec2i.left,
-                    >= 225f and < 315f => Vec2i.down,
-                    _ => Vec2i.zero
-                };
-                Vec2i tile = cam.pos.Floor();
-                Vec2i offsetTile = tile + offset;
-
-                bool isBlocked = Map.IsCollidingTile(map[offsetTile]);
-
-                if(isBlocked)
-                {
-                    float start = cam.angle, end = cam.angle + MathF.PI/2f;
-                    yield return new ActionOverTime(1.5f, interpolatedAction: t => cam.angle = Utils.Lerp(start, end, t));
-                }
-                else
-                {
-                    Vec2f start = cam.pos, end = cam.pos + offset;
-                    yield return new ActionOverTime(1.5f, interpolatedAction: t => cam.pos = Vec2f.Lerp(start, end, t));
-                }
-            }
-        }
-        backgroundSequenceCoroutine = win.StartCoroutine(background_sequence());
+        
+        backgroundSequenceCoroutine = BackgroundSequence(.75f, .5f, 6).StartCoroutine(win);
     }
 
 
     private void ClickStart(bool mp)
     {
-        backgroundSequenceCoroutine.Cancel();
+
         if(!mp)
         {
+            backgroundSequenceCoroutine.Cancel();
+
             startScreen.enabled = false;
             win.cursorVisible = false;
             win.input.lockCursor = true;
@@ -125,5 +94,65 @@ public class StartMenu
     {
         startScreen.enabled = true;
         settingsScreen.enabled = false;
+    }
+
+    private IEnumerator BackgroundSequence(float turnTime, float travelTime, int minTilesBeforeRandomTurn)
+    {
+        Camera cam = rend.camera;
+        Map map = rend.map;
+        Random rand = new();
+
+        game.GenerateMap(rand.Next());
+        cam.pos = cam.pos.Floor() + Vec2f.half;
+
+        static Vec2i get_offset_vec(float angle) // based on unit circle
+            => (Utils.Rad2Deg * angle) switch {
+                (>= 0f and < 45f) or (< 360f and >= 315f) => Vec2i.right,
+                >= 45f and < 135f => Vec2i.up,
+                >= 135f and < 225f => Vec2i.left,
+                >= 225f and < 315f => Vec2i.down,
+                _ => Vec2i.zero
+            };
+
+        int turnCooldown = 5;
+
+        while(true)
+        {
+            Vec2i offset = get_offset_vec(cam.angle);
+            Vec2i tile = cam.pos.Floor();
+
+            bool isBlocked = Map.IsCollidingTile(map[tile + offset]);
+
+            if(!isBlocked && turnCooldown <= 0)
+            {
+                bool leftBlocked = Map.IsCollidingTile(map[tile + get_offset_vec(Utils.NormAngle(cam.angle - MathF.PI/2f))]),
+                     rightBlocked = Map.IsCollidingTile(map[tile + get_offset_vec(Utils.NormAngle(cam.angle + MathF.PI/2f))]);
+
+                if(leftBlocked && rightBlocked) {}
+                else if(!leftBlocked && !rightBlocked)
+                    isBlocked = rand.NextSingle() > .85f;
+                else if(leftBlocked != rightBlocked)
+                    isBlocked = rand.NextSingle() > .5f;
+            }
+
+            if(isBlocked)
+            {
+                float turn = MathF.PI/2f * (rand.NextSingle() > .5f ? -1f : 1f);
+                if(Map.IsCollidingTile(map[tile + get_offset_vec(Utils.NormAngle(cam.angle + turn))]))
+                    turn *= -1f;
+
+                float start = cam.angle, end = cam.angle + turn;
+                yield return new ActionOverTime(turnTime, interpolatedAction: t => cam.angle = Utils.Lerp(start, end, t));
+
+                turnCooldown = minTilesBeforeRandomTurn;
+            }
+            else
+            {
+                Vec2f start = cam.pos, end = cam.pos + offset;
+                yield return new ActionOverTime(travelTime, interpolatedAction: t => cam.pos = Vec2f.Lerp(start, end, t));
+
+                turnCooldown--;
+            }
+        }
     }
 }

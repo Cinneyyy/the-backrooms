@@ -146,22 +146,6 @@ public static class Utils
         }
     }
 
-    public static Vec2f ToVec2f(this Dir dir)
-        => Vec2f.FromAngle(dir.ToAngle());
-
-    public static float ToAngle(this Dir dir)
-        => dir switch {
-            Dir.North => 90f,
-            Dir.South => 270f,
-            Dir.East => 0f,
-            Dir.West => 180f,
-            Dir.NE => 45f,
-            Dir.NW => 90f + 45f,
-            Dir.SW => 180f + 45f,
-            Dir.SE => 270f + 45f,
-            _ => throw new("Invalid dirction")
-        } * Deg2Rad;
-
     public static Coroutine StartCoroutine(this IEnumerator iterator, Window win)
         => win.StartCoroutine(iterator);
 }
