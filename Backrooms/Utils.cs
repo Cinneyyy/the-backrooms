@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text;
+using Backrooms.Coroutines;
 using Backrooms.Gui;
 
 namespace Backrooms;
@@ -14,16 +16,13 @@ public static class Utils
     public const float Rad2Deg = 180f/Pi;
     public const float Deg2Rad = Pi/180f;
 
-
     public static T Lerp<T>(T a, T b, T t) where T : INumber<T>
-        => Clamp(LerpUnclamped(a, b, t), T.Zero, T.One);
+        => a + (b - a) * t;
     public static float Lerp(float a, float b, float t)
-        => Clamp(LerpUnclamped(a, b, t), 0f, 1f);
+        => a + (b - a) * t;
 
-    public static T LerpUnclamped<T>(T a, T b, T t) where T : INumber<T>
-        => a + (b - a) * t;
-    public static float LerpUnclamped(float a, float b, float t)
-        => a + (b - a) * t;
+    public static float LerpClamped(float a, float b, float t)
+        => Lerp(a, b, Clamp01(t));
 
     public static int Length<T>(this T[,] arr2d, int idx)
         => arr2d.GetLength(idx);
@@ -162,4 +161,7 @@ public static class Utils
             Dir.SE => 270f + 45f,
             _ => throw new("Invalid dirction")
         } * Deg2Rad;
+
+    public static Coroutine StartCoroutine(this IEnumerator iterator, Window win)
+        => win.StartCoroutine(iterator);
 }

@@ -197,7 +197,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
             "FISHEYE_FIX <enabled>", [0, 1]),
 
-            new(["cursor", "cursor_visible", "show_cursor"], args => ParseBool(args[0], win, w => w.cursorVisible),
+            new(["cursor", "cursor_visible", "show_cursor"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", win, w => w.cursorVisible),
             "CURSOR_VISIBLE <enabled>", [0, 1])
         ];
     }

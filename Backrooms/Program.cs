@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Backrooms;
+﻿namespace Backrooms;
 
 internal class Program
 {

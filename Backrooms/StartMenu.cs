@@ -3,6 +3,8 @@ using System.Linq;
 using System.Drawing;
 using Backrooms.Gui;
 using Backrooms.Online;
+using System.Collections;
+using Backrooms.Coroutines;
 
 namespace Backrooms;
 
@@ -15,6 +17,7 @@ public class StartMenu
     private readonly Renderer rend;
     private readonly FontFamily font;
     private readonly Game game;
+    private Coroutine backgroundSequenceCoroutine;
 
     public readonly GuiGroup startScreen, settingsScreen;
 
@@ -53,11 +56,48 @@ public class StartMenu
 
         rend.guiGroups.Add(startScreen);
         rend.guiGroups.Add(settingsScreen);
+
+        IEnumerator background_sequence()
+        {
+            Camera cam = rend.camera;
+            Map map = rend.map;
+
+            game.GenerateMap(0);
+            cam.pos = cam.pos.Floor() + Vec2f.half;
+
+            while(true)
+            {
+                Vec2i offset = (Utils.Rad2Deg * cam.angle) switch {
+                    (>= 0f and < 45f) or (< 360f and >= 315f) => Vec2i.right,
+                    >= 45f and < 135f => Vec2i.up,
+                    >= 135f and < 225f => Vec2i.left,
+                    >= 225f and < 315f => Vec2i.down,
+                    _ => Vec2i.zero
+                };
+                Vec2i tile = cam.pos.Floor();
+                Vec2i offsetTile = tile + offset;
+
+                bool isBlocked = Map.IsCollidingTile(map[offsetTile]);
+
+                if(isBlocked)
+                {
+                    float start = cam.angle, end = cam.angle + MathF.PI/2f;
+                    yield return new ActionOverTime(1.5f, interpolatedAction: t => cam.angle = Utils.Lerp(start, end, t));
+                }
+                else
+                {
+                    Vec2f start = cam.pos, end = cam.pos + offset;
+                    yield return new ActionOverTime(1.5f, interpolatedAction: t => cam.pos = Vec2f.Lerp(start, end, t));
+                }
+            }
+        }
+        backgroundSequenceCoroutine = win.StartCoroutine(background_sequence());
     }
 
 
     private void ClickStart(bool mp)
     {
+        backgroundSequenceCoroutine.Cancel();
         if(!mp)
         {
             startScreen.enabled = false;

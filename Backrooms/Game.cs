@@ -210,11 +210,6 @@ public class Game
         if(input.KeyDown(Keys.C))
             DevConsole.Restore();
 
-        if(mpHandler is null || !mpHandler.ready)
-            return;
-
-        #region Input
-        camera.pos = mpHandler.ownClientState.pos;
         Vec2f prevCamPos = camera.pos;
         camera.pos += playerSpeed * dt * (
             (input.KeyHelt(Keys.A) ? 1f : input.KeyHelt(Keys.D) ? -1f : 0f) * camera.right +
@@ -222,6 +217,12 @@ public class Game
         camera.pos = map.ResolveIntersectionIfNecessery(prevCamPos, camera.pos, .25f, out _);
         if(input.lockCursor)
             camera.angle += input.mouseDelta.x * renderer.downscaleFactor * sensitivity / dt;
+
+        if(mpHandler is null || !mpHandler.ready)
+            return;
+
+        #region Input
+        camera.pos = mpHandler.ownClientState.pos;
         mpHandler.ownClientState.pos = camera.pos;
         mpHandler.ownClientState.rot = camera.angle;
         mpHandler.SendClientStateChange(StateKey.C_Pos);

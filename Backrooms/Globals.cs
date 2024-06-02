@@ -5,6 +5,7 @@ namespace Backrooms;
 
 public static class Globals
 {
+    #region Logging
     public static void Out(object message, ConsoleColor color = ConsoleColor.Gray)
     {
         Console.ForegroundColor = color;
@@ -38,4 +39,5 @@ public static class Globals
         if(condition)
             Out(msg, color);
     }
+    #endregion
 }

@@ -5,6 +5,8 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using System.Threading.Tasks;
+using Backrooms.Coroutines;
+using System.Collections;
 
 namespace Backrooms;
 
@@ -130,6 +132,9 @@ public class Window : Form
         if(manifest is not null)
             Icon = Resources.icons[manifest];
     }
+
+    public Coroutine StartCoroutine(IEnumerator iterator)
+        => new(this, iterator);
 
 
     private void BeginGameLoop()
