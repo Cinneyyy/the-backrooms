@@ -9,6 +9,8 @@
 - More level variation
     -> Not too much, it is the backrooms
 - Post processing effects
+- Entities as zip files
+    -> Custom behaviour/pathfinding in lua/python/js files
 
 ---
 ## Bugfixes

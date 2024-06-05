@@ -1,6 +1,6 @@
 ﻿namespace Backrooms;
 
-public enum OverflowBehavior
+public enum OverflowBehaviour
 {
     None,
     Clamp,

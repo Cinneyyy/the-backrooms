@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using NAudio.Wave;
 
 namespace Backrooms;
@@ -43,6 +44,13 @@ public class AudioSource : IDisposable
         };
         volume = 1f;
     }
+
+    public AudioSource(Stream dataStream, string fileType) : this(fileType.ToLower() switch {
+        ".mp3" => new Mp3FileReader(dataStream),
+        ".wav" => new WaveFileReader(dataStream),
+        ".aiff" => new AiffFileReader(dataStream),
+        _ => throw new($"Unsupported audio format: {fileType}")
+    }) { }
 
 
     void IDisposable.Dispose()

@@ -5,32 +5,87 @@ using Backrooms.Online.Generic;
 
 namespace Backrooms.Online;
 
-public class MPHandler(Game game, bool isHost, string ipAddress, int port, int bufSize = 256, bool printDebug = false)
+public class MpHandler
 {
-    public readonly Game game = game;
-    public readonly bool isHost = isHost;
+    public readonly Game game;
 
-    public readonly string ipAddress = ipAddress;
-    public readonly int port = port;
-    public readonly Server server = isHost ? new(bufSize, printDebug) : null;
-    public readonly Client client = new(bufSize, printDebug);
-    public readonly ServerState serverState = new();
     public readonly List<(byte id, ClientState state)> clientStates = [];
+    public readonly ServerState serverState = new();
     public event Action onFinishConnect;
     public event Action<byte> onPlayerConnect;
+    public event Action start;
+
+    private string _ipAddress;
+    private int _port, _bufSize = 512;
+    private bool _printDebug;
+    private bool _isHost;
 
 
     public byte ownClientId { get; private set; }
     public ClientState ownClientState { get; private set; }
     public bool ready { get; private set; }
+    public bool started { get; private set; }
+    public string ipAddress
+    {
+        get => _ipAddress;
+        set => SetIfNotStarted(ref _ipAddress, value);
+    }
+    public int port
+    {
+        get => _port;
+        set => SetIfNotStarted(ref _port, value);
+    }
+    public int bufSize
+    {
+        get => _bufSize;
+        set => SetIfNotStarted(ref _bufSize, value);
+    }
+    public bool printDebug
+    {
+        get => _printDebug;
+        set => SetIfNotStarted(ref _printDebug, value);
+    }
+    public bool isHost
+    {
+        get => _isHost;
+        set => SetIfNotStarted(ref _isHost, value);
+    }
+    public Server server { get; private set; }
+    public Client client { get; private set; }
+
+
+    public MpHandler(Game game, bool isHost, string ipAddress, int port, int bufSize = 512, bool printDebug = false)
+    {
+        this.game = game;
+        this.isHost = isHost;
+        this.ipAddress = ipAddress;
+        this.port = port;
+        this.printDebug = printDebug;
+        this.bufSize = bufSize;
+    }
+
+    public MpHandler(Game game, int bufSize = 512, bool printDebug = false)
+    {
+        this.game = game;
+        this.printDebug = printDebug;
+        this.bufSize = bufSize;
+    }
 
 
     public void Start()
     {
-        if(isHost) 
-            StartHost();
+        started = true;
 
+        if(isHost)
+        {
+            server = new(bufSize, printDebug);
+            StartHost();
+        }
+
+        client = new(bufSize, printDebug);
         StartClient();
+
+        start?.Invoke();
     }
 
     public ClientState GetClientState(byte clientId)
@@ -192,4 +247,7 @@ public class MPHandler(Game game, bool isHost, string ipAddress, int port, int b
 
         OutIf(printDebug, $"[Client] Successfully handled welcome packet ({length} bytes)");
     }
+
+    private void SetIfNotStarted<T>(ref T field, T value)
+        => field = !started ? value : throw new InvalidOperationException($"Cannot change this value when client/server has already started");
 }

@@ -33,13 +33,14 @@ public class Game
     public AudioSource olafScholzAudio;
     public float olafSpeed = .75f;
     public StartMenu startMenu;
-    public MPHandler mpHandler;
+    public MpHandler mpHandler;
     public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
     public PathfindingEntity olafPathfinder;
     public readonly Image[] skins = (from str in new string[] { "hazmat_suit", "entity", "freddy_fazbear", "huggy_wuggy", "purple_guy" }
                                     select Resources.sprites[str])
                                     .ToArray();
     public Pathfinder olafPathfinding;
+    public string testField = "grr";
 
 
     private readonly RoomGenerator generator = new();
@@ -70,7 +71,8 @@ public class Game
             fpsCounter = 0;
         };
 
-        startMenu = new(window, this);
+        mpHandler = new(this);
+        startMenu = new(window, this, mpHandler);
 
         renderer.map = map;
         map.texturesStr = [null, "wall", "pillar"];
@@ -103,9 +105,9 @@ public class Game
         //olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
         //window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
 
-        startMenu.mpHandlerInitialized += mpHandler => {
-            this.mpHandler = mpHandler;
+        //_ = new Entity(this, "C:\\Users\\Colin\\Downloads\\olaf");
 
+        mpHandler.start += () => {
             mpHandler.serverState.olafPos = map.size/2f;
             mpHandler.serverState.olafTarget = 1;
             mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
@@ -171,7 +173,7 @@ public class Game
             }
         camera.pos += Vec2f.half;
 
-        if(mpHandler is not null)
+        if(mpHandler.started)
         {
             mpHandler.ownClientState.pos = camera.pos;
             if(mpHandler.isHost)

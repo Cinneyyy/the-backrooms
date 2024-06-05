@@ -10,8 +10,7 @@ namespace Backrooms;
 
 public class StartMenu
 {
-    public MPHandler mpHandler;
-    public event Action<MPHandler> mpHandlerInitialized;
+    public MpHandler mpHandler;
 
     private readonly Window win;
     private readonly Renderer rend;
@@ -22,10 +21,11 @@ public class StartMenu
     public readonly GuiGroup startScreen, settingsScreen;
 
 
-    public StartMenu(Window win, Game game, string fontFamily = "cascadia_code")
+    public StartMenu(Window win, Game game, MpHandler mpHandler, string fontFamily = "cascadia_code")
     {
         this.win = win;
         this.game = game;
+        this.mpHandler = mpHandler;
         font = Resources.fonts[fontFamily];
         rend = win.renderer;
 
@@ -58,7 +58,7 @@ public class StartMenu
         rend.guiGroups.Add(settingsScreen);
 
         
-        backgroundSequenceCoroutine = BackgroundSequence(.75f, .5f, 6).StartCoroutine(win);
+        backgroundSequenceCoroutine = BackgroundSequence(.75f, .5f, 7).StartCoroutine(win);
     }
 
 
@@ -73,10 +73,11 @@ public class StartMenu
             win.cursorVisible = false;
             win.input.lockCursor = true;
 
-            mpHandler = new(game, true, "127.0.0.1", 8080);
-            mpHandler.Start();
+            mpHandler.isHost = true;
+            mpHandler.ipAddress = "127.0.0.1";
+            mpHandler.port = 8080;
 
-            mpHandlerInitialized?.Invoke(mpHandler);
+            mpHandler.Start();
         }
         else
         {
@@ -128,10 +129,7 @@ public class StartMenu
                 bool leftBlocked = Map.IsCollidingTile(map[tile + get_offset_vec(Utils.NormAngle(cam.angle - MathF.PI/2f))]),
                      rightBlocked = Map.IsCollidingTile(map[tile + get_offset_vec(Utils.NormAngle(cam.angle + MathF.PI/2f))]);
 
-                if(leftBlocked && rightBlocked) {}
-                else if(!leftBlocked && !rightBlocked)
-                    isBlocked = rand.NextSingle() > .85f;
-                else if(leftBlocked != rightBlocked)
+                if(leftBlocked != rightBlocked)
                     isBlocked = rand.NextSingle() > .5f;
             }
 

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Numerics;
 using System.Text;
 using Backrooms.Coroutines;
@@ -148,4 +149,22 @@ public static class Utils
 
     public static Coroutine StartCoroutine(this IEnumerator iterator, Window win)
         => win.StartCoroutine(iterator);
+
+    public static ZipArchiveEntry GetEntry(this ZipArchive zip, string fileName, string[] extensions)
+    {
+        foreach(ZipArchiveEntry entry in zip.Entries)
+            if(entry.Name.StartsWith(fileName, StringComparison.OrdinalIgnoreCase))
+                foreach(string ext in extensions)
+                    if(entry.Name.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+                        return entry;
+
+        return null;
+    }
+
+    public static MemoryStream ZipDirectoryInMemory(string dirPath)
+    {
+        MemoryStream stream = new();
+        ZipFile.CreateFromDirectory(dirPath, stream, CompressionLevel.NoCompression, false);
+        return stream;
+    }
 }

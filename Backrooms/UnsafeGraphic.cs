@@ -15,7 +15,7 @@ public unsafe class UnsafeGraphic : IDisposable
     private readonly Bitmap bitmap;
 
 
-    public UnsafeGraphic(Bitmap bitmap, bool useAlpha)
+    public UnsafeGraphic(Bitmap bitmap, bool useAlpha = true)
     {
         this.bitmap = bitmap;
         data = bitmap.LockBits(new(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, useAlpha ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb);
@@ -30,7 +30,7 @@ public unsafe class UnsafeGraphic : IDisposable
         bounds = new(wb, hb);
     }
 
-    public UnsafeGraphic(Image img, bool useAlpha) : this(new Bitmap(img), useAlpha) { }
+    public UnsafeGraphic(Image img, bool useAlpha = true) : this(new Bitmap(img), useAlpha) { }
 
     public UnsafeGraphic(BitmapData data)
     {

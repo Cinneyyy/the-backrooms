@@ -14,7 +14,7 @@ public class ValueSelectorElement : GuiElement
     public MouseButtons mb = MouseButtons.Left;
     public event Action<int> valueChanged;
     public event Action<string> valueChangedStr;
-    public OverflowBehavior overflowBehavior = OverflowBehavior.Mod;
+    public OverflowBehaviour overflowBehaviour = OverflowBehaviour.Mod;
 
     private Input input;
     private int _value;
@@ -27,11 +27,11 @@ public class ValueSelectorElement : GuiElement
         get => _value;
         set {
             if(value < 0 || value >= values.Length)
-                value = overflowBehavior switch {
-                    OverflowBehavior.None => value,
-                    OverflowBehavior.Clamp => Utils.Clamp(value, 0, values.Length-1),
-                    OverflowBehavior.Mod => Utils.Mod(value, values.Length),
-                    _ => throw new("Invalid OverflowBehavior")
+                value = overflowBehaviour switch {
+                    OverflowBehaviour.None => value,
+                    OverflowBehaviour.Clamp => Utils.Clamp(value, 0, values.Length-1),
+                    OverflowBehaviour.Mod => Utils.Mod(value, values.Length),
+                    _ => throw new("Invalid OverflowBehaviour")
                 };
 
             _value = value;

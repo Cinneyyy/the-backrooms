@@ -27,6 +27,7 @@
     <None Remove="Resources\Textures\checkmark.png" />
     <None Remove="Resources\Textures\empty.png" />
     <None Remove="Resources\Textures\floor.png" />
+    <None Remove="Resources\Textures\missing.png" />
     <None Remove="Resources\Textures\nocursor.cur" />
     <None Remove="Resources\Textures\oli.png" />
     <None Remove="Resources\Textures\pillar.png" />
@@ -38,6 +39,10 @@
     <None Remove="Resources\Textures\square.png" />
     <None Remove="Resources\Textures\up_arrow.png" />
     <None Remove="Resources\wall.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Textures\missing.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -72,6 +77,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
