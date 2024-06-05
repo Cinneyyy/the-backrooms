@@ -78,6 +78,7 @@ public class StartMenu
             mpHandler.port = 8080;
 
             mpHandler.Start();
+            mpHandler.onFinishConnect += () => game.GenerateMap(0);
         }
         else
         {

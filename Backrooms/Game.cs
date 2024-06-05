@@ -35,12 +35,12 @@ public class Game
     public StartMenu startMenu;
     public MpHandler mpHandler;
     public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
-    public PathfindingEntity olafPathfinder;
     public readonly Image[] skins = (from str in new string[] { "hazmat_suit", "entity", "freddy_fazbear", "huggy_wuggy", "purple_guy" }
                                     select Resources.sprites[str])
                                     .ToArray();
-    public Pathfinder olafPathfinding;
-    public string testField = "grr";
+    public PathfindingEntity olafPathfinding;
+    public string[] customEntityPaths = ["C:/Users/Colin/Downloads/entity1"];//, "C:/Users/Colin/Downloads/entity2"];
+    public Entity[] customEntities;
 
 
     private readonly RoomGenerator generator = new();
@@ -99,13 +99,13 @@ public class Game
 
         olafPathfinding = new(map, new BreadthFirstSearch());
         window.pulse += () => { 
-            if(mpHandler is not null)
+            if(mpHandler is not null && mpHandler.started)
                 olafPathfinding.FindPath(olafScholz.pos, mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos);
         };
         //olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
         //window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
 
-        //_ = new Entity(this, "C:\\Users\\Colin\\Downloads\\olaf");
+        customEntities = (from e in customEntityPaths select new Entity(this, e)).ToArray();
 
         mpHandler.start += () => {
             mpHandler.serverState.olafPos = map.size/2f;
@@ -224,7 +224,6 @@ public class Game
             return;
 
         #region Input
-        camera.pos = mpHandler.ownClientState.pos;
         mpHandler.ownClientState.pos = camera.pos;
         mpHandler.ownClientState.rot = camera.angle;
         mpHandler.SendClientStateChange(StateKey.C_Pos);

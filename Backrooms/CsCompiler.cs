@@ -34,7 +34,7 @@ public static class CsCompiler
             foreach(Diagnostic err in from d in emit.Diagnostics
                                       where d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error
                                       select d)
-                Out($"{err.Id} ;; {err.GetMessage()}", ConsoleColor.Red);
+                Out($"{err.Id} error: {err.GetMessage()}", ConsoleColor.Red);
 
             return null;
         }

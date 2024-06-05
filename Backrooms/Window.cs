@@ -162,9 +162,7 @@ public class Window : Form
             }
             catch(Exception exc)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"{exc.GetType()} in Draw(), Window.cs:\n{exc}");
-                Console.ForegroundColor = ConsoleColor.Gray;
+                Out($"{exc.GetType()} in main UpdateLoop (Window.cs) ;; {exc.Message}", ConsoleColor.Red);
             }
     }
 

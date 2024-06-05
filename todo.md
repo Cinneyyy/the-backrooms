@@ -10,10 +10,12 @@
     -> Not too much, it is the backrooms
 - Post processing effects
 - Entities as zip files
-    -> Custom behaviour/pathfinding in lua/python/js files
+    -> Custom behaviour/pathfinding in C# files
+- Maybe maybe rewrite multiplayer code (not MpHandler itself, just the way it is used)
 
 ---
 ## Bugfixes
+- Audio on custom entities
 - GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
 - Multiplayer
     -> Client disconnect handling

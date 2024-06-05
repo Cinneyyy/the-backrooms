@@ -1,6 +1,6 @@
 ﻿namespace Backrooms.Pathfinding;
 
-public class Pathfinder(Map map, IPathfindingAlgorithm pathfinding)
+public class PathfindingEntity(Map map, IPathfindingAlgorithm pathfinding)
 {
     public Path path;
     public Map map = map;

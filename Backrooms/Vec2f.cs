@@ -7,8 +7,6 @@ namespace Backrooms;
 
 public record struct Vec2f(float x, float y) : IEnumerable<float>
 {
-    public float x = x, y = y;
-
     public static readonly Vec2f zero = new(0f), nan = new(float.NaN);
     public static readonly Vec2f one = new(1f), negOne = -one;
     public static readonly Vec2f half = new(.5f), negHalf = -half;
