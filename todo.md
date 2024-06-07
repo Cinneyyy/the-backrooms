@@ -15,12 +15,11 @@
 
 ---
 ## Bugfixes
-- Audio on custom entities
+- Rewrite custom entity loader to just extract zip to a local directory, and load assets from there
 - GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
 - Multiplayer
     -> Client disconnect handling
-- Ceiling/floor rendering is **extremely** slow (~150fps -> ~60fps in debug mode)
+- Ceiling/floor rendering is **extremely** slow
 - Fix pathfinding bugs
     -> Dijkstra's shortest path
     -> Pathfinding shortcuts
-- Parallelize/optimize sprite rendering

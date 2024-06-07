@@ -85,6 +85,7 @@ public class Game
 
         PostProcessEffect lsdEffect = new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f, enabled: false);
         renderer.postProcessEffects.Add(lsdEffect);
+        renderer.postProcessEffects.Add(new CrtScreen());
         //renderer.postProcessEffects.Add(new DistanceFog(Renderer.GetDistanceFog, renderer.depthBuf));
         //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
@@ -195,6 +196,16 @@ public class Game
 
     private void Tick(float dt)
     {
+        //{
+        //    CrtScreen crtEffect = renderer.postProcessEffects.Find(p => p is CrtScreen) as CrtScreen;
+        //    if(input.KeyHelt(Keys.M)) crtEffect.distortionConstants.x += dt;
+        //    if(input.KeyHelt(Keys.N)) crtEffect.distortionConstants.x -= dt;
+        //    if(input.KeyHelt(Keys.K)) crtEffect.distortionConstants.y += dt;
+        //    if(input.KeyHelt(Keys.J)) crtEffect.distortionConstants.y -= dt;
+
+        //    Out(crtEffect.distortionConstants);
+        //}
+
         fpsCounter++;
 
         if(input.KeyDown(Keys.F1))

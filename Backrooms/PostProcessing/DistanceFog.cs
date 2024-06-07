@@ -4,7 +4,7 @@ namespace Backrooms.PostProcessing;
 
 public class DistanceFog(Func<float, float> calcFog, float[] depthBuf, bool enabled = true) : PostProcessEffect(enabled)
 {
-    public override bool requireRefBitmap => false;
+    public override bool requireRefBitmap { get; } = false;
 
 
     protected override unsafe void Exec(byte* scan0, int stride, int w, int h)

@@ -8,7 +8,7 @@ public unsafe class HVDistortion(Func<float, float> distortX, Func<float, float>
     private readonly VDistortion vDistortion = new(distortY, emptyCol, true);
 
 
-    public override bool requireRefBitmap => false;
+    public override bool requireRefBitmap { get; } = false;
     public Func<float, float> distortX
     {
         get => hDistortion.distort;

@@ -16,15 +16,12 @@ public static class CsCompiler
 
         Compilation compilation = CSharpCompilation.Create(assemblyName)
             .WithOptions(options)
-            .AddReferences(from ass in AppDomain.CurrentDomain.GetAssemblies()
+            .AddReferences(from ass in AppDomain.CurrentDomain.GetAssemblies() // ass is for assembly obv
                            where !ass.IsDynamic
                            select MetadataReference.CreateFromFile(ass.Location));
 
-        foreach(string codeFile in sourceFiles)
-        {
-            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(codeFile);
-            compilation = compilation.AddSyntaxTrees(syntaxTree);
-        }
+        compilation = compilation.AddSyntaxTrees(from f in sourceFiles
+                                                 select CSharpSyntaxTree.ParseText(f));
 
         using MemoryStream stream = new();
         EmitResult emit = compilation.Emit(stream);

@@ -8,7 +8,7 @@ public unsafe class HDistortion(Func<float, float> distort, Color32? emptyCol = 
     public Color32 emptyCol = emptyCol ?? Color32.black;
 
 
-    public override bool requireRefBitmap => false;
+    public override bool requireRefBitmap { get; } = false;
 
 
     protected override void Exec(byte* scan0, int stride, int w, int h)
