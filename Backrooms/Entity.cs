@@ -72,8 +72,6 @@ public class Entity
             behaviourType = behaviour.GetType(tags.instance);
             instance = Activator.CreateInstance(behaviourType, game, this);
 
-            Assembly pathfindingAssembly = tags.builtinPathfinding ? Assembly.GetExecutingAssembly() : behaviour;
-            pathfinding = new(game.map, Activator.CreateInstance(pathfindingAssembly.GetType(tags.pathfinding)) as IPathfindingAlgorithm);
 
             foreach(EntityTags.Function func in tags.functions)
             {
@@ -89,8 +87,13 @@ public class Entity
                 }
             }
 
-            if(tags.automaticallyManagePathfinding)
-                game.window.tick += dt => pos = pathfinding.MoveTowards(pos, tags.size/2f, tags.speed, dt);
+            if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)
+            {
+                Assembly pathfindingAssembly = pathfindingData.builtinAlgorithm ? Assembly.GetExecutingAssembly() : behaviour;
+                pathfinding = new(game.map, Activator.CreateInstance(pathfindingAssembly.GetType(pathfindingData.algorithmName)) as IPathfindingAlgorithm);
+
+                game.window.tick += dt => pos = pathfinding.MoveTowards(pos, tags.size/2f, pathfindingData.speed, dt);
+            }
 
             Out($"Successfully loaded entity at {dataPath}");
         }
