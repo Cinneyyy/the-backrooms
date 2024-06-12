@@ -9,13 +9,13 @@
 - More level variation
     -> Not too much, it is the backrooms
 - Post processing effects
-- Entities as zip files
-    -> Custom behaviour/pathfinding in C# files
 - Maybe maybe rewrite multiplayer code (not MpHandler itself, just the way it is used)
+- Out() categories
+    -> e.g. Debug, Load, Error, etc.
 
 ---
 ## Bugfixes
-- Rewrite custom entity loader to just extract zip to a local directory, and load assets from there
+- Custom entity audio is sometimes stuttery
 - GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
 - Multiplayer
     -> Client disconnect handling

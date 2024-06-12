@@ -26,44 +26,47 @@ public class Entity
 
     public Entity(Game game, string dataPath)
     {
-        Stream memStream = null;
-
         try
         {
-            using ZipArchive zip = File.GetAttributes(dataPath).HasFlag(FileAttributes.Directory) 
-                ? new(memStream = Utils.ZipDirectoryInMemory(dataPath), ZipArchiveMode.Update)
-                : ZipFile.Open(dataPath, ZipArchiveMode.Update);
+            if(IO::Path.HasExtension(dataPath))
+                ZipFile.ExtractToDirectory(dataPath, dataPath = IO::Path.GetDirectoryName(dataPath));
+
+            string path(string fileName)
+                => $"{dataPath}/{fileName}";
+            IEnumerable<string> fromPattern(string pattern)
+                => Directory.GetFiles(dataPath, pattern, SearchOption.AllDirectories);
+            IEnumerable<string> fromExtensions(string name, IEnumerable<string> extensions)
+                => from f in fromPattern($"{name}.*")
+                   from e in extensions
+                   where f.EndsWith(e, StringComparison.OrdinalIgnoreCase)
+                   select f;
+            string text(string fileName)
+                => File.ReadAllText(path(fileName));
 
             // Tags
-            if(zip.GetEntry("tags.json") is var tagsEntry && tagsEntry is not null)
-                using(Stream stream = tagsEntry.Open())
-                    using(StreamReader reader = new(stream))
-                        tags = JsonSerializer.Deserialize<EntityTags>(reader.ReadToEnd());
+            if(text("tags.json") is string tagsJson)
+                tags = JsonSerializer.Deserialize<EntityTags>(tagsJson);
 
             // Sprite
-            if(zip.GetEntry("sprite", [".png", ".jpg", ".jpeg"]) is var spriteEntry && spriteEntry is not null)
-                using(Stream stream = spriteEntry.Open())
+            if(fromExtensions("sprite", [".png", ".jpg", ".jpeg"]).FirstOrDefault() is string spritePath and not null)
+                using(Stream stream = new FileStream(spritePath, FileMode.Open))
                     sprite = new(Image.FromStream(stream));
             else
                 sprite = new(Resources.sprites["missing"]);
 
             // Audio
-            if(zip.GetEntry("audio", [".mp3", ".wav", ".aiff"]) is var audioEntry && audioEntry is not null)
-                audio = new(audioEntry.Open(), IO::Path.GetExtension(audioEntry.Name)) {
-                    loop = true
+            if(fromExtensions("audio", [".mp3", ".wav", ".aiff"]).FirstOrDefault() is string audioPath and not null)
+            {
+                audio = new(audioPath, true) {
+                    volume = 0f
                 };
 
-            // Behaviour
-            List<string> sourceFiles = [];
-            foreach(ZipArchiveEntry entry in from e in zip.Entries 
-                                             where IO::Path.GetExtension(e.Name).Equals(".cs", StringComparison.CurrentCultureIgnoreCase)
-                                             select e)
-            {
-                using Stream stream = entry.Open();
-                using StreamReader reader = new(stream);
-
-                sourceFiles.Add(reader.ReadToEnd());
+                game.mpHandler.onFinishConnect += audio.Play;
             }
+
+            // Behaviour
+            IEnumerable<string> sourceFiles = from f in fromExtensions("*", [".cs"])
+                                              select File.ReadAllText(f);
 
             behaviour = CsCompiler.BuildAssembly([..sourceFiles], IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLower());
             behaviourType = behaviour.GetType(tags.instance);
@@ -82,16 +85,18 @@ public class Entity
                     case "tick_dt": game.window.tick += dt => method.Invoke(instance, [dt]); break;
                     case "tick": game.window.tick += _ => method.Invoke(instance, null); break;
                     case "awake": game.mpHandler.onFinishConnect += () => method.Invoke(instance, null); break;
+                    case "get_volume": game.window.tick += _ => audio.volume = Utils.Clamp01((float)method.Invoke(instance, [(game.camera.pos - pos).length])); break;
                 }
             }
+
+            if(tags.automaticallyManagePathfinding)
+                game.window.tick += dt => pos = pathfinding.MoveTowards(pos, tags.size/2f, tags.speed, dt);
+
+            Out($"Successfully loaded entity at {dataPath}");
         }
         catch(Exception exc)
         {
             Out($"There was an error loading entity at {dataPath}: {exc}", ConsoleColor.Red);
-        }
-        finally
-        {
-            memStream?.Dispose();
         }
     }
 }

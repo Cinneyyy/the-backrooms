@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -26,6 +27,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     public Window win;
     public Cmd[] cmds;
     public Func<bool> run;
+    public bool queryIfEmpty = true;
 
     private readonly Thread thread;
     private Action nextTick;
@@ -86,7 +88,8 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
         win.Shown += (_, _) => thread.Start();
 
         cmds = [
-            new(["help", "?", "cmd_list", "cmds", "commands", "command_list"], args => {
+            new(["help", "?", "cmd_list", "cmds", "commands", "command_list"], 
+            args => {
                 if(args.Length == 1)
                 {
                     Cmd cmd = cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First();
@@ -101,10 +104,16 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             }, 
             "HELP [<command>]", [0, 1]),
 
-            new(["aliases", "alias"], args => Out($"Aliases of the {args[0].ToUpper()} command: {cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First().identifiers.FormatStr(", ", id => id.ToUpper())}"),
+            new(["aliases", "alias"], 
+            args => Out($"Aliases of the {args[0].ToUpper()} command: {cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First().identifiers.FormatStr(", ", id => id.ToUpper())}"),
             "ALIASES <cmd>", [1]),
 
-            new(["resolution", "res", "set_resolution", "set_res"], args => {
+            new(["query_if_empty", "emptyquery"],
+            args => ParseBool(args.ElementAtOrDefault(0), ref queryIfEmpty),
+            "QUERY_IF_EMPTY <value>", [0, 1]),
+
+            new(["resolution", "res", "set_resolution", "set_res"], 
+            args => {
                 if(args[0] is "query" or "q" or "?")
                 {
                     Out($"The current resolution is {win.renderer.virtRes.ToString("{0}x{1}")}");
@@ -143,7 +152,8 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             }, 
             "SET_RESOLUTION [<width[x|:|/]height> | <width height> | <[*|/] factor>]", [1, 2]),
 
-            new(["fov", "set_fov", "field_of_view", "set_field_of_view"], args => {
+            new(["fov", "set_fov", "field_of_view", "set_field_of_view"], 
+            args => {
                 args[0] = args[0].ToLower();
 
                 if(args[0] is "query" or "q" or "?")
@@ -185,20 +195,29 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             },
             "FOV <value[°|pi|deg|rad|]>", [1]),
 
-            new(["hide", "close", "hide_console", "close_console"], args => Hide(), 
+            new(["hide", "close", "hide_console", "close_console"], 
+            args => Hide(), 
             "HIDE", [0]),
 
-            new(["fps_display", "fps", "show_fps"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", win.renderer.FindGuiGroup("hud").FindElement("fps"), e => e.enabled), 
+            new(["fps_display", "fps", "show_fps"], 
+            args => ParseBool(args.ElementAtOrDefault(0), win.renderer.FindGuiGroup("hud").FindElement("fps"), e => e.enabled), 
             "SHOW_FPS <enabled>", [0, 1]),
 
-            new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.useParallelRendering), 
+            new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], 
+            args => ParseBool(args.ElementAtOrDefault(0), ref win.renderer.useParallelRendering), 
             "PARALLEL_RENDER <enabled>", [0, 1]),
 
-            new(["fisheye_fix", "ff", "fix_fisheye_effect"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", ref win.renderer.camera.fixFisheyeEffect), 
+            new(["fisheye_fix", "ff", "fix_fisheye_effect"], 
+            args => ParseBool(args.ElementAtOrDefault(0), ref win.renderer.camera.fixFisheyeEffect), 
             "FISHEYE_FIX <enabled>", [0, 1]),
 
-            new(["cursor", "cursor_visible", "show_cursor"], args => ParseBool(args.ElementAtOrDefault(0) ?? "^", win, w => w.cursorVisible),
-            "CURSOR_VISIBLE <enabled>", [0, 1])
+            new(["cursor", "cursor_visible", "show_cursor"], 
+            args => ParseBool(args.ElementAtOrDefault(0), win, w => w.cursorVisible),
+            "CURSOR_VISIBLE <enabled>", [0, 1]),
+
+            new(["wall_height", "wheight", "wallh"],
+            args => ParseNumber(args.ElementAtOrDefault(0), ref win.renderer.wallHeight),
+            "WALL_HEIGHT <height>", [0, 1])
         ];
     }
 
@@ -236,13 +255,10 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     }
 
 
-    public static void ParseBool(string strVal, ref bool target, bool throwExcIfFailed = true)
+    public void ParseBool(string strVal, ref bool target, bool throwExcIfFailed = true)
     {
         if(string.IsNullOrWhiteSpace(strVal))
-            if(throwExcIfFailed) 
-                throw new ArgumentException("Invalid input for ParseBool (null/whitspace)");
-            else 
-                return;
+            strVal = queryIfEmpty ? "?" : "^";
 
         switch(strVal.ToLower())
         {
@@ -265,19 +281,35 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                     break;
         }
     }
-    public static void ParseBool(string strVal, Func<bool> get, Action<bool> set, bool throwExcIfFailed = true)
+    public void ParseBool(string strVal, Func<bool> get, Action<bool> set, bool throwExcIfFailed = true)
     {
         bool value = get();
         ParseBool(strVal, ref value, throwExcIfFailed);
         set(value);
     }
-    public static void ParseBool<T>(string strVal, T target, Expression<Func<T, bool>> outExpr, bool throwExcIfFailed = true)
+    public void ParseBool<T>(string strVal, T target, Expression<Func<T, bool>> outExpr, bool throwExcIfFailed = true)
     {
         MemberExpression expr = outExpr.Body as MemberExpression;
         PropertyInfo prop = expr.Member as PropertyInfo;
         bool value = (bool)prop.GetValue(target);
         ParseBool(strVal, ref value, throwExcIfFailed);
         prop.SetValue(target, value);
+    }
+
+    public static void ParseNumber<T>(string str, ref T field) where T : INumber<T>
+    {
+        if(string.IsNullOrWhiteSpace(str) || str is "q" or "query" or "?")
+            Out($"The current value is {field}");
+        else
+            field = T.Parse(str, null);
+    }
+
+    public static void ParseVector<T>(string str, ref T field) where T : IVector<T>
+    {
+        if(string.IsNullOrWhiteSpace(str) || str is "q" or "query" or "?")
+            Out($"The current value is {field}");
+        else
+            field = T.Parse(str.Replace("(", "").Replace(")", "").Split(',', ':', ';', 'x', '/', '|'));
     }
 
     public static nint PostMessage(ConsoleKey key, uint msg = 0x100u) 

@@ -5,7 +5,7 @@ using System.Drawing;
 
 namespace Backrooms;
 
-public record struct Vec2f(float x, float y) : IEnumerable<float>
+public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f>
 {
     public static readonly Vec2f zero = new(0f), nan = new(float.NaN);
     public static readonly Vec2f one = new(1f), negOne = -one;
@@ -101,6 +101,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>
 
     public static Vec2f Parse(string x, string y)
         => new(float.Parse(x), float.Parse(y));
+    public static Vec2f Parse(string[] components)
+        => Parse(components[0], components[1]);
 
 
     public static Vec2f operator +(Vec2f a, Vec2f b) => new(a.x + b.x, a.y + b.y);

@@ -22,6 +22,7 @@ public unsafe class Renderer
     public float[] depthBuf;
     public event Action dimensionsChanged;
     public bool useParallelRendering = true;
+    public float wallHeight = 1f;
 
 
     public Vec2i virtRes { get; private set; }
@@ -171,7 +172,7 @@ public unsafe class Renderer
 
         depthBuf[x] = normDist;
 
-        float height = virtRes.y / dist;
+        float height = wallHeight * virtRes.y / dist;
         int halfHeight = (height / 2f).Floor();
         int y0 = Utils.Clamp(virtCenter.y - halfHeight, 0, virtRes.y-1),
             y1 = Utils.Clamp(virtCenter.y + halfHeight, 0, virtRes.y-1);
@@ -197,7 +198,7 @@ public unsafe class Renderer
                 texPos += texStep;
                 byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
 
-                *scan     = (byte)(*texScan     * brightness);
+                *scan = (byte)(*texScan * brightness);
                 *(scan+1) = (byte)(*(texScan+1) * brightness);
                 *(scan+2) = (byte)(*(texScan+2) * brightness);
 
@@ -212,7 +213,7 @@ public unsafe class Renderer
         else
             floorWall = new(mPos.x + wallX, dir.y > 0 ? mPos.y : mPos.y + 1f);
 
-        float distWall = dist, distPlayer = 0f, currDist;
+        float distWall = dist / wallHeight, distPlayer = 0f, currDist;
         byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1-1)*data.Stride + x*3;
 
         for(int y = y1+1; y <= virtRes.y; y++)

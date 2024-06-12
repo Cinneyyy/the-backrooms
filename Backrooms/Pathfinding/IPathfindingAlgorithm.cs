@@ -9,8 +9,10 @@ public interface IPathfindingAlgorithm
 
     static List<Vec2i> ShortenPath(Map map, List<Vec2i> nodes)
     {
-        //// TODO: fix this fix this fix this
-        //return nodes;
+        // TODO: fix this fix this fix this
+#if true
+        return nodes;
+#else
 
         if(nodes.Count <= 2)
             return nodes;
@@ -58,5 +60,6 @@ public interface IPathfindingAlgorithm
             if(!removedIndices.Contains(i))
                 filteredNodes.Add(nodes[i]);
         return filteredNodes;
+#endif
     }
 }

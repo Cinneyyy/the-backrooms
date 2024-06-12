@@ -85,7 +85,7 @@ public class Game
 
         PostProcessEffect lsdEffect = new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f, enabled: false);
         renderer.postProcessEffects.Add(lsdEffect);
-        renderer.postProcessEffects.Add(new CrtScreen());
+        //renderer.postProcessEffects.Add(new CrtScreen());
         //renderer.postProcessEffects.Add(new DistanceFog(Renderer.GetDistanceFog, renderer.depthBuf));
         //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));

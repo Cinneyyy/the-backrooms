@@ -17,6 +17,7 @@ public class Window : Form
     public DevConsole console;
     public event Action<float> tick;
     public event Action pulse;
+    public event Action visible;
     public readonly Screen screen;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
@@ -144,6 +145,7 @@ public class Window : Form
         while(!Visible)
             Thread.Sleep(1);
 
+        visible?.Invoke();
         DateTime lastFrame = DateTime.UtcNow;
         while(Visible)
             try

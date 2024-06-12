@@ -2,23 +2,24 @@
 
 namespace Backrooms;
 
-public readonly record struct EntityTags
+public record struct EntityTags
 {
-    public readonly record struct Function(string id, string name);
-    public readonly record struct Vector2(float x, float y)
+    public record struct Function(string id, string name);
+    public record struct Vector2(float x, float y)
     {
         public static implicit operator Vec2f(Vector2 v) => new(v.x, v.y);
     }
 
 
-    public string instance { get; init; }
-    public bool builtinPathfinding { get; init; }
-    public string pathfinding { get; init; }
-    public float speed { get; init; }
-    public float size { get; init; }
-    public Function[] functions { get; init; }
+    public string instance { get; set; }
+    public bool builtinPathfinding { get; set; }
+    public string pathfinding { get; set; }
+    public bool automaticallyManagePathfinding { get; set; }
+    public float speed { get; set; }
+    public float size { get; set; }
+    public Function[] functions { get; set; }
 
 
-    public Function GetFunction(string id)
+    public readonly Function GetFunction(string id)
         => functions.Where(f => f.id == id).First();
 }
