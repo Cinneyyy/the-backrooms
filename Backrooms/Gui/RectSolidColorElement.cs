@@ -3,14 +3,11 @@ using System.Drawing;
 
 namespace Backrooms.Gui;
 
+[GuiElement(safety = ElementSafety.Unsafe)]
 public class RectSolidColorElement(string name, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     public Color color = color;
     public bool accurateColorBlending = true;
-
-
-    public override bool isUnsafe => true;
-    public override bool isSafe => false;
 
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h)

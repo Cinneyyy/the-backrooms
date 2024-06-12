@@ -3,19 +3,25 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace Backrooms.Gui;
 
 public class GuiGroup : IEnumerable<GuiElement>
 {
+    public const MouseButtons InteractMB = MouseButtons.Left;
+
     public Renderer rend;
+    public Input input;
     public string name;
     public bool enabled;
     public bool calculateLocationUsingWidth;
     public event Action<float> persistentTick, groupEnabledTick;
 
     private readonly List<GuiElement> unsafeElements = [], safeElements = [];
+    private readonly List<EditModeDraggable> editModeElements = [];
     private Vec2f _screenAnchor;
+    private bool _editMode;
 
 
     public Vec2f screenStep { get; private set; }
@@ -30,6 +36,22 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Vec2f sizeRatioFactor { get; private set; }
     public Vec2f screenFactor { get; private set; }
     public Vec2f screenOffset { get; private set; }
+    public bool mbHelt => !editMode && input.MbHelt(InteractMB);
+    public bool mbDown => !editMode && input.MbDown(InteractMB);
+    public bool editMode
+    {
+        get => _editMode;
+        set {
+            if(_editMode == value)
+                return;
+
+            _editMode = value;
+            if(value)
+                EnterEditMode();
+            else
+                editModeElements.Clear();
+        }
+    }
 
     private IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
 
@@ -37,6 +59,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     public GuiGroup(Renderer rend, string name, bool locationUsingWidth, bool enabled = true)
     {
         this.rend = rend;
+        input = rend.input;
         this.name = name;
         this.enabled = enabled;
         calculateLocationUsingWidth = locationUsingWidth;
@@ -47,25 +70,25 @@ public class GuiGroup : IEnumerable<GuiElement>
     }
 
 
-    public void Add(GuiElement element)
+    public void Add(GuiElement elem)
     {
-        element.group = this;
+        elem.group = this;
 
-        if(element.isUnsafe) unsafeElements.Add(element);
-        if(element.isSafe) safeElements.Add(element);
+        if(elem.isUnsafe) unsafeElements.Add(elem);
+        if(elem.isSafe) safeElements.Add(elem);
 
-        element.OnAddedToGroup();
-        element.ReloadScreenDimensions();
+        elem.OnAddedToGroup();
+        elem.ReloadScreenDimensions();
     }
 
-    public void Remove(GuiElement element)
+    public void Remove(GuiElement elem)
     {
-        element.group = null;
+        elem.group = null;
 
-        if(element.isUnsafe) unsafeElements.Remove(element);
-        if(element.isSafe) safeElements.Remove(element);
+        if(elem.isUnsafe) unsafeElements.Remove(elem);
+        if(elem.isSafe) safeElements.Remove(elem);
 
-        element.OnRemovedFromGroup();
+        elem.OnRemovedFromGroup();
     }
 
     public unsafe void DrawUnsafeElements(byte* scan, int stride, int w, int h)
@@ -73,9 +96,15 @@ public class GuiGroup : IEnumerable<GuiElement>
         if(!enabled)
             return;
 
-        foreach(GuiElement element in unsafeElements)
-            if(element.enabled)
-                element.DrawUnsafe(scan, stride, w, h);
+        if(editMode)
+        {
+            foreach(EditModeDraggable draggable in editModeElements)
+                draggable.DrawAndProcess(scan, stride, w, h);
+        }
+
+        foreach(GuiElement elem in unsafeElements)
+            if(elem.enabled)
+                elem.DrawUnsafe(scan, stride, w, h);
     }
 
     public void DrawSafeElements(Graphics g)
@@ -83,9 +112,9 @@ public class GuiGroup : IEnumerable<GuiElement>
         if(!enabled)
             return;
 
-        foreach(GuiElement element in safeElements)
-            if(element.enabled)
-                element.DrawSafe(g);
+        foreach(GuiElement elem in safeElements)
+            if(elem.enabled)
+                elem.DrawSafe(g);
     }
 
     public GuiElement GetUnsafeElement(Index idx) => unsafeElements[idx];
@@ -105,9 +134,8 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     private void ReloadScreenDimensions()
     {
-        sizeRatioFactor = new Vec2f(1f / rend.virtRatio, 1f);
         screenStep = 1f / (Vec2f)rend.virtRes;
-        (screenFactor, screenOffset) = calculateLocationUsingWidth ? (rend.virtRes, Vec2f.zero) : (new(rend.virtRes.y), new((rend.virtRes.x - rend.virtRes.y)/2f, 0f));
+        (screenFactor, screenOffset, sizeRatioFactor) = calculateLocationUsingWidth ? (rend.virtRes, Vec2f.zero, Vec2f.one) : (new(rend.virtRes.y), new((rend.virtRes.x - rend.virtRes.y)/2f, 0f), new(1f / rend.virtRatio, 1f));
 
         foreach(GuiElement e in allElements)
             e.ReloadScreenDimensions();
@@ -115,9 +143,25 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     private void Tick(float dt)
     {
+        if(input.KeyDown(Keys.F6))
+            editMode ^= true;
+
         persistentTick?.Invoke(dt);
 
         if(enabled)
             groupEnabledTick?.Invoke(dt);
+    }
+
+    private void EnterEditMode()
+    {
+        foreach(GuiElement elem in allElements)
+            AddEditModeItems(elem);
+    }
+
+    private void AddEditModeItems(GuiElement elem)
+    {
+        ColorBlock colors = new(Color.White, .9f, .6f, .3f, true, false);
+        EditModeDraggable rightScaler = new(colors, elem.location + Anchor.T.ToOffset() * elem.size, new(.05f), elem, false, true, this, (a, d) => elem.size = elem.size with { x = elem.size.x + d.x });
+        editModeElements.Add(rightScaler);
     }
 }

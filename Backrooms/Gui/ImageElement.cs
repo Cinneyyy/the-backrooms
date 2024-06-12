@@ -3,14 +3,11 @@ using System.Drawing;
 
 namespace Backrooms.Gui;
 
+[GuiElement(safety = ElementSafety.Unsafe)]
 public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     public UnsafeGraphic image = image;
     public float rMul = color.R/255f, gMul = color.G/255f, bMul = color.B/255f;
-
-
-    public override bool isUnsafe => true;
-    public override bool isSafe => false;
 
 
     public ImageElement(string name, string spriteId, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, new UnsafeGraphic(Resources.sprites[spriteId], true), color, location, size, anchor) { }
@@ -43,6 +40,4 @@ public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f l
             scan += stride;
         }
     }
-
-    public override void DrawSafe(Graphics g) => throw new System.NotImplementedException();
 }

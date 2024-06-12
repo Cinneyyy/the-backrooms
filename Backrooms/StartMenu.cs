@@ -30,7 +30,7 @@ public class StartMenu
         rend = win.renderer;
 
         Color baseColor = Color.FromArgb(0);
-        ColorBlock colors = new(Color.FromArgb(125, baseColor), Color.FromArgb(185, baseColor), Color.FromArgb(225, baseColor), 0f);
+        ColorBlock colors = new(Color.FromArgb(125, baseColor), Color.FromArgb(185, baseColor), Color.FromArgb(225, baseColor));
 
         startScreen = new(rend, "sm_start", false, true) {
             new TextElement("title", "The Backrooms", font, 30f, Color.Yellow, Anchor.C, new(.5f, .2f), Vec2f.zero),

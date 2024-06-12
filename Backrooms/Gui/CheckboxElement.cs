@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 
 namespace Backrooms.Gui;
 
+[GuiElement(safety = ElementSafety.Neither)]
 public class CheckboxElement(string name, string text, FontFamily font, float textSize, Color color, ColorBlock colors, UnsafeGraphic checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     public readonly TextElement textElem = new($"{name}_text", text, font, textSize, color, Anchor.Left, location, size, anchor);
@@ -11,14 +11,11 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     public readonly ImageElement checkmarkElem = new($"{name}_checkmark", checkmark, color, new(), new(size.y * checkmarkSize), Anchor.C) {
         enabled = isOn
     };
-    public MouseButtons button = MouseButtons.Left;
 
     private Input input;
     private bool _isOn = isOn;
 
 
-    public override bool isSafe => false;
-    public override bool isUnsafe => false;
     public bool isOn
     {
         get => _isOn;
@@ -71,8 +68,8 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
         bool isHovering = input.ContainsCursorCentered(backgroundElem.screenLocation + backgroundElem.screenSize/2, backgroundElem.screenSize);
 
         if(isHovering)
-            isOn ^= input.MbDown(button);
+            isOn ^= group.mbDown;
 
-        backgroundElem.color = !isHovering ? colors.normal : (input.MbHelt(button) ? colors.select : colors.hover);
+        backgroundElem.color = !isHovering ? colors.normal : (group.mbHelt ? colors.select : colors.hover);
     }
 }

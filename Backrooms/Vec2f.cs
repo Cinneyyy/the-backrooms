@@ -27,6 +27,7 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     public readonly float yxRatio => y/x;
     public readonly float xyDelta => x-y;
     public readonly float yxDelta => y-x;
+    public readonly Vec2f swap => new(y, x);
 
 
     public Vec2f(float xy) : this(xy, xy) { }

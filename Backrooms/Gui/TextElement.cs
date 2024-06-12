@@ -2,6 +2,7 @@
 
 namespace Backrooms.Gui;
 
+[GuiElement(safety = ElementSafety.Safe)]
 public class TextElement(string name, string text, FontFamily fontFamily, float emSize, Color color, StringFormat format, Anchor textAnchor, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
 {
     private const GraphicsUnit GRAPHICS_UNIT = GraphicsUnit.Millimeter;
@@ -23,8 +24,6 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
     };
 
 
-    public override bool isUnsafe => false;
-    public override bool isSafe => true;
     public Color color
     {
         get => _color;

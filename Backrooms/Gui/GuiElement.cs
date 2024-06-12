@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Drawing;
+using System.Reflection;
 
 namespace Backrooms.Gui;
 
-public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor = Anchor.C)
+public abstract class GuiElement
 {
     public GuiGroup group;
-    public string name = name;
+    public string name;
+    public readonly GuiElementAttribute safetyAttr;
 
-    private Vec2f _location = location, _size = size;
-    private Anchor _anchor = anchor;
+    private Vec2f _location, _size;
+    private Anchor _anchor;
     private bool _enabled = true;
 
 
@@ -42,8 +44,6 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
             ReloadScreenLocation();
         }
     }
-    public abstract bool isUnsafe { get; }
-    public abstract bool isSafe { get; }
     public bool enabled
     {
         get => _enabled;
@@ -59,6 +59,21 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
             else
                 OnDisable();
         }
+    }
+    public bool isSafe => safetyAttr.isSafe;
+    public bool isUnsafe => safetyAttr.isUnsafe;
+
+
+    public GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor = Anchor.C)
+    {
+        this.name = name;
+        _location = location;
+        _size = size;
+        _anchor = anchor;
+
+        safetyAttr = GetType().GetCustomAttribute<GuiElementAttribute>();
+        if(safetyAttr is null)
+            throw new($"All types derived from GuiElement must have GuiElementAttribute");
     }
 
 
@@ -91,21 +106,9 @@ public abstract class GuiElement(string name, Vec2f location, Vec2f size, Anchor
 
     public void ReloadScreenLocation()
     {
-        screenLocationF = location * group.screenFactor + group.screenOffset + group.screenAnchor - screenSizeF * (Vec2f)(anchor switch {
-            Anchor.C => new(.5f, .5f),
-            Anchor.T => new(.5f, 0f),
-            Anchor.B => new(.5f, 1f),
-            Anchor.L => new(0f, .5f),
-            Anchor.R => new(1f, .5f),
-            Anchor.TL => new(0f, 0f),
-            Anchor.TR => new(1f, 0f),
-            Anchor.BL => new(0f, 1f),
-            Anchor.BR => new(1f, 1f),
-            _ => throw new($"Invalid GUI anchor ;; {anchor} ;; {(byte)anchor}")
-        });
+        screenLocationF = location * group.screenFactor + group.screenOffset + group.screenAnchor - screenSizeF * anchor.ToOffset();
         screenLocation = screenLocationF.Floor();
     }
-
 
     public unsafe virtual void DrawUnsafe(byte* scan, int stride, int w, int h) => throw new NotImplementedException("DrawUnsafe has not been implemented");
     public virtual void DrawSafe(Graphics g) => throw new NotImplementedException("DrawSafe has not been implemented");

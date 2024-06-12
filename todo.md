@@ -2,24 +2,25 @@
 
 ---
 ## Features
-- Finish up main menu
-- Actual gameplay
+1. Finish up main menu
+1. Actual gameplay
     -> Objectives
-- More varied enemies & enemy AI
-- More level variation
+1. More varied enemies & enemy AI
+1. More level variation
     -> Not too much, it is the backrooms
-- Post processing effects
-- Maybe maybe rewrite multiplayer code (not MpHandler itself, just the way it is used)
-- Out() categories
+1. Post processing effects
+1. Maybe maybe rewrite multiplayer code (not MpHandler itself, just the way it is used)
+1. Out() categories
     -> e.g. Debug, Load, Error, etc.
+1. GUI edit mode
 
 ---
 ## Bugfixes
-- Custom entity audio is sometimes stuttery
-- GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
-- Multiplayer
+1. Custom entity audio is sometimes stuttery
+1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
+1. Multiplayer
     -> Client disconnect handling
-- Ceiling/floor rendering is **extremely** slow
-- Fix pathfinding bugs
+1. Ceiling/floor rendering is **extremely** slow
+1. Fix pathfinding bugs
     -> Dijkstra's shortest path
     -> Pathfinding shortcuts

@@ -4,6 +4,7 @@ using System.Windows.Forms;
 
 namespace Backrooms.Gui;
 
+[GuiElement(safety = ElementSafety.Neither)]
 public class ValueSelectorElement : GuiElement
 {
     public readonly ImageElement leftArrowElem, rightArrowElem;
@@ -20,8 +21,6 @@ public class ValueSelectorElement : GuiElement
     private int _value;
 
 
-    public override bool isSafe => false;
-    public override bool isUnsafe => false;
     public int value
     {
         get => _value;

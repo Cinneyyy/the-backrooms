@@ -42,10 +42,10 @@ public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
     public bool ContainsCursorCentered(Vec2f loc, Vec2f size)
         => Utils.InsideRectCentered(loc, size, virtMousePos);
 
-    public bool ContainsNormCursor(Vec2f loc, Vec2f size)
-        => Utils.InsideRect(loc, size, normMousePos);
-    public bool ContainsNormCursorCentered(Vec2f loc, Vec2f size)
-        => Utils.InsideRectCentered(loc, size, normMousePos);
+    public bool ContainsNormCursor(Vec2f loc, Vec2f size, Vec2f? mPosMul = null)
+        => Utils.InsideRect(loc, size, normMousePos * (mPosMul ?? Vec2f.one));
+    public bool ContainsNormCursorCentered(Vec2f loc, Vec2f size, Vec2f? mPosMul = null)
+        => Utils.InsideRectCentered(loc, size, normMousePos * (mPosMul ?? Vec2f.one));
 
 
     internal void OnUpdateDimensions(Renderer rend)
