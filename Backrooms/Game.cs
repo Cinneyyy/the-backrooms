@@ -9,6 +9,7 @@ using System.Drawing;
 using Backrooms.Pathfinding;
 using Backrooms.PostProcessing;
 using Backrooms.Gui;
+using System.IO;
 
 namespace Backrooms;
 
@@ -29,17 +30,12 @@ public class Game
         { 1, 1, 1, 1, 1, 1, 1, 1 },
     });
     public float playerSpeed = 2f, sensitivity = 1/5000f;
-    public SpriteRenderer olafScholz;
-    public AudioSource olafScholzAudio;
-    public float olafSpeed = .75f;
     public StartMenu startMenu;
     public MpHandler mpHandler;
     public readonly List<(byte id, SpriteRenderer renderer)> playerRenderers = [];
     public readonly Image[] skins = (from str in new string[] { "hazmat_suit", "entity", "freddy_fazbear", "huggy_wuggy", "purple_guy" }
                                     select Resources.sprites[str])
                                     .ToArray();
-    public PathfindingEntity olafPathfinding;
-    public string[] customEntityPaths = ["C:/Users/Colin/Downloads/entity1"];//, "C:/Users/Colin/Downloads/entity2"];
     public Entity[] customEntities;
 
 
@@ -83,36 +79,22 @@ public class Game
         map.floorLuminance = .5f;
         map.ceilLuminance = .5f;
 
-        PostProcessEffect lsdEffect = new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f, enabled: false);
-        renderer.postProcessEffects.Add(lsdEffect);
+        //PostProcessEffect lsdEffect = new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f, enabled: false);
+        //renderer.postProcessEffects.Add(lsdEffect);
         //renderer.postProcessEffects.Add(new CrtScreen());
         //renderer.postProcessEffects.Add(new DistanceFog(Renderer.GetDistanceFog, renderer.depthBuf));
         //renderer.postProcessEffects.Add(new VDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HDistortion(x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
         //renderer.postProcessEffects.Add(new HVDistortion(x => MathF.Sin(2.5f * (window.timeElapsed + x)) / 20f, x => MathF.Cos(2.5f * (window.timeElapsed + x)) / 20f));
-        window.tick += dt => lsdEffect.enabled ^= input.KeyDown(Keys.L);
-
-        renderer.sprites.Add(olafScholz = new(camera.pos, new(.8f), Resources.sprites["oli"]));
-        olafScholzAudio = new(Resources.audios["scholz_speech_1"]) {
-            loop = true
-        };
-        //olafScholzAudio.Play();
-
-        olafPathfinding = new(map, new BreadthFirstSearch());
-        window.pulse += () => { 
-            if(mpHandler is not null && mpHandler.started)
-                olafPathfinding.FindPath(olafScholz.pos, mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos);
-        };
+        //window.tick += dt => lsdEffect.enabled ^= input.KeyDown(Keys.L);
         //olafPathfinder = new(map, map.size/2f, olafScholz.size.x/2f, olafSpeed);
         //window.pulse += () => olafPathfinder.RefreshPath(mpHandler.GetClientState(mpHandler.serverState.olafTarget)?.pos ?? map.size/2f);
 
-        customEntities = (from e in customEntityPaths select new Entity(this, e)).ToArray();
+        customEntities = (from e in Directory.GetFiles("Entities", "*.zip", SearchOption.TopDirectoryOnly)
+                          .Concat(Directory.GetDirectories("Entities", "*", SearchOption.TopDirectoryOnly))
+                          select new Entity(this, e)).ToArray();
 
         mpHandler.start += () => {
-            mpHandler.serverState.olafPos = map.size/2f;
-            mpHandler.serverState.olafTarget = 1;
-            mpHandler.SendServerStateChange(StateKey.S_OlafPos, StateKey.S_OlafTarget);
-
             mpHandler.onFinishConnect += () => {
                 mpHandler.ownClientState.skinIdx = 0;
                 mpHandler.SendClientStateChange(StateKey.C_Skin);
@@ -177,11 +159,6 @@ public class Game
         if(mpHandler.started)
         {
             mpHandler.ownClientState.pos = camera.pos;
-            if(mpHandler.isHost)
-            {
-                mpHandler.serverState.olafPos = olafScholz.pos = camera.pos;
-                mpHandler.SendServerStateChange(StateKey.S_OlafPos);
-            }
             mpHandler.SendClientStateChange(StateKey.C_Pos);
         }
     }
@@ -252,34 +229,7 @@ public class Game
                 Thread.Sleep(1);
                 mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
             }
-
-
-        if(input.KeyDown(Keys.E))
-            mpHandler.SendClientRequest(RequestKey.C_MakeMeOlafTarget);
         #endregion
-
-        Vec2f olafTarget = mpHandler.GetClientState(mpHandler.serverState.olafTarget).pos;
-        Vec2f olafToPlayer = olafTarget - olafScholz.pos;
-        olafScholz.pos = olafPathfinding.MoveTowards(olafScholz.pos, olafScholz.size.x/2f, olafSpeed, dt);
-        //Out(olafScholz.pos);
-
-        //Vec2f oldOlaf = olafScholz.pos;
-        //if(olafTarget != olafScholz.pos)
-        //    olafScholz.pos += olafToPlayer.normalized * olafSpeed * dt;
-        //olafPathfinder.Tick(dt);
-        //olafScholz.pos = olafPathfinder.pos;//map.ResolveIntersectionIfNecessery(oldOlaf, olafPathfinder.pos, olafScholz.size.x/2f, out _);
-        olafScholzAudio.volume = MathF.Pow(1f - olafToPlayer.length / 10f, 3f);
-
-
-        if(mpHandler.isHost)
-        {
-            mpHandler.serverState.olafPos = olafScholz.pos;
-            mpHandler.SendServerStateChange(StateKey.S_OlafPos);
-        }
-        else
-        {
-            olafScholz.pos = mpHandler.serverState.olafPos;
-        }
 
         foreach(var (id, rend) in playerRenderers)
             rend.pos = mpHandler.GetClientState(id).pos;

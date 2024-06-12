@@ -1,0 +1,23 @@
+{
+    "instance": "Behaviour",
+    "size": 0.8,
+    "managedPathfinding": {
+        "builtinAlgorithm": true,
+        "algorithmName": "Backrooms.Pathfinding.BreadthFirstSearch",
+        "speed": 1.0
+    },
+    "functions": [
+        {
+            "id": "tick_dt",
+            "name": "Tick"
+        },
+        {
+            "id": "awake",
+            "name": "Awake"
+        },
+        {
+            "id": "get_volume",
+            "name": "GetVolume"
+        }
+    ]
+}

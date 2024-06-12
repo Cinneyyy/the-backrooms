@@ -10,6 +10,5 @@ public enum RequestKey
     S_RegenerateMap = Server | 1,
     S_UpdateSkin = Server | 2,
 
-    C_MakeMeOlafTarget = Client | 1,
-    C_UpdateSkin = Client | 2
+    C_UpdateSkin = Client | 1
 }

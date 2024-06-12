@@ -19,8 +19,6 @@ namespace Backrooms.Online;
 public class ServerState : State<StateKey>
 {
     public int levelSeed;
-    public Vec2f olafPos;
-    public byte olafTarget;
 
     public static readonly StateKey[] allKeys = (from v in Enum.GetValues<StateKey>()
                                                  where (v != StateKey.Server) && (((byte)v & 0b1100_0000) == (byte)StateKey.Server)
@@ -35,19 +33,16 @@ public class ServerState : State<StateKey>
         switch(key)
         {
             case StateKey.S_LevelSeed: writer.Write(levelSeed); break;
-            case StateKey.S_OlafPos: writer.Write(olafPos); break;
-            case StateKey.S_OlafTarget: writer.Write(olafTarget); break;
             default: throw new($"Invalid StateKey in ServerState.SerializeField(): {key} // {(byte)key}");
         }
     }
 
     protected override void DeserializeField(BinaryReader reader, StateKey key)
     {
+#pragma warning disable IDE0066
         switch(key)
         {
             case StateKey.S_LevelSeed: levelSeed = reader.ReadInt32(); break;
-            case StateKey.S_OlafPos: olafPos = reader.ReadVec2f(); break;
-            case StateKey.S_OlafTarget: olafTarget = reader.ReadByte(); break;
             default: throw new($"Invalid StateKey in ServerState.DeserializeField(): {key} // {(byte)key}");
         }
     }

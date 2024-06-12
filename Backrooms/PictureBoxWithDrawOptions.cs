@@ -25,7 +25,7 @@ public class PictureBoxWithDrawOptions : PictureBox
         }
         catch(Exception exc)
         {
-            Out(exc, ConsoleColor.Red);
+            Out($"{exc.GetType()} in OnPaint (PictureBoxWithDrawOptions.cs) ;; {exc.Message}", ConsoleColor.Red);
         }
     }
 }

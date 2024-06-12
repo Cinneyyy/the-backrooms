@@ -181,10 +181,6 @@ public class MpHandler
 
         switch(key)
         {
-            case RequestKey.C_MakeMeOlafTarget:
-                serverState.olafTarget = clientId;
-                SendServerStateChangeAsServer(StateKey.S_OlafTarget);
-                break;
             case RequestKey.C_UpdateSkin:
                 SendServerRequest(RequestKey.S_UpdateSkin);
                 break;
