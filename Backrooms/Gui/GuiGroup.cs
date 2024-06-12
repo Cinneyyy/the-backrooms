@@ -19,9 +19,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     public event Action<float> persistentTick, groupEnabledTick;
 
     private readonly List<GuiElement> unsafeElements = [], safeElements = [];
-    private readonly List<EditModeDraggable> editModeElements = [];
     private Vec2f _screenAnchor;
-    private bool _editMode;
 
 
     public Vec2f screenStep { get; private set; }
@@ -36,24 +34,9 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Vec2f sizeRatioFactor { get; private set; }
     public Vec2f screenFactor { get; private set; }
     public Vec2f screenOffset { get; private set; }
-    public bool mbHelt => !editMode && input.MbHelt(InteractMB);
-    public bool mbDown => !editMode && input.MbDown(InteractMB);
-    public bool editMode
-    {
-        get => _editMode;
-        set {
-            if(_editMode == value)
-                return;
-
-            _editMode = value;
-            if(value)
-                EnterEditMode();
-            else
-                editModeElements.Clear();
-        }
-    }
-
-    private IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
+    public bool mbHelt => input.MbHelt(InteractMB);
+    public bool mbDown => input.MbDown(InteractMB);
+    public IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
 
 
     public GuiGroup(Renderer rend, string name, bool locationUsingWidth, bool enabled = true)
@@ -96,12 +79,6 @@ public class GuiGroup : IEnumerable<GuiElement>
         if(!enabled)
             return;
 
-        if(editMode)
-        {
-            foreach(EditModeDraggable draggable in editModeElements)
-                draggable.DrawAndProcess(scan, stride, w, h);
-        }
-
         foreach(GuiElement elem in unsafeElements)
             if(elem.enabled)
                 elem.DrawUnsafe(scan, stride, w, h);
@@ -123,10 +100,10 @@ public class GuiGroup : IEnumerable<GuiElement>
     public GuiElement GetSafeElement(Index idx) => safeElements[idx];
     public T GetSafeElement<T>(Index idx) where T : GuiElement => GetSafeElement(idx) as T;
 
-    public GuiElement FindElement(string name) => (from e in allElements
+    public GuiElement GetElement(string name) => (from e in allElements
                                                    where e.name == name
                                                    select e).FirstOrDefault();
-    public T FindElement<T>(string name) where T : GuiElement => FindElement(name) as T;
+    public T GetElement<T>(string name) where T : GuiElement => GetElement(name) as T;
 
     public IEnumerator<GuiElement> GetEnumerator() => allElements.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -143,25 +120,9 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     private void Tick(float dt)
     {
-        if(input.KeyDown(Keys.F6))
-            editMode ^= true;
-
         persistentTick?.Invoke(dt);
 
         if(enabled)
             groupEnabledTick?.Invoke(dt);
-    }
-
-    private void EnterEditMode()
-    {
-        foreach(GuiElement elem in allElements)
-            AddEditModeItems(elem);
-    }
-
-    private void AddEditModeItems(GuiElement elem)
-    {
-        ColorBlock colors = new(Color.White, .9f, .6f, .3f, true, false);
-        EditModeDraggable rightScaler = new(colors, elem.location + Anchor.T.ToOffset() * elem.size, new(.05f), elem, false, true, this, (a, d) => elem.size = elem.size with { x = elem.size.x + d.x });
-        editModeElements.Add(rightScaler);
     }
 }

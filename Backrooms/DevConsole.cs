@@ -200,7 +200,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "HIDE", [0]),
 
             new(["fps_display", "fps", "show_fps"], 
-            args => ParseBool(args.ElementAtOrDefault(0), win.renderer.FindGuiGroup("hud").FindElement("fps"), e => e.enabled), 
+            args => ParseBool(args.ElementAtOrDefault(0), win.renderer.FindGuiGroup("hud").GetElement("fps"), e => e.enabled), 
             "SHOW_FPS <enabled>", [0, 1]),
 
             new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], 
@@ -217,7 +217,33 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
             new(["wall_height", "wheight", "wallh"],
             args => ParseNumber(args.ElementAtOrDefault(0), ref win.renderer.wallHeight),
-            "WALL_HEIGHT <height>", [0, 1])
+            "WALL_HEIGHT <height>", [0, 1]),
+
+            new(["gui_elem_size", "elem_size"],
+            args => {
+                GuiElement elem = win.renderer.FindGuiGroup(args[0]).GetElement(args[1]);
+                Vec2f size = elem.size;
+                ParseVector(args.ElementAtOrDefault(2), ref size);
+                elem.size = size;
+            },
+            "ELEM_SIZE <group> <element>", [2, 3]),
+
+            new(["gui_elem_loc", "elem_loc"],
+            args => {
+                GuiElement elem = win.renderer.FindGuiGroup(args[0]).GetElement(args[1]);
+                Vec2f loc = elem.location;
+                ParseVector(args.ElementAtOrDefault(2), ref loc);
+                elem.size = loc;
+            },
+            "ELEM_LOC <group> <element>", [2, 3]),
+
+            new(["list_gui_groups", "gui_groups"],
+            args => Out(win.renderer.guiGroups.FormatStr(", ", g => g.name)),
+            "LIST_GUI_GROUPS", [0]),
+
+            new(["list_gui_elements", "gui_elements", "list_gui_elems", "gui_elems"],
+            args => Out(win.renderer.guiGroups.FormatStr(" ;; ", g => $"[{g.name}: {g.allElements.FormatStr(", ", e => $"{e.name}")}]")),
+            "LIST_GUI_ELEMENTS", [0])
         ];
     }
 
