@@ -15,15 +15,15 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Input input;
     public string name;
     public bool enabled;
-    public bool calculateLocationUsingWidth;
     public event Action<float> persistentTick, groupEnabledTick;
 
     private readonly List<GuiElement> unsafeElements = [], safeElements = [];
     private Vec2f _screenAnchor;
+    private bool _fullScreenLocation;
 
 
     public Vec2f screenStep { get; private set; }
-    public Vec2f screenAnchor
+    public Vec2f position
     {
         get => _screenAnchor;
         set {
@@ -31,21 +31,29 @@ public class GuiGroup : IEnumerable<GuiElement>
             ReloadScreenDimensions();
         }
     }
-    public Vec2f sizeRatioFactor { get; private set; }
-    public Vec2f screenFactor { get; private set; }
+    public bool fullScreenLocation
+    {
+        get => _fullScreenLocation;
+        set {
+            _fullScreenLocation = value;
+            ReloadScreenDimensions();
+        }
+    }
+    public Vec2f screenRes { get; private set; }
     public Vec2f screenOffset { get; private set; }
+    public Vec2f guiToVirtRatio { get; private set; }
     public bool mbHelt => input.MbHelt(InteractMB);
     public bool mbDown => input.MbDown(InteractMB);
     public IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
 
 
-    public GuiGroup(Renderer rend, string name, bool locationUsingWidth, bool enabled = true)
+    public GuiGroup(Renderer rend, string name, bool fullScreenLocation, bool enabled = true)
     {
         this.rend = rend;
         input = rend.input;
         this.name = name;
         this.enabled = enabled;
-        calculateLocationUsingWidth = locationUsingWidth;
+        this.fullScreenLocation = fullScreenLocation;
         rend.window.tick += Tick;
 
         ReloadScreenDimensions();
@@ -111,8 +119,18 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     private void ReloadScreenDimensions()
     {
-        screenStep = 1f / (Vec2f)rend.virtRes;
-        (screenFactor, screenOffset, sizeRatioFactor) = calculateLocationUsingWidth ? (rend.virtRes, Vec2f.zero, Vec2f.one) : (new(rend.virtRes.y), new((rend.virtRes.x - rend.virtRes.y)/2f, 0f), new(1f / rend.virtRatio, 1f));
+        if(fullScreenLocation)
+        {
+            screenRes = rend.virtRes;
+            screenOffset = Vec2f.zero;
+            guiToVirtRatio = Vec2f.one;
+        }
+        else
+        {
+            screenRes = new(rend.virtRes.y);
+            screenOffset = new((rend.virtRes.x - rend.virtRes.y)/2f, 0f);
+            guiToVirtRatio = new(1f / rend.virtRatio, 1f);
+        }
 
         foreach(GuiElement e in allElements)
             e.ReloadScreenDimensions();

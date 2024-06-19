@@ -4,11 +4,11 @@ using System.Drawing;
 namespace Backrooms.Gui;
 
 [GuiElement(safety = ElementSafety.Neither)]
-public class CheckboxElement(string name, string text, FontFamily font, float textSize, Color color, ColorBlock colors, UnsafeGraphic checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
+public class CheckboxElement(string name, string text, FontFamily font, float textSize, Color color, ColorBlock colors, UnsafeGraphic checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
-    public readonly TextElement textElem = new($"{name}_text", text, font, textSize, color, Anchor.Left, location, size, anchor);
-    public readonly RectSolidColorElement backgroundElem = new($"{name}_background", colors.normal, new(), new(size.y), Anchor.C);
-    public readonly ImageElement checkmarkElem = new($"{name}_checkmark", checkmark, color, new(), new(size.y * checkmarkSize), Anchor.C) {
+    public readonly TextElement textElem = new($"{name}_text", text, font, textSize, color, new(0f, .5f), location, size, anchor);
+    public readonly RectSolidColorElement backgroundElem = new($"{name}_background", colors.normal, new(), new(size.y), null);
+    public readonly ImageElement checkmarkElem = new($"{name}_checkmark", checkmark, color, new(), new(size.y * checkmarkSize), null) {
         enabled = isOn
     };
 
@@ -27,7 +27,7 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     }
 
 
-    public CheckboxElement(string name, string text, FontFamily font, float textSize, Color textColor, ColorBlock colors, string checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, text, font, textSize, textColor, colors, new UnsafeGraphic(checkmark), checkmarkSize, isOn, valueChanged, location, size, anchor) { }
+    public CheckboxElement(string name, string text, FontFamily font, float textSize, Color textColor, ColorBlock colors, string checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : this(name, text, font, textSize, textColor, colors, new UnsafeGraphic(checkmark), checkmarkSize, isOn, valueChanged, location, size, anchor) { }
 
 
     public override void OnAddedToGroup()

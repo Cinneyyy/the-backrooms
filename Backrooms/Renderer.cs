@@ -5,7 +5,6 @@ using System.Drawing.Imaging;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.PostProcessing;
-using System.Linq;
 
 namespace Backrooms;
 
@@ -47,9 +46,7 @@ public unsafe class Renderer
 
 
     public GuiGroup FindGuiGroup(string name)
-        => (from g in guiGroups
-            where g.name == name
-            select g).FirstOrDefault();
+        => guiGroups.Find(g => g.name == name);
 
     public void UpdateResolution(Vec2i virtRes, Vec2i physRes)
     {

@@ -248,6 +248,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     }
 
 
+    /// <summary>Only really use for initializers, as it resizes the internal array</summary>
     public void Add(Cmd cmd)
     {
         Array.Resize(ref cmds, cmds.Length+1);

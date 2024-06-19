@@ -126,5 +126,9 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     public static explicit operator Vec2i(Vec2f v) => v.Round();
     public static implicit operator Vec2f(Vec2i v) => new(v.x, v.y);
 
+    public static explicit operator SizeF(Vec2f v) => new(v.x, v.y);
+    public static explicit operator Vec2f(SizeF s) => new(s.Width, s.Height);
+
     public static explicit operator PointF(Vec2f v) => new(v.x, v.y);
+    public static explicit operator Vec2f(PointF p) => new(p.X, p.Y);
 }

@@ -2,16 +2,16 @@
 
 namespace Backrooms;
 
-public class Camera(float fovRadians, float maxDist, float angle = 0f)
+public class Camera(float fovDegrees, float maxDist, float angle = 0f)
 {
     public Vec2f pos;
     public float maxDist = maxDist;
     public bool fixFisheyeEffect = true;
 
 #pragma warning disable IDE0032
-    private float _angle = angle, _fov = fovRadians, _fovFactor = MathF.Tan(fovRadians/2f);
+    private float _angle = angle, _fov = fovDegrees * Utils.Deg2Rad, _fovFactor = MathF.Tan(fovDegrees * Utils.Deg2Rad / 2f);
 #pragma warning restore
-    private Vec2f _plane = Vec2f.PlaneFromFov(angle, fovRadians), _forward = Vec2f.FromAngle(angle), _right = Vec2f.FromAngle(angle - MathF.PI/2f);
+    private Vec2f _plane = Vec2f.PlaneFromFov(angle, fovDegrees * Utils.Deg2Rad), _forward = Vec2f.FromAngle(angle), _right = Vec2f.FromAngle(angle - MathF.PI/2f);
 
 
     public float angle

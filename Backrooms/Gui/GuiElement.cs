@@ -10,8 +10,7 @@ public abstract class GuiElement
     public string name;
     public readonly GuiElementAttribute safetyAttr;
 
-    private Vec2f _location, _size;
-    private Anchor _anchor;
+    private Vec2f _location, _size, _anchor;
     private bool _enabled = true;
 
 
@@ -36,7 +35,7 @@ public abstract class GuiElement
             ReloadScreenSize();
         }
     }
-    public Anchor anchor
+    public Vec2f anchor
     {
         get => _anchor;
         set {
@@ -64,12 +63,12 @@ public abstract class GuiElement
     public bool isUnsafe => safetyAttr.isUnsafe;
 
 
-    public GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor = Anchor.C)
+    public GuiElement(string name, Vec2f location, Vec2f size, Vec2f? anchor = null)
     {
         this.name = name;
         _location = location;
         _size = size;
-        _anchor = anchor;
+        _anchor = anchor ?? Vec2f.half;
 
         safetyAttr = GetType().GetCustomAttribute<GuiElementAttribute>();
         if(safetyAttr is null)
@@ -83,7 +82,7 @@ public abstract class GuiElement
         ReloadScreenDimensions();
     }
 
-    public GuiElement(string name, Vec2f location, Vec2f size, Anchor anchor, GuiGroup group) : this(name, location, size, anchor)
+    public GuiElement(string name, Vec2f location, Vec2f size, Vec2f anchor, GuiGroup group) : this(name, location, size, anchor)
     {
         this.group = group;
         ReloadScreenDimensions();
@@ -106,12 +105,12 @@ public abstract class GuiElement
 
     public void ReloadScreenLocation()
     {
-        screenLocationF = location * group.screenFactor + group.screenOffset + group.screenAnchor - screenSizeF * anchor.ToOffset();
+        screenLocationF = location * group.screenRes + group.screenOffset + group.position - screenSizeF * anchor;
         screenLocation = screenLocationF.Floor();
     }
 
-    public unsafe virtual void DrawUnsafe(byte* scan, int stride, int w, int h) => throw new NotImplementedException("DrawUnsafe has not been implemented");
-    public virtual void DrawSafe(Graphics g) => throw new NotImplementedException("DrawSafe has not been implemented");
+    public unsafe virtual void DrawUnsafe(byte* scan, int stride, int w, int h) => throw new NotImplementedException($"GUI type {GetType().FullName} does not implement the unsafe draw call");
+    public virtual void DrawSafe(Graphics g) => throw new NotImplementedException($"GUI type {GetType().FullName} does not implement the safe draw call");
     public virtual void OnAddedToGroup() { }
     public virtual void OnRemovedFromGroup() { }
 

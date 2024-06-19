@@ -10,13 +10,13 @@ public class RoomGenerator : IEnumerable
     public float mazeFill = .5f; // .8f
     public int mazeCount = 1000; // 1000
     public float collResolveChance = .5f; // .5;
-    public (int min, int max) roomCount = (10, 15); // 5, 15
-    public (int min, int max) roomSize = (8, 25); // 1, 32
-    public (int min, int max) pillarRoomSize = (20, 50); // 1, 32
-    public (int min, int max) pillarRoomCount = (10, 15); // 1, 4
-    public (int min, int max) pillarSpacing = (2, 4); // 2, 6
+    public Vec2i roomCount = new(10, 15); // 5, 15
+    public Vec2i roomSize = new(8, 25); // 1, 32
+    public Vec2i pillarRoomSize = new(20, 50); // 1, 32
+    public Vec2i pillarRoomCount = new(10, 15); // 1, 4
+    public Vec2i pillarSpacing = new(2, 4); // 2, 6
     public int staggeredPillarRoomChance = 50; // 50
-    public (int min, int max) staggeredPillarStep = (1, 4);
+    public Vec2i staggeredPillarStep = new(1, 4);
     public int[] frontierAttempts = [ 1 ]; // [ 1 ]
     public List<(Vec2i loc, Vec2i size)> rooms = [], pillarRooms = [];
 
@@ -96,11 +96,11 @@ public class RoomGenerator : IEnumerable
 
     public void GenerateRooms()
     {
-        int roomCount = Rand(this.roomCount.min, this.roomCount.max, true);
+        int roomCount = Rand(this.roomCount.x, this.roomCount.y, true);
 
         for(int i = 0; i < roomCount; i++)
         {
-            Vec2i size = new(Rand(roomSize.min, roomSize.max, true), Rand(roomSize.min, roomSize.max, true));
+            Vec2i size = new(Rand(roomSize.x, roomSize.y, true), Rand(roomSize.x, roomSize.y, true));
             Vec2i loc = new(Rand(columns - size.x), Rand(rows - size.y));
             rooms.Add((new(loc.x, loc.y), new(size.x, size.y)));
 
@@ -112,32 +112,32 @@ public class RoomGenerator : IEnumerable
 
     public void GeneratePillarRooms()
     {
-        int roomCount = Rand(pillarRoomCount.min, pillarRoomCount.max, true);
+        int roomCount = Rand(pillarRoomCount.x, pillarRoomCount.y, true);
 
         for(int i = 0; i < roomCount; i++)
         {
-            (int w, int h) size = (Rand(pillarRoomSize.min, pillarRoomSize.max, true), Rand(pillarRoomSize.min, pillarRoomSize.max, true));
-            Vec2i loc = new(Rand(columns - size.w), Rand(rows - size.h));
-            pillarRooms.Add((new(loc.x, loc.y), new(size.w, size.h)));
+            Vec2i size = new(Rand(pillarRoomSize.x, pillarRoomSize.y, true), Rand(pillarRoomSize.x, pillarRoomSize.y, true));
+            Vec2i loc = new(Rand(columns - size.x), Rand(rows - size.y));
+            pillarRooms.Add((new(loc.x, loc.y), new(size.x, size.y)));
 
-            for(int y = loc.y; y < loc.y + size.h; y++)
-                for(int x = loc.x; x < loc.x + size.w; x++)
+            for(int y = loc.y; y < loc.y + size.y; y++)
+                for(int x = loc.x; x < loc.x + size.x; x++)
                     this[x, y] = Tile.Empty;
 
             if(Rand(100) >= staggeredPillarRoomChance) // staggered
             {
-                bool inRoom(int x, int y) => x >= 0 && y >= 0 && x < size.w && y < size.h;
+                bool inRoom(int x, int y) => x >= 0 && y >= 0 && x < size.x && y < size.y;
 
-                int hStep = Rand(staggeredPillarStep.min, staggeredPillarStep.max, true), vStep = Rand(staggeredPillarStep.min, staggeredPillarStep.max, true);
+                int hStep = Rand(staggeredPillarStep.x, staggeredPillarStep.y, true), vStep = Rand(staggeredPillarStep.x, staggeredPillarStep.y, true);
                 if(hStep == vStep && hStep == 1)
                     if(Rand(100) >= 50) hStep = 2;
                     else vStep = 2;
 
-                for(int x = -size.h; x < size.w;)
+                for(int x = -size.y; x < size.x;)
                 {
                     int nextX = x + 2*hStep;
 
-                    for(int y = 0; y < size.h; y += vStep)
+                    for(int y = 0; y < size.y; y += vStep)
                     {
                         if(inRoom(x, y))
                             this[x + loc.x, y + loc.y] = Tile.Pillar;
@@ -149,9 +149,9 @@ public class RoomGenerator : IEnumerable
             }
             else
             {
-                int spacing = Rand(pillarSpacing.min, pillarSpacing.max, true);
-                for(int x = 0; x < size.w; x += spacing)
-                    for(int y = 0; y < size.h; y += spacing)
+                int spacing = Rand(pillarSpacing.x, pillarSpacing.y, true);
+                for(int x = 0; x < size.x; x += spacing)
+                    for(int y = 0; y < size.y; y += spacing)
                         this[x + loc.x, y + loc.y] = Tile.Pillar;
             }
         }

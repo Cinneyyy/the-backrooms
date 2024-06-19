@@ -3,15 +3,16 @@ using System.Windows.Forms;
 
 namespace Backrooms;
 
-public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
+public partial class Input
 {
-    public bool lockCursor = lockCursor;
+    public bool lockCursor;
+    public KeyMap keyMap;
 
     private readonly HashSet<Keys> additionPending = [], removalPending = [], keyState = [], lastKeyState = [];
     private readonly HashSet<MouseButtons> additionPendingMb = [], removalPendingMb = [], mbState = [], lastMbState = [];
-    private readonly Vec2i screenLoc = screenLoc;
-    private readonly Renderer rend = rend;
-    private Vec2i screenRes = rend.physRes, screenCenter = rend.physCenter + screenLoc;
+    private readonly Vec2i screenLoc;
+    private readonly Renderer rend;
+    private Vec2i screenRes, screenCenter;
 
 
     public Vec2i mousePos { get; private set; }
@@ -23,12 +24,28 @@ public partial class Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
     public bool cursorOffScreen => mousePos.x < screenLoc.x || mousePos.y < screenLoc.y || mousePos.x >= screenLoc.x + screenRes.x || mousePos.y >= screenLoc.y + screenRes.y;
 
 
-    public bool KeyHelt(Keys key)
-        => keyState.Contains(key);
-    public bool KeyDown(Keys key)
-        => !lastKeyState.Contains(key) && keyState.Contains(key);
-    public bool KeyUp(Keys key)
-        => lastKeyState.Contains(key) && !keyState.Contains(key);
+    public Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
+    {
+        this.lockCursor = lockCursor;
+        this.screenLoc = screenLoc;
+        this.rend = rend;
+        screenRes = rend.physRes;
+        screenCenter = rend.physCenter + screenLoc;
+        keyMap = new(this) {
+            [GameKey.MoveForward] = Keys.W,
+            [GameKey.MoveBackward] = Keys.S,
+            [GameKey.MoveLeft] = Keys.A,
+            [GameKey.MoveRight] = Keys.D
+        };
+    }
+
+
+    public bool KeyHelt(Keys key) => keyState.Contains(key);
+    public bool KeyHelt(GameKey key) => keyMap.KeyHelt(key);
+    public bool KeyDown(Keys key) => !lastKeyState.Contains(key) && keyState.Contains(key);
+    public bool KeyDown(GameKey key) => keyMap.KeyDown(key);
+    public bool KeyUp(Keys key) => lastKeyState.Contains(key) && !keyState.Contains(key);
+    public bool KeyUp(GameKey key) => keyMap.KeyUp(key);
 
     public bool MbHelt(MouseButtons mb)
         => mbState.Contains(mb);

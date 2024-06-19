@@ -58,14 +58,14 @@ public class ValueSelectorElement : GuiElement
     }
 
 
-    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, Image upArrow, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : base(name, location, size, anchor)
+    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, Image upArrow, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : base(name, location, size, anchor)
     {
         this.values = values;
         _value = startValue;
         this.colors = colors;
         this.valueChanged = valueChanged;
 
-        textElem = new($"{name}_text", values.Length == 0 ? string.Empty : values[startValue], font, textSize, textColor, Anchor.C, location, size);   
+        textElem = new($"{name}_text", values.Length == 0 ? string.Empty : values[startValue], font, textSize, textColor, Vec2f.half, location, size);   
         leftArrowElem = new($"{name}_leftarrow", image: null, textColor, new(), new(size.y * arrowSize));
         rightArrowElem = new($"{name}_rightarrow", image: null, textColor, new(), new(size.y * arrowSize));
         leftBackgroundElem = new($"{name}_leftbg", colors.normal, new(), new(size.y));
@@ -74,7 +74,7 @@ public class ValueSelectorElement : GuiElement
         upArrowSprite = upArrow;
     }
 
-    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, string upArrowSprite, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : this(name, values, startValue, textColor, font, textSize, colors, Resources.sprites[upArrowSprite], arrowSize, valueChanged, location, size, anchor) { }
+    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, string upArrowSprite, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : this(name, values, startValue, textColor, font, textSize, colors, Resources.sprites[upArrowSprite], arrowSize, valueChanged, location, size, anchor) { }
 
 
     public override void OnAddedToGroup()

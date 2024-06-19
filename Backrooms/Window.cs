@@ -19,11 +19,14 @@ public class Window : Form
     public event Action pulse;
     public event Action visible;
     public readonly Screen screen;
+    public float fpsCountFreq = .5f;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
     private readonly Thread pulseThread;
     private bool _cursorVisible;
+    private int lastFrameCount;
+    private float fpsTimer;
 
 
     public string title
@@ -44,6 +47,8 @@ public class Window : Form
             _cursorVisible = value;
         }
     }
+    public int frameCount { get; private set; }
+    public int currFps { get; private set; }
 
 
     public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, bool hideCursor, Action<Window> load = null, Action<float> tick = null)
@@ -111,7 +116,9 @@ public class Window : Form
             while(Visible)
             {
                 Thread.Sleep(1000);
-                invoke();
+                
+                if(pulse is not null)
+                    invoke();
             }
         }) {
             IsBackground = true
@@ -153,6 +160,15 @@ public class Window : Form
                 DateTime now = DateTime.UtcNow;
                 deltaTime = (float)(now - lastFrame).TotalSeconds;
                 lastFrame = now;
+
+                frameCount++;
+                fpsTimer += deltaTime;
+                if(fpsTimer >= fpsCountFreq)
+                {
+                    fpsTimer = 0f;
+                    currFps = (int)((frameCount - lastFrameCount) / fpsCountFreq);
+                    lastFrameCount = frameCount;
+                }
 
                 tick?.Invoke(deltaTime);
 

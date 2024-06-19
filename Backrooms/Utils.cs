@@ -167,18 +167,4 @@ public static class Utils
         ZipFile.CreateFromDirectory(dirPath, stream, CompressionLevel.NoCompression, false);
         return stream;
     }
-
-    public static Vec2f ToOffset(this Anchor anchor)
-        => anchor switch {
-            Anchor.C => new(.5f, .5f),
-            Anchor.T => new(.5f, 0f),
-            Anchor.B => new(.5f, 1f),
-            Anchor.L => new(0f, .5f),
-            Anchor.R => new(1f, .5f),
-            Anchor.TL => new(0f, 0f),
-            Anchor.TR => new(1f, 0f),
-            Anchor.BL => new(0f, 1f),
-            Anchor.BR => new(1f, 1f),
-            _ => throw new($"Invalid GUI anchor ;; {anchor} ;; {(byte)anchor}")
-        };
 }

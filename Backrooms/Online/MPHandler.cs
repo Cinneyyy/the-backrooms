@@ -163,15 +163,15 @@ public class MpHandler
         RequestKey key = (RequestKey)packet[0];
         Out($"Received server request: {key}");
 
-        switch(key)
-        {
-            case RequestKey.S_RegenerateMap: 
-                game.GenerateMap(serverState.levelSeed); 
-                break;
-            case RequestKey.S_UpdateSkin:
-                game.ReloadSkins();
-                break;
-        }
+        //switch(key)
+        //{
+        //    case RequestKey.S_RegenerateMap:
+        //        game.GenerateMap(serverState.levelSeed);
+        //        break;
+        //    case RequestKey.S_UpdateSkin:
+        //        game.ReloadSkins();
+        //        break;
+        //}
     }
 
     private void HandleClientRequest(byte clientId, byte[] packet, int length)

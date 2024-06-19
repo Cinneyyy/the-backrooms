@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -24,13 +23,10 @@ public class Entity
     public readonly PathfindingEntity pathfinding;
 
 
-    public Entity(Game game, string dataPath)
+    public Entity(EntityManager manager, string dataPath)
     {
         try
         {
-            if(IO::Path.HasExtension(dataPath))
-                ZipFile.ExtractToDirectory(dataPath, dataPath = IO::Path.GetDirectoryName(dataPath));
-
             string path(string fileName)
                 => $"{dataPath}/{fileName}";
             IEnumerable<string> fromPattern(string pattern)
@@ -61,7 +57,7 @@ public class Entity
                     volume = 0f
                 };
 
-                game.mpHandler.onFinishConnect += audio.Play;
+                manager.entityActivate += audio.Play;
             }
 
             // Behaviour
@@ -70,7 +66,7 @@ public class Entity
 
             behaviour = CsCompiler.BuildAssembly([..sourceFiles], IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLower());
             behaviourType = behaviour.GetType(tags.instance);
-            instance = Activator.CreateInstance(behaviourType, game, this);
+            instance = Activator.CreateInstance(behaviourType, manager.game, this);
 
 
             foreach(EntityTags.Function func in tags.functions)
@@ -80,19 +76,19 @@ public class Entity
 
                 switch(func.id)
                 {
-                    case "tick_dt": game.window.tick += dt => method.Invoke(instance, [dt]); break;
-                    case "tick": game.window.tick += _ => method.Invoke(instance, null); break;
-                    case "awake": game.mpHandler.onFinishConnect += () => method.Invoke(instance, null); break;
-                    case "get_volume": game.window.tick += _ => audio.volume = Utils.Clamp01((float)method.Invoke(instance, [(game.camera.pos - pos).length])); break;
+                    case "tick_dt": manager.entityTick += dt => method.Invoke(instance, [dt]); break;
+                    case "tick": manager.entityTick += _ => method.Invoke(instance, null); break;
+                    case "awake": manager.entityActivate += () => method.Invoke(instance, null); break;
+                    case "get_volume": manager.entityTick += _ => audio.volume = Utils.Clamp01((float)method.Invoke(instance, [(manager.camera.pos - pos).length])); break;
                 }
             }
 
             if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)
             {
                 Assembly pathfindingAssembly = pathfindingData.builtinAlgorithm ? Assembly.GetExecutingAssembly() : behaviour;
-                pathfinding = new(game.map, Activator.CreateInstance(pathfindingAssembly.GetType(pathfindingData.algorithmName)) as IPathfindingAlgorithm);
+                pathfinding = new(manager.map, Activator.CreateInstance(pathfindingAssembly.GetType(pathfindingData.algorithmName)) as IPathfindingAlgorithm);
 
-                game.window.tick += dt => pos = pathfinding.MoveTowards(pos, tags.size/2f, pathfindingData.speed, dt);
+                manager.entityTick += dt => pos = pathfinding.MoveTowards(pos, tags.size/2f, pathfindingData.speed, dt);
             }
 
             Out($"Successfully loaded entity at {dataPath}");

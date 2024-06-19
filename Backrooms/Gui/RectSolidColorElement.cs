@@ -4,7 +4,7 @@ using System.Drawing;
 namespace Backrooms.Gui;
 
 [GuiElement(safety = ElementSafety.Unsafe)]
-public class RectSolidColorElement(string name, Color color, Vec2f location, Vec2f size, Anchor anchor = Anchor.C) : GuiElement(name, location, size, anchor)
+public class RectSolidColorElement(string name, Color color, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
     public Color color = color;
     public bool accurateColorBlending = true;
