@@ -1,5 +1,4 @@
-﻿using System.Windows.Forms;
-using Backrooms.Online;
+﻿using Backrooms.Online;
 
 namespace Backrooms;
 
@@ -12,8 +11,8 @@ public class CameraController
     public readonly Input input;
     public readonly Map map;
     public readonly Renderer renderer;
-    public float moveSpeed = 2.25f, sensitivity = 1/5000f;
-    public bool canMove = true;
+    public float moveSpeed = 2f, sensitivity = 1/5000f;
+    public bool canMove = false;
 
 
     public Vec2f pos

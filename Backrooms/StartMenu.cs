@@ -15,17 +15,19 @@ public class StartMenu
     private readonly Window win;
     private readonly FontFamily font;
     private readonly Camera cam;
+    private readonly CameraController camController;
     private readonly Map map;
     private readonly Coroutine backgroundSequenceCoroutine;
 
     public readonly GuiGroup startScreen, settingsScreen;
 
 
-    public StartMenu(Window win, Renderer rend, Camera cam, Map map, MpHandler mpHandler, string fontFamily = "cascadia_code")
+    public StartMenu(Window win, Renderer rend, Camera cam, CameraController camController, Map map, MpHandler mpHandler, string fontFamily = "cascadia_code")
     {
         this.win = win;
         this.mpHandler = mpHandler;
         this.cam = cam;
+        this.camController = camController;
         this.map = map;
 
         font = Resources.fonts[fontFamily];
@@ -80,6 +82,7 @@ public class StartMenu
             mpHandler.port = 8080;
 
             mpHandler.Start();
+            camController.canMove = true;
         }
         else
         {

@@ -43,12 +43,12 @@ public class Game
         };
         renderer.map = map;
 
-        camera = renderer.camera = new(90f * Utils.Deg2Rad, 20f, 0f);
+        camera = renderer.camera = new(90f, 20f, 0f);
         cameraController = new(camera, mpHandler, window, input, map, renderer);
 
         GenerateMap(RNG.int32);
 
-        startMenu = new(window, renderer, camera, map, mpHandler);
+        startMenu = new(window, renderer, camera, cameraController, map, mpHandler);
 
         fpsDisplay = new("fps", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
         renderer.guiGroups.Add(new(renderer, "fps", true) { fpsDisplay });

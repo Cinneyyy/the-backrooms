@@ -19,7 +19,7 @@ public class Window : Form
     public event Action pulse;
     public event Action visible;
     public readonly Screen screen;
-    public float fpsCountFreq = .5f;
+    public float fpsCountFreq = .25f;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
