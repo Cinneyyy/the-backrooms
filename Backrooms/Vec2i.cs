@@ -57,6 +57,9 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
     readonly IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
+    public void Swap()
+        => (x, y) = (y, x);
+
 
     public static Vec2i Parse(string x, string y)
         => new(int.Parse(x), int.Parse(y));
@@ -96,8 +99,12 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
     public static Vec2i operator >>(Vec2i a, int b) => new(a.x >> b, a.y >> b);
 
 
-    public static implicit operator Size(Vec2i v) => new(v.x, v.y);
-    public static implicit operator Vec2i(Size s) => new(s.Width, s.Height);
-    public static implicit operator Point(Vec2i v) => new(v.x, v.y);
-    public static implicit operator Vec2i(Point p) => new(p.X, p.Y);
+    public static explicit operator Size(Vec2i v) => new(v.x, v.y);
+    public static explicit operator Vec2i(Size s) => new(s.Width, s.Height);
+
+    public static explicit operator Point(Vec2i v) => new(v.x, v.y);
+    public static explicit operator Vec2i(Point p) => new(p.X, p.Y);
+
+    public static explicit operator (int x, int y)(Vec2i v) => (v.x, v.y);
+    public static implicit operator Vec2i((int x, int y) t) => new(t.x, t.y);
 }

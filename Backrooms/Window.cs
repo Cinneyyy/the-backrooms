@@ -19,7 +19,7 @@ public class Window : Form
     public event Action pulse;
     public event Action visible;
     public readonly Screen screen;
-    public float fpsCountFreq = .25f;
+    public float fpsCountFreq = 1f;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
@@ -68,7 +68,7 @@ public class Window : Form
         title = windowTitle;
         startTime = DateTime.UtcNow;
 
-        renderer = new(virtualResolution, Size, this);
+        renderer = new(virtualResolution, (Vec2i)Size, this);
         input = new(renderer, (Vec2i)Location, lockCursor);
         renderer.input = input;
         console = new(this, () => Visible);

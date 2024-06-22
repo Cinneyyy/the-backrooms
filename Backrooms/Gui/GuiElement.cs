@@ -70,7 +70,10 @@ public abstract class GuiElement
         _size = size;
         _anchor = anchor ?? Vec2f.half;
 
-        safetyAttr = GetType().GetCustomAttribute<GuiElementAttribute>();
+        Type type = GetType();
+        Assert(type.Name.EndsWith("element", StringComparison.OrdinalIgnoreCase), $"All GUI element type names should end with the 'Element' suffix for clarity");
+
+        safetyAttr = type.GetCustomAttribute<GuiElementAttribute>();
         if(safetyAttr is null)
             throw new($"All types derived from GuiElement must have GuiElementAttribute");
     }

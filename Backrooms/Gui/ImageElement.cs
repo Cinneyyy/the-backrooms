@@ -4,9 +4,9 @@ using System.Drawing;
 namespace Backrooms.Gui;
 
 [GuiElement(safety = ElementSafety.Unsafe)]
-public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
+public class ImageElement(string name, UnsafeGraphic graphic, Color color, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
-    public UnsafeGraphic image = image;
+    public UnsafeGraphic graphic = graphic;
     public float rMul = color.R/255f, gMul = color.G/255f, bMul = color.B/255f;
 
 
@@ -15,7 +15,10 @@ public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f l
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h)
     {
-        Assert(image.useAlpha, "ImageElement.image has to use 32-bit format!");
+        if(graphic is null)
+            return;
+
+        Assert(graphic.useAlpha, "ImageElement.image has to use 32-bit format!");
 
         scan += Math.Max(screenLocation.y, 0) * stride + Math.Max(screenLocation.x, 0) * 3;
 
@@ -26,7 +29,7 @@ public class ImageElement(string name, UnsafeGraphic image, Color color, Vec2f l
         {
             for(int j = 0; j < maxX; j++)
             {
-                (byte r, byte g, byte b, byte a) color = image.GetUvRgba(j / (screenSizeF.x-1f), i / (screenSizeF.y-1f));
+                (byte r, byte g, byte b, byte a) color = graphic.GetUvRgba(j / (screenSizeF.x-1f), i / (screenSizeF.y-1f));
 
                 if(color.a > 0x80)
                 {

@@ -52,13 +52,13 @@ public class ValueSelectorElement : GuiElement
             Bitmap counter = new(value);
             clockwise.RotateFlip(RotateFlipType.Rotate90FlipNone);
             counter.RotateFlip(RotateFlipType.Rotate90FlipX);
-            rightArrowElem.image = new(clockwise, true);
-            leftArrowElem.image = new(counter, true);
+            rightArrowElem.graphic = new(clockwise, true);
+            leftArrowElem.graphic = new(counter, true);
         }
     }
 
 
-    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, Image upArrow, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : base(name, location, size, anchor)
+    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, bool fastBlend, Image upArrow, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : base(name, location, size, anchor)
     {
         this.values = values;
         _value = startValue;
@@ -66,15 +66,15 @@ public class ValueSelectorElement : GuiElement
         this.valueChanged = valueChanged;
 
         textElem = new($"{name}_text", values.Length == 0 ? string.Empty : values[startValue], font, textSize, textColor, Vec2f.half, location, size);   
-        leftArrowElem = new($"{name}_leftarrow", image: null, textColor, new(), new(size.y * arrowSize));
-        rightArrowElem = new($"{name}_rightarrow", image: null, textColor, new(), new(size.y * arrowSize));
-        leftBackgroundElem = new($"{name}_leftbg", colors.normal, new(), new(size.y));
-        rightBackgroundElem = new($"{name}_rightbg", colors.normal, new(), new(size.y));
+        leftArrowElem = new($"{name}_leftarrow", graphic: null, textColor, new(), new(size.y * arrowSize));
+        rightArrowElem = new($"{name}_rightarrow", graphic: null, textColor, new(), new(size.y * arrowSize));
+        leftBackgroundElem = new($"{name}_leftbg", colors.normal, fastBlend, new(), new(size.y));
+        rightBackgroundElem = new($"{name}_rightbg", colors.normal, fastBlend, new(), new(size.y));
 
         upArrowSprite = upArrow;
     }
 
-    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, string upArrowSprite, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : this(name, values, startValue, textColor, font, textSize, colors, Resources.sprites[upArrowSprite], arrowSize, valueChanged, location, size, anchor) { }
+    public ValueSelectorElement(string name, string[] values, int startValue, Color textColor, FontFamily font, float textSize, ColorBlock colors, bool fastBlend, string upArrowSprite, float arrowSize, Action<int> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : this(name, values, startValue, textColor, font, textSize, colors, fastBlend, Resources.sprites[upArrowSprite], arrowSize, valueChanged, location, size, anchor) { }
 
 
     public override void OnAddedToGroup()

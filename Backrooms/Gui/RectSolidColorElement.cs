@@ -4,10 +4,10 @@ using System.Drawing;
 namespace Backrooms.Gui;
 
 [GuiElement(safety = ElementSafety.Unsafe)]
-public class RectSolidColorElement(string name, Color color, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
+public class RectSolidColorElement(string name, Color color, bool fastBlend, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
     public Color color = color;
-    public bool accurateColorBlending = true;
+    public bool fastBlend = fastBlend;
 
 
     public override unsafe void DrawUnsafe(byte* scan, int stride, int w, int h)
@@ -27,17 +27,17 @@ public class RectSolidColorElement(string name, Color color, Vec2f location, Vec
                 int o = 3*j;
                 byte* pixel = scan + o;
 
-                if(accurateColorBlending)
-                {
-                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), b, alpha)) * 255f);
-                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), g, alpha)) * 255f);
-                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel/255f), r, alpha)) * 255f);
-                }
-                else
+                if(fastBlend)
                 {
                     *pixel = (byte)Utils.Lerp(*pixel++, color.B, alpha);
                     *pixel = (byte)Utils.Lerp(*pixel++, color.G, alpha);
                     *pixel = (byte)Utils.Lerp(*pixel, color.R, alpha);
+                }
+                else
+                {
+                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), b, alpha)) * 255f);
+                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), g, alpha)) * 255f);
+                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel/255f), r, alpha)) * 255f);
                 }
             }
 

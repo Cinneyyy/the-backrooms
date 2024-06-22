@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Backrooms.Online;
 using System.Drawing;
 using Backrooms.Gui;
+using Backrooms.ItemManagement;
 
 namespace Backrooms;
 
@@ -19,6 +20,7 @@ public class Game
     public Map map;
     public StartMenu startMenu;
     public CameraController cameraController;
+    public Inventory inventory;
 
     private readonly RoomGenerator generator = new();
     private readonly TextElement fpsDisplay;
@@ -32,7 +34,10 @@ public class Game
 
         mpHandler = new(this);
 
-        map = new(new Tile[0, 0]) {
+        ColorBlock invColors = new(Color.Black, 125, 185, 225);
+        inventory = new(window, renderer, input, new(5, 2), invColors);
+
+        renderer.map = map = new(new Tile[0, 0]) {
             texturesStr = [null, "wall", "pillar"],
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
@@ -41,12 +46,11 @@ public class Game
             floorLuminance = .5f,
             ceilLuminance = .5f
         };
-        renderer.map = map;
 
-        camera = renderer.camera = new(90f, 20f, 0f);
+        renderer.camera = camera = new(90f, 20f, 0f);
         cameraController = new(camera, mpHandler, window, input, map, renderer);
 
-        GenerateMap(RNG.int32);
+        GenerateMap(RNG.integer);
 
         startMenu = new(window, renderer, camera, cameraController, map, mpHandler);
 
@@ -55,19 +59,18 @@ public class Game
 
         window.tick += Tick;
 
-        entityManager = new(mpHandler, window, map, camera, this);
-        entityManager.LoadEntities("Entities");
+        //entityManager = new(mpHandler, window, map, camera, this);
+        //entityManager.LoadEntities("Entities");
     }
 
 
     public void GenerateMap(int seed)
     {
-        Out($"Generating map with seed {seed}");
         Vec2f camPos;
 
-        void generate(int s)
+        void generate()
         {
-            generator.Initiate(s);
+            generator.Initiate(seed);
             generator.GenerateHallways();
             generator.GenerateRooms();
             generator.GeneratePillarRooms();
@@ -76,19 +79,21 @@ public class Game
             camPos = map.size/2f;
         }
 
-        generate(seed);
+        generate();
 
         while(camPos.Floor() is Vec2i cPos)
             if(map.InBounds(cPos))
-            {
                 if(Map.IsCollidingTile(map[cPos]))
                     camPos += Vec2f.right;
                 else
                     break;
-            }
             else
-                generate(++seed);
+            {
+                seed++;
+                generate();
+            }
 
+        Out($"Generated map with seed {seed}");
         cameraController.pos = camPos + Vec2f.half;
     }
 

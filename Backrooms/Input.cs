@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace Backrooms;
@@ -115,15 +116,17 @@ public partial class Input
         removalPending.Clear();
         removalPendingMb.Clear();
 
+        Vec2i cp = (Vec2i)Cursor.Position;
         if(lockCursor)
         {
-            mouseDelta = (Vec2i)Cursor.Position - screenCenter;
-            mousePos = Cursor.Position = screenCenter;
+            mouseDelta = cp - screenCenter;
+            mousePos = screenCenter;
+            Cursor.Position = (Point)mousePos;
         }
         else
         {
-            mouseDelta = mousePos - Cursor.Position;
-            mousePos = Cursor.Position;
+            mouseDelta = mousePos - cp;
+            mousePos = cp;
         }
 
         virtMousePos = (Vec2i)((mousePos - screenLoc) * rend.downscaleFactor);

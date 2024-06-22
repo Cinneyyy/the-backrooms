@@ -19,8 +19,14 @@ public static class Utils
 
     public static T Lerp<T>(T a, T b, T t) where T : INumber<T>
         => a + (b - a) * t;
-    public static float Lerp(float a, float b, float t)
-        => a + (b - a) * t;
+    public static float Lerp(float min, float max, float t)
+        => min + (max - min) * t;
+
+    public static float InvLerp(float x, float min, float max)
+        => (x - min) / (max - min);
+
+    public static float Map(float x, float fmin, float fmax, float tmin, float tmax)
+        => (x - fmin) * (tmax - tmin) / (fmax - fmin) + tmin;
 
     public static float LerpClamped(float a, float b, float t)
         => Lerp(a, b, Clamp01(t));
@@ -167,4 +173,30 @@ public static class Utils
         ZipFile.CreateFromDirectory(dirPath, stream, CompressionLevel.NoCompression, false);
         return stream;
     }
+
+    public static void Populate<T>(this T[] arr, Func<int, T> @new)
+    {
+        for(int i = 0; i < arr.Length; i++)
+            arr[i] = @new(i);
+    }
+    public static void Populate<T>(this T[,] arr, Func<int, int, T> @new)
+    {
+        for(int i = 0; i < arr.Length0(); i++)
+            for(int j = 0; j < arr.Length1(); j++)
+                arr[i, j] = @new(i, j);
+    }
+    public static void Populate<T>(this T[,,] arr, Func<int, int, int, T> @new)
+    {
+        for(int i = 0; i < arr.Length0(); i++)
+            for(int j = 0; j < arr.Length1(); j++)
+                for(int k = 0; k < arr.Length2(); k++)
+                    arr[i, j, k] = @new(i, j, k);
+    }
+
+    public static T At<T>(this T[] arr, Index x)
+        => arr[x];
+    public static T At<T>(this T[,] arr, Index x, Index y)
+        => arr[x.Value, y.Value];
+    public static T At<T>(this T[,,] arr, Index x, Index y, Index z)
+        => arr[x.Value, y.Value, z.Value];
 }

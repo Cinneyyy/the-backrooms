@@ -46,6 +46,9 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     public void Normalize() 
         => this = normalized;
 
+    public void Swap()
+        => (x, y) = (y, x);
+
     public readonly Vec2i Round() 
         => new(x.Round(), y.Round());
     public readonly Vec2i Ceil() 
@@ -97,8 +100,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     public static float Dot(float a, float b)
         => MathF.Cos(a)*MathF.Cos(b) + MathF.Sin(a)*MathF.Sin(b);
 
-    public static Vec2f Lerp(Vec2f a, Vec2f b, float t) 
-        => new(Utils.Lerp(a.x, b.x, t), Utils.Lerp(a.y, b.y, t));
+    public static Vec2f Lerp(Vec2f min, Vec2f max, float t) 
+        => new(Utils.Lerp(min.x, max.x, t), Utils.Lerp(min.y, max.y, t));
 
     public static Vec2f Parse(string x, string y)
         => new(float.Parse(x), float.Parse(y));
@@ -131,4 +134,7 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
 
     public static explicit operator PointF(Vec2f v) => new(v.x, v.y);
     public static explicit operator Vec2f(PointF p) => new(p.X, p.Y);
+
+    public static explicit operator (float x, float y)(Vec2f v) => (v.x, v.y);
+    public static implicit operator Vec2f((float x, float y) t) => new(t.x, t.y);
 }

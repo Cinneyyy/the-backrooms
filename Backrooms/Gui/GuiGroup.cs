@@ -63,13 +63,42 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     public void Add(GuiElement elem)
     {
-        elem.group = this;
-
         if(elem.isUnsafe) unsafeElements.Add(elem);
         if(elem.isSafe) safeElements.Add(elem);
 
+        elem.group = this;
         elem.OnAddedToGroup();
         elem.ReloadScreenDimensions();
+    }
+
+    public void AddManySafe(IEnumerable<GuiElement> elems)
+    {
+        safeElements.AddRange(elems);
+
+        foreach(GuiElement elem in elems)
+        {
+            if(!elem.isSafe)
+                throw new($"Attempted to add non-safe element '{elem.name}' to GuiGroup '{name}'");
+
+            elem.group = this;
+            elem.OnAddedToGroup();
+            elem.ReloadScreenDimensions();
+        }
+    }
+
+    public void AddManyUnsafe(IEnumerable<GuiElement> elems)
+    {
+        unsafeElements.AddRange(elems);
+
+        foreach(GuiElement elem in elems)
+        {
+            if(!elem.isUnsafe)
+                throw new($"Attempted to add non-unsafe element '{elem.name}' to GuiGroup '{name}'");
+
+            elem.group = this;
+            elem.OnAddedToGroup();
+            elem.ReloadScreenDimensions();
+        }
     }
 
     public void Remove(GuiElement elem)
@@ -104,13 +133,15 @@ public class GuiGroup : IEnumerable<GuiElement>
 
     public GuiElement GetUnsafeElement(Index idx) => unsafeElements[idx];
     public T GetUnsafeElement<T>(Index idx) where T : GuiElement => GetUnsafeElement(idx) as T;
+    public GuiElement GetUnsafeElement(string name) => unsafeElements.Find(e => e.name == name);
+    public T GetUnsafeElement<T>(string name) where T : GuiElement => unsafeElements.Find(e => e.name == name) as T;
 
     public GuiElement GetSafeElement(Index idx) => safeElements[idx];
     public T GetSafeElement<T>(Index idx) where T : GuiElement => GetSafeElement(idx) as T;
+    public GuiElement GetSafeElement(string name) => safeElements.Find(e => e.name == name);
+    public T GetSafeElement<T>(string name) where T : GuiElement => safeElements.Find(e => e.name == name) as T;
 
-    public GuiElement GetElement(string name) => (from e in allElements
-                                                   where e.name == name
-                                                   select e).FirstOrDefault();
+    public GuiElement GetElement(string name) => allElements.Where(e => e.name == name).FirstOrDefault();
     public T GetElement<T>(string name) where T : GuiElement => GetElement(name) as T;
 
     public IEnumerator<GuiElement> GetEnumerator() => allElements.GetEnumerator();
