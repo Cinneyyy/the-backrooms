@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing;
 using System.Drawing.Text;
@@ -21,9 +22,11 @@ public static class Resources
 
 
     public static readonly Dictionary<string, Image> sprites = [];
+    public static readonly Dictionary<string, UnsafeGraphic> unsafeGraphics = [];
     public static readonly Dictionary<string, Icon> icons = [];
     public static readonly Dictionary<string, WaveStream> audios = [];
     public static readonly Dictionary<string, FontFamily> fonts = [];
+    public static event Action onFinishInit;
     public static readonly bool finishedInit;
 
     private static readonly StringDictionary manifests = [];
@@ -52,7 +55,13 @@ public static class Resources
             Stream stream = assembly.GetManifestResourceStream(manifest);
             switch(type)
             {
-                case ResType.Image: sprites.Add(name, Image.FromStream(stream)); break;
+                case ResType.Image:
+                {
+                    Image image = Image.FromStream(stream);
+                    sprites.Add(name, image); 
+                    unsafeGraphics.Add(name, new(image));
+                    break;
+                }
                 case ResType.Font:
                     using(MemoryStream memStream = new())
                     {
@@ -84,6 +93,7 @@ public static class Resources
         }
 
         finishedInit = true;
+        onFinishInit?.Invoke();
     }
 
 

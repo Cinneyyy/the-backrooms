@@ -14,7 +14,7 @@ public class InvSlot(Vec2i index)
         get => _item;
         set {
             _item = value;
-            invItemDisplay.graphic = item.graphic;
+            invItemDisplay.graphic = item?.graphic;
         }
     }
     public bool isEmpty => item is null;

@@ -243,7 +243,11 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
             new(["list_gui_elements", "gui_elements", "list_gui_elems", "gui_elems"],
             args => Out(win.renderer.guiGroups.FormatStr(" ;; ", g => $"[{g.name}: {g.allElements.FormatStr(", ", e => $"{e.name}")}]")),
-            "LIST_GUI_ELEMENTS", [0])
+            "LIST_GUI_ELEMENTS", [0]),
+
+            new(["count_tick_listeners", "tick_listeners", "tick_lists"],
+            args => Out($"{win.GetTickInvocationList().Length} listeners are subscribed to win.tick"),
+            "COUNT_TICK_LISTENERS", [0])
         ];
     }
 

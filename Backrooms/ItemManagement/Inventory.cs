@@ -21,6 +21,7 @@ public class Inventory
     private bool _enabled;
     private InvSlot hoveredSlot;
     private readonly Vec2f invOffset = new(0f, .1f);
+    private InvSlot selectedSlot;
 
 
     public bool enabled
@@ -105,6 +106,9 @@ public class Inventory
 
         return false;
     }
+    /// <summary>Returns whether or not the insertion was successful</summary>
+    public bool AddItem(string itemId) 
+        => AddItem(Item.items[itemId]);
 
     /// <summary>Returns whether or not the slot was empty before the insertion</summary>
     public bool SetItem(Vec2i slot, Item item)
@@ -158,11 +162,9 @@ public class Inventory
 
             InvSlot slot = slots[selectedSlot.x, selectedSlot.y];
 
-            // If/else instead of ternary becasue left-clicking will have functionality
-            if(input.MbHelt(MouseButtons.Left))
-                slot.invItemBackground.color = colors.select;
-            else
-                slot.invItemBackground.color = colors.hover;
+            slot.invItemBackground.color = input.MbHelt(MouseButtons.Left) ? colors.select : colors.hover;
+            if(input.MbDown(MouseButtons.Left))
+                ClickSlot(slot);
 
             if(slot != hoveredSlot)
             {
@@ -176,5 +178,18 @@ public class Inventory
             hoveredSlot.invItemBackground.color = colors.normal;
             hoveredSlot = null;
         }
+    }
+
+    private void ClickSlot(InvSlot slot)
+    {
+        if(selectedSlot is null)
+            selectedSlot = slot;
+        else if(selectedSlot != slot)
+        {
+            Swap(selectedSlot.index, slot.index);
+            selectedSlot = null;
+        }
+        else
+            selectedSlot = null;
     }
 }

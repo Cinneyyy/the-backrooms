@@ -42,6 +42,7 @@
     <None Remove="Resources\Textures\Skins\purple_guy.png" />
     <None Remove="Resources\Textures\square.png" />
     <None Remove="Resources\Textures\up_arrow.png" />
+    <None Remove="Resources\Textures\vodka.png" />
     <None Remove="Resources\wall.png" />
   </ItemGroup>
 
@@ -77,6 +78,7 @@
     <EmbeddedResource Include="Resources\Textures\Skins\purple_guy.png" />
     <EmbeddedResource Include="Resources\Textures\square.png" />
     <EmbeddedResource Include="Resources\Textures\up_arrow.png" />
+    <EmbeddedResource Include="Resources\Textures\vodka.png" />
     <EmbeddedResource Include="Resources\Textures\wall.png" />
   </ItemGroup>
 

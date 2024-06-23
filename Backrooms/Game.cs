@@ -21,6 +21,7 @@ public class Game
     public StartMenu startMenu;
     public CameraController cameraController;
     public Inventory inventory;
+    public PlayerStats playerStats;
 
     private readonly RoomGenerator generator = new();
     private readonly TextElement fpsDisplay;
@@ -33,9 +34,12 @@ public class Game
         input = window.input;
 
         mpHandler = new(this);
+        playerStats = new(100f, 100f, 100f, 100f);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
         inventory = new(window, renderer, input, new(5, 2), invColors);
+        inventory.AddItem("vodka");
+        inventory.AddItem("oli");
 
         renderer.map = map = new(new Tile[0, 0]) {
             texturesStr = [null, "wall", "pillar"],

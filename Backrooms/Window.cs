@@ -144,6 +144,9 @@ public class Window : Form
     public Coroutine StartCoroutine(IEnumerator iterator)
         => new(this, iterator);
 
+    public Delegate[] GetTickInvocationList()
+        => tick?.GetInvocationList();
+
 
     private void BeginGameLoop()
     {
