@@ -158,15 +158,11 @@ public unsafe class Renderer
                 hit = true;
         }
 
-        Vec2f hitPos = camera.pos + sideDist;
-
         float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
         float normDist = Utils.Clamp01(dist / camera.maxDist);
+        Vec2f hitPos = camera.pos + dir * dist;
 
-        bool drawWall = true;
-        if(depthBuf[x] <= normDist || dist >= camera.maxDist || dist <= 0f)
-            drawWall = false;
-
+        bool drawWall = depthBuf[x] > normDist && dist < camera.maxDist && dist > 0f;
         depthBuf[x] = normDist;
 
         float height = wallHeight * virtRes.y / dist;
@@ -174,7 +170,10 @@ public unsafe class Renderer
         int y0 = Utils.Clamp(virtCenter.y - halfHeight, 0, virtRes.y-1),
             y1 = Utils.Clamp(virtCenter.y + halfHeight, 0, virtRes.y-1);
 
-        float brightness = GetDistanceFog(normDist) * (vert ? .75f : .5f);
+        float brightness = (vert ? .75f : .5f) * GetDistanceFog(normDist);
+        const float light_spacing = 10f, light_strength = 3.5f;
+        float lightDistSqr = Utils.Sqr(hitPos.x - (hitPos.x / light_spacing).Round() * light_spacing) + Utils.Sqr(hitPos.y - (hitPos.y / light_spacing).Round() * light_spacing);
+        brightness = Utils.Clamp01(brightness * light_strength / (1f + lightDistSqr));
 
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
