@@ -9,13 +9,13 @@ public class CameraController
 
     public readonly Camera camera;
     public readonly MpHandler mpHandler;
-    public readonly Input input;
+    public readonly InputGetter input;
     public readonly Map map;
     public readonly Renderer renderer;
     public float moveSpeed = 2f, sensitivity = 1/5000f;
     public bool canMove = false;
 
-
+    
     public Vec2f pos
     {
         get => camera.pos;
@@ -28,7 +28,7 @@ public class CameraController
     }
 
 
-    public CameraController(Camera camera, MpHandler mpHandler, Window window, Input input, Map map, Renderer renderer)
+    public CameraController(Camera camera, MpHandler mpHandler, Window window, InputGetter input, Map map, Renderer renderer)
     {
         this.camera = camera;
         this.mpHandler = mpHandler;
@@ -64,7 +64,7 @@ public class CameraController
 
         pos = map.ResolveIntersectionIfNecessery(currPos, newPos, HITBOX_RADIUS, out _);
 
-        if(input.lockCursor)
-            camera.angle += input.mouseDelta.x * renderer.singleDownscaleFactor * sensitivity / dt;
+        if(input.unlockedInput.lockCursor)
+            camera.angle += input.unlockedInput.mouseDelta.x * renderer.singleDownscaleFactor * sensitivity / dt;
     }
 }

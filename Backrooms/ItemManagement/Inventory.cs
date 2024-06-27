@@ -13,7 +13,7 @@ public class Inventory
     public readonly GuiGroup gui;
     public readonly Vec2f guiBounds, guiTL, guiBR;
     public readonly float slotSize;
-    public readonly Input input;
+    public readonly InputGetter input;
     public readonly Window win;
     public readonly float guiScale;
     public readonly Game game;
@@ -23,6 +23,7 @@ public class Inventory
     private InvSlot hoveredSlot;
     private readonly Vec2f invOffset = new(0f, .1f);
     private InvSlot selectedSlot;
+    private readonly InputLock inputLock = new();
 
 
     public bool enabled
@@ -32,11 +33,12 @@ public class Inventory
             _enabled = value;
             gui.enabled = value;
             win.SetCursor(value);
+            input.SetLock(inputLock, value);
         }
     }
 
 
-    public Inventory(Window win, Renderer rend, Game game, Input input, Vec2i size, ColorBlock slotColors, float guiScale = .75f)
+    public Inventory(Window win, Renderer rend, Game game, InputGetter input, Vec2i size, ColorBlock slotColors, float guiScale = .75f)
     {
         this.input = input;
         this.game = game;
@@ -149,15 +151,15 @@ public class Inventory
 
     private void Tick(float dt)
     {
-        if(input.KeyDown(Keys.I))
+        if(input.KeyDown(Keys.I, inputLock))
             enabled ^= true;
 
         if(!enabled)
             return;
 
-        if(input.ContainsNormCursorCentered(Vec2f.half + invOffset, guiBounds))
+        if(input.unlockedInput.ContainsNormCursorCentered(Vec2f.half + invOffset, guiBounds))
         {
-            Vec2f mPos = input.normMousePos;
+            Vec2f mPos = input.unlockedInput.normMousePos;
             Vec2i selectedSlot = new Vec2f(
                 Utils.Map(mPos.x, guiTL.x, guiBR.x, 0f, size.x),
                 Utils.Map(mPos.y, guiTL.y, guiBR.y, 0f, size.y)).Floor();

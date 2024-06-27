@@ -1,6 +1,4 @@
-﻿using Backrooms.Serialization;
-
-namespace Backrooms;
+﻿namespace Backrooms;
 
 internal class Program
 {

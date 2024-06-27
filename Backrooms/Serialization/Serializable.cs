@@ -17,14 +17,18 @@ public abstract class Serializable<TSelf> where TSelf : Serializable<TSelf>
     static Serializable()
     {
         type = typeof(TSelf);
-        properties = (from p in type.GetProperties()
+
+        properties = (from p in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                       where p.GetCustomAttribute<DontSerializeAttribute>() is null
-                      && p.PropertyType != typeof(object)
+                      where p.PropertyType != typeof(object)
+                      where p.CanWrite && p.CanRead
+                      where p.GetIndexParameters() is []
                       select p).ToArray();
-        fields = (from f in type.GetFields()
-                      where f.GetCustomAttribute<DontSerializeAttribute>() is null
-                      && f.FieldType != typeof(object)
-                      select f).ToArray();
+        fields = (from f in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                  where f.GetCustomAttribute<DontSerializeAttribute>() is null
+                  where f.FieldType != typeof(object)
+                  select f).ToArray();
+
         memberCount = properties.Length + fields.Length;
 
         for(int i = 0; i < properties.Length; i++)

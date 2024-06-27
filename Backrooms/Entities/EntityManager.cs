@@ -4,7 +4,7 @@ using System.Linq;
 using System;
 using Backrooms.Online;
 
-namespace Backrooms;
+namespace Backrooms.Entities;
 
 public class EntityManager(MpHandler mpHandler, Window window, Map map, Camera camera, Game game)
 {
@@ -22,7 +22,7 @@ public class EntityManager(MpHandler mpHandler, Window window, Map map, Camera c
 
     public void LoadEntities(string directoryPath)
     {
-        foreach(string zip in Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly))
+        foreach (string zip in Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly))
             ZipFile.ExtractToDirectory(zip, Path.GetFileNameWithoutExtension(zip));
 
         entities = (from d in Directory.GetDirectories(directoryPath, "*", SearchOption.TopDirectoryOnly)

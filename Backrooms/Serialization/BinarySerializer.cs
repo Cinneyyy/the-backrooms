@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 
 namespace Backrooms.Serialization;
@@ -15,7 +16,7 @@ namespace Backrooms.Serialization;
 /// </summary>
 public static class BinarySerializer<T> where T : Serializable<T>, new()
 {
-    public static byte[] Serialize(T instance)
+    public static byte[] Serialize(T instance, CompressionLevel compression = CompressionLevel.Optimal)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
@@ -38,16 +39,79 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
         stream.Position = 0;
         writer.Write(length);
 
-        return stream.ToArray();
+        if(compression == CompressionLevel.NoCompression)
+            return stream.ToArray();
+
+        using MemoryStream compressedStream = new();
+        using(GZipStream gZipStream = new(compressedStream, compression, true))
+        {
+            stream.Position = 0;
+            stream.CopyTo(gZipStream);
+        }
+
+        return compressedStream.ToArray();
+    }
+    public static byte[] Serialize(T instance, string[] members, CompressionLevel compression = CompressionLevel.Optimal)
+    {
+        using MemoryStream stream = new();
+        using BinaryWriter writer = new(stream);
+
+        writer.Write(0);
+
+        foreach(string mem in members)
+        {
+            int index = Serializable<T>.memberIndices[mem];
+
+            if(Serializable<T>.IsProperty(index))
+            {
+                PropertyInfo info = Serializable<T>.properties[index];
+                WriteSerializedTypeData(info.PropertyType, info.GetValue(instance), writer, index);
+            }
+            else
+            {
+                FieldInfo info = Serializable<T>.fields[index - Serializable<T>.properties.Length];
+                WriteSerializedTypeData(info.FieldType, info.GetValue(instance), writer, index);
+            }
+        }
+
+        int length = (int)stream.Position;
+        stream.Position = 0;
+        writer.Write(length);
+
+        if(compression == CompressionLevel.NoCompression)
+            return stream.ToArray();
+
+        using MemoryStream compressedStream = new();
+        using(GZipStream gZipStream = new(compressedStream, compression, true))
+        {
+            stream.Position = 0;
+            stream.CopyTo(gZipStream);
+        }
+
+        return compressedStream.ToArray();
     }
 
-    public static T Deserialize(byte[] data)
+    public static void DeserializeRef(byte[] data, ref T target, bool decompress = true)
     {
-        using MemoryStream stream = new(data);
+        MemoryStream stream;
+
+        if(decompress)
+        {
+            stream = new();
+
+            using MemoryStream compressedData = new(data);
+            using GZipStream gZipStream = new(compressedData, CompressionMode.Decompress, true);
+
+            gZipStream.CopyTo(stream);
+            stream.Position = 0;
+        }
+        else
+            stream = new(data);
+
         using BinaryReader reader = new(stream);
 
         int length = reader.ReadInt32();
-        T target = new();
+        target ??= new();
 
         while(stream.Position < length)
         {
@@ -65,6 +129,16 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
             }
         }
 
+        stream.Dispose();
+    }
+    public static void Deserialize(byte[] data, out T target, bool decompress = true)
+    {
+        target = new();
+        DeserializeRef(data, ref target, decompress);
+    }
+    public static T Deserialize(byte[] data, bool decompress = true)
+    {
+        Deserialize(data, out T target, decompress);
         return target;
     }
 
@@ -88,25 +162,6 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
         else
             WriteSerializedPrimitive(type, value, writer, index);
 
-    }
-
-    private static void ReadSerializedTypeData(Type type, string memName, ref T target, BinaryReader reader)
-    {
-        if(type.IsSubclassOfGeneric(typeof(Serializable<>)))
-        {
-            int length = reader.ReadInt32();
-            byte[] data = reader.ReadBytes(length);
-
-            object deserializedMember =
-                typeof(BinarySerializer<>)
-                .MakeGenericType(type)
-                .GetMethod("Deserialize")
-                .Invoke(null, [data]);
-
-            target.SetMember(memName, deserializedMember);
-        }
-        else
-            ReadSerializedPrimitive(type, memName, ref target, reader);
     }
 
     private static void WriteSerializedPrimitive(Type type, object value, BinaryWriter writer, int index)
@@ -133,6 +188,25 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
             case var _ when type == typeof(Vec2i): writer.Write((Vec2i)value); break;
             default: throw new InvalidCastException($"Tried serializing non-primitive and non-serializable type '{type.FullName}'");
         }
+    }
+
+    private static void ReadSerializedTypeData(Type type, string memName, ref T target, BinaryReader reader)
+    {
+        if(type.IsSubclassOfGeneric(typeof(Serializable<>)))
+        {
+            int length = reader.ReadInt32();
+            byte[] data = reader.ReadBytes(length);
+
+            object deserializedMember =
+                typeof(BinarySerializer<>)
+                .MakeGenericType(type)
+                .GetMethod("Deserialize")
+                .Invoke(null, [data]);
+
+            target.SetMember(memName, deserializedMember);
+        }
+        else
+            ReadSerializedPrimitive(type, memName, ref target, reader);
     }
     
     private static void ReadSerializedPrimitive(Type type, string memName, ref T target, BinaryReader reader)

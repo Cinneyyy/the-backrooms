@@ -7,6 +7,7 @@ using System.Drawing;
 using Backrooms.Gui;
 using Backrooms.ItemManagement;
 using Backrooms.InputSystem;
+using Backrooms.Entities;
 
 namespace Backrooms;
 
@@ -16,6 +17,7 @@ public class Game
     public Renderer renderer;
     public Camera camera;
     public Input input;
+    public InputGetter inputGetter;
     public EntityManager entityManager;
     public MpHandler mpHandler;
     public Map map;
@@ -33,12 +35,13 @@ public class Game
         this.window = window;
         renderer = window.renderer;
         input = window.input;
+        inputGetter = new(input);
 
         mpHandler = new(this);
         playerStats = new(100f, 100f, 100f, 100f);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
-        inventory = new(window, renderer, this, input, new(5, 2), invColors);
+        inventory = new(window, renderer, this, inputGetter, new(5, 2), invColors);
         inventory.AddItem("vodka");
         inventory.AddItem("oli");
 
@@ -53,14 +56,16 @@ public class Game
         };
 
         renderer.camera = camera = new(90f, 20f, 0f);
-        cameraController = new(camera, mpHandler, window, input, map, renderer);
+        cameraController = new(camera, mpHandler, window, inputGetter, map, renderer);
 
         GenerateMap(RNG.signedInt);
 
         startMenu = new(window, renderer, camera, cameraController, map, mpHandler);
 
         fpsDisplay = new("fps", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
-        renderer.guiGroups.Add(new(renderer, "fps", true) { fpsDisplay });
+        renderer.guiGroups.Add(new(renderer, "fps", true) { 
+            fpsDisplay 
+        });
 
         window.tick += Tick;
 

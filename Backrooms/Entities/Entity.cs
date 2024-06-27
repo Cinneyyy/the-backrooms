@@ -8,7 +8,7 @@ using System.Text.Json;
 using Backrooms.Pathfinding;
 using IO = System.IO;
 
-namespace Backrooms;
+namespace Backrooms.Entities;
 
 public class Entity
 {
