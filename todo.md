@@ -11,9 +11,11 @@
     - Not too much, it is the backrooms
 1. More varied enemies & enemy AI
 1. Post processing effects
+    - Maybe more efficient ones also
 1. GUI edit mode
 1. Out() categories
     - e.g. Debug, Load, Error, etc.
+1. Switch from wolfenstein-style-rendering to doom-style-rendering
 
 ---
 ## Bugfixes

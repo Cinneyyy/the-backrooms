@@ -7,6 +7,7 @@ using System.Drawing.Drawing2D;
 using System.Threading.Tasks;
 using Backrooms.Coroutines;
 using System.Collections;
+using Backrooms.InputSystem;
 
 namespace Backrooms;
 
@@ -15,11 +16,12 @@ public class Window : Form
     public Renderer renderer;
     public Input input;
     public DevConsole console;
-    public event Action<float> tick;
+    public event Action<float> tick, fixedTick;
     public event Action pulse;
     public event Action visible;
     public readonly Screen screen;
     public float fpsCountFreq = 1f;
+    public float fixedDeltaTime = 1/30f;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
@@ -34,7 +36,8 @@ public class Window : Form
         get => Text;
         set => Text = value;
     }
-    public float timeElapsed => (float)(DateTime.UtcNow - startTime).TotalSeconds;
+    public float timeElapsed { get; private set; }
+    public float fixedTimeElapsed { get; private set; }
     public float deltaTime { get; private set; }
     public bool cursorVisible
     {
@@ -48,7 +51,13 @@ public class Window : Form
         }
     }
     public int frameCount { get; private set; }
+    public int fixedFrameCount { get; private set; }
     public int currFps { get; private set; }
+    public float fixedLoopsPerSecond
+    {
+        get => 1f / fixedDeltaTime;
+        set => fixedDeltaTime = 1f / value;
+    }
 
 
     public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, bool hideCursor, Action<Window> load = null, Action<float> tick = null)
@@ -98,13 +107,14 @@ public class Window : Form
         this.tick += _ => input.Tick();
         KeyDown += (_, args) => input.CB_OnKeyDown(args.KeyCode);
         KeyUp += (_, args) => input.CB_OnKeyUp(args.KeyCode);
-        pictureBox.MouseDown += (_, args) => input.CB_OnCursorDown(args.Button);
-        pictureBox.MouseUp += (_, args) => input.CB_OnCursorUp(args.Button);
+        pictureBox.MouseDown += (_, args) => input.CB_OnKeyDown(args.Button.ToKey());
+        pictureBox.MouseUp += (_, args) => input.CB_OnKeyUp(args.Button.ToKey());
         FormClosed += (_, args) => Exit((int)args.CloseReason);
 
         _cursorVisible = true;
+        input.lockCursor = false;
         if(hideCursor)
-            Shown += (_, _) => cursorVisible = false;
+            Shown += (_, _) => SetCursor(false);
 
         // Start pulse timer
         pulseThread = new(() => {
@@ -161,6 +171,7 @@ public class Window : Form
             try
             {
                 DateTime now = DateTime.UtcNow;
+                timeElapsed = (float)(now - startTime).TotalSeconds;
                 deltaTime = (float)(now - lastFrame).TotalSeconds;
                 lastFrame = now;
 
@@ -175,8 +186,14 @@ public class Window : Form
 
                 tick?.Invoke(deltaTime);
 
-                Bitmap renderResult = renderer.Draw(); 
+                // Invoke fixedTick, while the delta between real time and fixed time > fixed delta time
+                while(timeElapsed - fixedTimeElapsed > fixedDeltaTime)
+                {
+                    fixedTick?.Invoke(fixedDeltaTime);
+                    fixedTimeElapsed += fixedDeltaTime;
+                }
 
+                Bitmap renderResult = renderer.Draw();
                 Image lastImg = pictureBox.Image;
                 pictureBox.Image = renderResult;
                 lastImg.Dispose();
@@ -186,6 +203,15 @@ public class Window : Form
                 Out($"{exc.GetType()} in main UpdateLoop (Window.cs) ;; {exc.Message}", ConsoleColor.Red);
             }
     }
+
+    public void SetCursor(bool freeAndVisible)
+    {
+        cursorVisible = freeAndVisible;
+        input.lockCursor = !freeAndVisible;
+    }
+
+    public void ToggleCursor()
+        => SetCursor(!cursorVisible);
 
 
     public static void Exit(int exitCode = 0)

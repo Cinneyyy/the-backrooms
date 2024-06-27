@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Numerics;
 using System.Text;
+using System.Windows.Forms;
 using Backrooms.Coroutines;
 using Backrooms.Gui;
 
@@ -76,9 +77,9 @@ public static class Utils
     public static float NormAngle(float a)
         => Mod(a, Tau);
 
-    public static bool RoughlyEqual(float a, float b, float eps = 1e-8f)
+    public static bool RoughlyEquals(this float a, float b, float eps = 1e-8f)
         => MathF.Abs(a - b) <= eps;
-    public static bool RoughlyZero(float f, float eps = 1e-8f)
+    public static bool RoughlyZero(this float f, float eps = 1e-8f)
         => MathF.Abs(f) <= eps;
 
     public static void DoNothing() { }
@@ -144,11 +145,11 @@ public static class Utils
     public static bool InsideRectCentered(Vec2f loc, Vec2f size, Vec2f pt)
         => loc.x - size.x/2f <= pt.x && loc.x + size.x/2f >= pt.x && loc.y - size.y/2f <= pt.y && loc.y + size.y/2f >= pt.y;
 
-    public static void Shuffle<T>(this IList<T> list, Random rand)
+    public static void Shuffle<T>(this IList<T> list)
     {
         for(int i = list.Count-1; i > 0; i--)
         {
-            int k = rand.Next(i + 1);
+            int k = RNG.RangeIncl(i);
             (list[i], list[k]) = (list[k], list[i]);
         }
     }
@@ -199,4 +200,31 @@ public static class Utils
         => arr[x.Value, y.Value];
     public static T At<T>(this T[,,] arr, Index x, Index y, Index z)
         => arr[x.Value, y.Value, z.Value];
+
+    public static float F(this double d) => (float)d;
+    public static float F(this int i) => i;
+    public static int I(this long l) => (int)l;
+    public static int I(this float f) => (int)f;
+
+    public static Keys ToKey(this MouseButtons mb)
+        => mb switch {
+            MouseButtons.Left => Keys.LButton,
+            MouseButtons.Right => Keys.RButton,
+            MouseButtons.Middle => Keys.MButton,
+            MouseButtons.XButton1 => Keys.XButton1,
+            MouseButtons.XButton2 => Keys.XButton2,
+            MouseButtons.None => Keys.None,
+            _ => throw new($"Invalid mouse button ;; {mb} ({(int)mb})")
+        };
+
+    public static bool IsSubclassOfGeneric(this Type type, Type genericType)
+    {
+        if(type is null || type == typeof(object))
+            return false;
+
+        if(type.IsGenericType && type.GetGenericTypeDefinition() == genericType)
+            return true;
+
+        return type.BaseType.IsSubclassOfGeneric(genericType);
+    }
 }

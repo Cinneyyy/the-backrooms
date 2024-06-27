@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Threading.Tasks;
 using Backrooms.Gui;
+using Backrooms.InputSystem;
 using Backrooms.PostProcessing;
 
 namespace Backrooms;

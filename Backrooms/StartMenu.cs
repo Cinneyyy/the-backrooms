@@ -19,7 +19,7 @@ public class StartMenu
     private readonly Map map;
     private readonly Coroutine backgroundSequenceCoroutine;
 
-    public readonly GuiGroup startScreen, settingsScreen;
+    public readonly GuiGroup startGui, settingsGui;
 
 
     public StartMenu(Window win, Renderer rend, Camera cam, CameraController camController, Map map, MpHandler mpHandler, string fontFamily = "cascadia_code")
@@ -34,7 +34,7 @@ public class StartMenu
 
         ColorBlock colors = new(Color.Black, 125, 185, 225);
 
-        startScreen = new(rend, "sm_start", false, true) {
+        startGui = new(rend, "sm_start", false, true) {
             new TextElement("title", "The Backrooms", font, 30f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
             
             new ButtonElement("start_sp", "Singleplayer", font, 15f, Color.Yellow, colors, true, () => ClickStart(false), new(.5f, .4f), new(.4f, .1f)),
@@ -45,7 +45,7 @@ public class StartMenu
 
         Vec2i native = rend.physRes;
         Vec2i[] resolutions = [native/10, native/8, native/6, native/4, native/2, native];
-        settingsScreen = new(rend, "sm_settings", false, false) {
+        settingsGui = new(rend, "sm_settings", false, false) {
             new TextElement("title", "Settings", font, 25f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
 
             new CheckboxElement("show_fps", "Show FPS", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, true, b => rend.FindGuiGroup("hud").GetElement("fps").enabled = b, new(.5f, .4f), new(.65f, .065f)),
@@ -56,8 +56,8 @@ public class StartMenu
             new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, CloseSettings, new(.5f, .85f), new(.2f, .1f)),
         };
 
-        rend.guiGroups.Add(startScreen);
-        rend.guiGroups.Add(settingsScreen);
+        rend.guiGroups.Add(startGui);
+        rend.guiGroups.Add(settingsGui);
         
         backgroundSequenceCoroutine = BackgroundSequence(.75f, .5f, 7).StartCoroutine(win);
     }
@@ -72,9 +72,8 @@ public class StartMenu
 
             backgroundSequenceCoroutine.Cancel();
 
-            startScreen.enabled = false;
-            win.cursorVisible = false;
-            win.input.lockCursor = true;
+            startGui.enabled = false;
+            win.SetCursor(false);
 
             mpHandler.isHost = true;
             mpHandler.ipAddress = "127.0.0.1";
@@ -91,14 +90,14 @@ public class StartMenu
 
     private void OpenSettings()
     {
-        startScreen.enabled = false;
-        settingsScreen.enabled = true;
+        startGui.enabled = false;
+        settingsGui.enabled = true;
     }
 
     private void CloseSettings()
     {
-        startScreen.enabled = true;
-        settingsScreen.enabled = false;
+        startGui.enabled = true;
+        settingsGui.enabled = false;
     }
 
     private IEnumerator BackgroundSequence(float turnTime, float travelTime, int minTilesBeforeRandomTurn)

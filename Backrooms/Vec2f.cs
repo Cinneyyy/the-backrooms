@@ -90,7 +90,7 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     }
 
     public static bool RoughlyEqual(Vec2f a, Vec2f b, float eps = 1e-8f)
-        => Utils.RoughlyEqual(a.x, b.x, eps) && Utils.RoughlyEqual(a.y, b.y, eps);
+        => Utils.RoughlyEquals(a.x, b.x, eps) && Utils.RoughlyEquals(a.y, b.y, eps);
 
     public static Vec2f FromAngle(float radians)
         => new(MathF.Cos(radians), MathF.Sin(radians));

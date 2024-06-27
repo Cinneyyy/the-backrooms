@@ -2,20 +2,21 @@
 using System.Drawing;
 using System.Windows.Forms;
 using Backrooms.Gui;
+using Backrooms.InputSystem;
 
 namespace Backrooms.ItemManagement;
 
 public class Inventory
 {
-    private const float GUI_SIZE = .75f;
-
     public readonly Vec2i size;
     public readonly InvSlot[,] slots;
     public readonly GuiGroup gui;
-    public readonly Vec2f guiSize, guiTL, guiBR;
+    public readonly Vec2f guiBounds, guiTL, guiBR;
     public readonly float slotSize;
     public readonly Input input;
     public readonly Window win;
+    public readonly float guiScale;
+    public readonly Game game;
     public ColorBlock colors;
 
     private bool _enabled;
@@ -30,19 +31,20 @@ public class Inventory
         set {
             _enabled = value;
             gui.enabled = value;
-            win.cursorVisible = value;
-            input.lockCursor = !value;
+            win.SetCursor(value);
         }
     }
 
 
-    public Inventory(Window win, Renderer rend, Input input, Vec2i size, ColorBlock slotColors)
+    public Inventory(Window win, Renderer rend, Game game, Input input, Vec2i size, ColorBlock slotColors, float guiScale = .75f)
     {
         this.input = input;
+        this.game = game;
         this.win = win;
         win.tick += Tick;
 
         this.size = size;
+        this.guiScale = guiScale;
         colors = slotColors;
         slots = new InvSlot[size.x, size.y];
         slots.Populate((x, y) => new(new(x, y)));
@@ -53,10 +55,10 @@ public class Inventory
         };
 
         GuiElement[] guiElements = new GuiElement[size.x * size.y * 2];
-        slotSize = GUI_SIZE / size.max;
-        guiSize = new Vec2f(slotSize / rend.virtRatio, slotSize) * (Vec2f)size;
-        guiTL = Vec2f.half - guiSize/2f + invOffset;
-        guiBR = guiTL + guiSize;
+        slotSize = guiScale / size.max;
+        guiBounds = new Vec2f(slotSize / rend.virtRatio, slotSize) * (Vec2f)size;
+        guiTL = Vec2f.half - guiBounds/2f + invOffset;
+        guiBR = guiTL + guiBounds;
 
         Vec2f slotSizeVec = new(slotSize * .925f);
         Vec2f baseSlotLoc = Vec2f.half - (slotSize * (Vec2f)size)/2f + new Vec2f(slotSize/2f) + invOffset;
@@ -107,7 +109,7 @@ public class Inventory
         return false;
     }
     /// <summary>Returns whether or not the insertion was successful</summary>
-    public bool AddItem(string itemId) 
+    public bool AddItem(string itemId)
         => AddItem(Item.items[itemId]);
 
     /// <summary>Returns whether or not the slot was empty before the insertion</summary>
@@ -153,7 +155,7 @@ public class Inventory
         if(!enabled)
             return;
 
-        if(input.ContainsNormCursorCentered(Vec2f.half + invOffset, guiSize))
+        if(input.ContainsNormCursorCentered(Vec2f.half + invOffset, guiBounds))
         {
             Vec2f mPos = input.normMousePos;
             Vec2i selectedSlot = new Vec2f(
@@ -162,9 +164,14 @@ public class Inventory
 
             InvSlot slot = slots[selectedSlot.x, selectedSlot.y];
 
-            slot.invItemBackground.color = input.MbHelt(MouseButtons.Left) ? colors.select : colors.hover;
-            if(input.MbDown(MouseButtons.Left))
+            slot.invItemBackground.color = input.KeyHelt(Keys.LButton) ? colors.select : colors.hover;
+            if(input.KeyDown(Keys.Left))
                 ClickSlot(slot);
+            else if(input.KeyDown(Keys.Right))
+                if(this.selectedSlot is not null)
+                    this.selectedSlot = null;
+                else          
+                    slot.item?.Use(slot, game);
 
             if(slot != hoveredSlot)
             {
@@ -184,12 +191,10 @@ public class Inventory
     {
         if(selectedSlot is null)
             selectedSlot = slot;
-        else if(selectedSlot != slot)
+        else
         {
             Swap(selectedSlot.index, slot.index);
             selectedSlot = null;
         }
-        else
-            selectedSlot = null;
     }
 }

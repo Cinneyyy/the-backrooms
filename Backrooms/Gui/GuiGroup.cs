@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using Backrooms.InputSystem;
 
 namespace Backrooms.Gui;
 
 public class GuiGroup : IEnumerable<GuiElement>
 {
-    public const MouseButtons InteractMB = MouseButtons.Left;
+    public const Keys InteractionButton = Keys.LButton;
 
     public Renderer rend;
     public Input input;
@@ -42,8 +43,8 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Vec2f screenRes { get; private set; }
     public Vec2f screenOffset { get; private set; }
     public Vec2f guiToVirtRatio { get; private set; }
-    public bool mbHelt => input.MbHelt(InteractMB);
-    public bool mbDown => input.MbDown(InteractMB);
+    public bool mbHelt => input.KeyHelt(InteractionButton);
+    public bool mbDown => input.KeyDown(Keys.LButton);
     public IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
 
 

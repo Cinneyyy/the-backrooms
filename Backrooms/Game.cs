@@ -6,6 +6,7 @@ using Backrooms.Online;
 using System.Drawing;
 using Backrooms.Gui;
 using Backrooms.ItemManagement;
+using Backrooms.InputSystem;
 
 namespace Backrooms;
 
@@ -37,7 +38,7 @@ public class Game
         playerStats = new(100f, 100f, 100f, 100f);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
-        inventory = new(window, renderer, input, new(5, 2), invColors);
+        inventory = new(window, renderer, this, input, new(5, 2), invColors);
         inventory.AddItem("vodka");
         inventory.AddItem("oli");
 
@@ -54,7 +55,7 @@ public class Game
         renderer.camera = camera = new(90f, 20f, 0f);
         cameraController = new(camera, mpHandler, window, input, map, renderer);
 
-        GenerateMap(RNG.integer);
+        GenerateMap(RNG.signedInt);
 
         startMenu = new(window, renderer, camera, cameraController, map, mpHandler);
 
@@ -108,10 +109,20 @@ public class Game
             fpsDisplay.text = $"{window.currFps} fps";
 
         if(input.KeyDown(Keys.F1))
-            input.lockCursor ^= true;
+            window.ToggleCursor();
 
         if(input.KeyDown(Keys.Escape))
-            Window.Exit();
+        {
+            if(startMenu.startGui.enabled)
+                Window.Exit();
+            else if(inventory.enabled)
+                inventory.enabled = false;
+            else
+            {
+                startMenu.startGui.enabled = true;
+                window.SetCursor(true);
+            }
+        }
 
         if(input.KeyDown(Keys.F3))
             Debugger.Break();
@@ -122,15 +133,17 @@ public class Game
         if(input.KeyDown(Keys.C))
             DevConsole.Restore();
 
-        if(mpHandler is { ready: true } && input.KeyDown(Keys.F5))
-            if(!mpHandler.isHost)
-                Out("You must be host to refresh the map!");
-            else
-            {
-                mpHandler.serverState.levelSeed = new Random().Next();
-                mpHandler.SendServerStateChange(StateKey.S_LevelSeed);
-                Thread.Sleep(1);
-                mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
-            }
+        if(input.KeyDown(Keys.F5))
+            GenerateMap(RNG.signedInt);
+        //if(mpHandler is { ready: true } && input.KeyDown(Keys.F5))
+        //    if(!mpHandler.isHost)
+        //        Out("You must be host to refresh the map!");
+        //    else
+        //    {
+        //        mpHandler.serverState.levelSeed = new Random().Next();
+        //        mpHandler.SendServerStateChange(StateKey.S_LevelSeed);
+        //        Thread.Sleep(1);
+        //        mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
+        //    }
     }
 }

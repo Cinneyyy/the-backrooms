@@ -1,6 +1,6 @@
-﻿namespace Backrooms;
+﻿namespace Backrooms.InputSystem;
 
-public enum GameKey : byte
+public enum InputAction : byte
 {
     MoveForward,
     MoveBackward,

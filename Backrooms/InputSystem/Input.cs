@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Backrooms;
+namespace Backrooms.InputSystem;
 
 public partial class Input
 {
@@ -10,7 +10,6 @@ public partial class Input
     public KeyMap keyMap;
 
     private readonly HashSet<Keys> additionPending = [], removalPending = [], keyState = [], lastKeyState = [];
-    private readonly HashSet<MouseButtons> additionPendingMb = [], removalPendingMb = [], mbState = [], lastMbState = [];
     private readonly Vec2i screenLoc;
     private readonly Renderer rend;
     private Vec2i screenRes, screenCenter;
@@ -30,30 +29,25 @@ public partial class Input
         this.lockCursor = lockCursor;
         this.screenLoc = screenLoc;
         this.rend = rend;
+
         screenRes = rend.physRes;
         screenCenter = rend.physCenter + screenLoc;
+
         keyMap = new(this) {
-            [GameKey.MoveForward] = Keys.W,
-            [GameKey.MoveBackward] = Keys.S,
-            [GameKey.MoveLeft] = Keys.A,
-            [GameKey.MoveRight] = Keys.D
+            [InputAction.MoveForward] = Keys.W,
+            [InputAction.MoveBackward] = Keys.S,
+            [InputAction.MoveLeft] = Keys.A,
+            [InputAction.MoveRight] = Keys.D
         };
     }
 
 
     public bool KeyHelt(Keys key) => keyState.Contains(key);
-    public bool KeyHelt(GameKey key) => keyMap.KeyHelt(key);
+    public bool KeyHelt(InputAction key) => keyMap.KeyHelt(key);
     public bool KeyDown(Keys key) => !lastKeyState.Contains(key) && keyState.Contains(key);
-    public bool KeyDown(GameKey key) => keyMap.KeyDown(key);
+    public bool KeyDown(InputAction key) => keyMap.KeyDown(key);
     public bool KeyUp(Keys key) => lastKeyState.Contains(key) && !keyState.Contains(key);
-    public bool KeyUp(GameKey key) => keyMap.KeyUp(key);
-
-    public bool MbHelt(MouseButtons mb)
-        => mbState.Contains(mb);
-    public bool MbDown(MouseButtons mb)
-        => !lastMbState.Contains(mb) && mbState.Contains(mb);
-    public bool MbUp(MouseButtons mb)
-        => lastMbState.Contains(mb) && !mbState.Contains(mb);
+    public bool KeyUp(InputAction key) => keyMap.KeyUp(key);
 
     public bool ContainsCursor(Vec2f loc, Vec2f size)
         => Utils.InsideRect(loc, size, virtMousePos);
@@ -83,38 +77,18 @@ public partial class Input
             removalPending.Add(key);
     }
 
-    internal void CB_OnCursorDown(MouseButtons mb)
-    {
-        if(!mbState.Contains(mb))
-            additionPendingMb.Add(mb);
-    }
-    internal void CB_OnCursorUp(MouseButtons mb)
-    {
-        if(mbState.Contains(mb))
-            removalPendingMb.Add(mb);
-    }
-
     internal void Tick()
     {
         lastKeyState.Clear();
-        lastMbState.Clear();
         lastKeyState.UnionWith(keyState);
-        lastMbState.UnionWith(mbState);
 
         foreach(Keys key in removalPending)
             keyState.Remove(key);
         foreach(Keys key in additionPending)
             keyState.Add(key);
 
-        foreach(MouseButtons mb in removalPendingMb)
-            mbState.Remove(mb);
-        foreach(MouseButtons mb in additionPendingMb)
-            mbState.Add(mb);
-
         additionPending.Clear();
-        additionPendingMb.Clear();
         removalPending.Clear();
-        removalPendingMb.Clear();
 
         Vec2i cp = (Vec2i)Cursor.Position;
         if(lockCursor)
@@ -131,7 +105,7 @@ public partial class Input
 
         virtMousePos = (Vec2i)((mousePos - screenLoc) * rend.downscaleFactor);
         virtMouseDelta = (Vec2i)(virtMouseDelta * rend.downscaleFactor);
-        normMousePos = (Vec2f)virtMousePos/rend.virtRes;
-        normMouseDelta = (Vec2f)virtMouseDelta/rend.virtRes;
+        normMousePos = (Vec2f)virtMousePos / rend.virtRes;
+        normMouseDelta = (Vec2f)virtMouseDelta / rend.virtRes;
     }
 }

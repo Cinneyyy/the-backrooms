@@ -1,4 +1,5 @@
-﻿using Backrooms.Online;
+﻿using Backrooms.InputSystem;
+using Backrooms.Online;
 
 namespace Backrooms;
 
@@ -54,8 +55,8 @@ public class CameraController
             return;
 
         Vec2f move = 
-            (camera.right * (input.KeyHelt(GameKey.MoveLeft) ? 1f : input.KeyHelt(GameKey.MoveRight) ? -1f : 0f)
-            + camera.forward * (input.KeyHelt(GameKey.MoveBackward) ? -1f : input.KeyHelt(GameKey.MoveForward) ? 1f : 0f))
+            (camera.right * (input.KeyHelt(InputAction.MoveLeft) ? 1f : input.KeyHelt(InputAction.MoveRight) ? -1f : 0f)
+            + camera.forward * (input.KeyHelt(InputAction.MoveBackward) ? -1f : input.KeyHelt(InputAction.MoveForward) ? 1f : 0f))
             .normalized;
 
         Vec2f currPos = pos;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using Backrooms.InputSystem;
 
 namespace Backrooms.Gui;
 
@@ -12,7 +13,6 @@ public class ValueSelectorElement : GuiElement
     public readonly TextElement textElem;
     public readonly string[] values;
     public ColorBlock colors;
-    public MouseButtons mb = MouseButtons.Left;
     public event Action<int> valueChanged;
     public event Action<string> valueChangedStr;
     public OverflowBehaviour overflowBehaviour = OverflowBehaviour.Mod;
@@ -122,7 +122,7 @@ public class ValueSelectorElement : GuiElement
         bool lHover = input.ContainsCursorCentered(leftBackgroundElem.screenLocation + leftBackgroundElem.screenSize/2, leftBackgroundElem.screenSize);
         bool rHover = input.ContainsCursorCentered(rightBackgroundElem.screenLocation + rightBackgroundElem.screenSize/2, rightBackgroundElem.screenSize);
 
-        bool mbDown = input.MbDown(mb);
+        bool mbDown = group.mbDown;
 
         if(lHover && mbDown)
             value--;
