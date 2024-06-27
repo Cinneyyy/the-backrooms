@@ -7,7 +7,6 @@ namespace Backrooms.Serialization;
 
 public abstract class Serializable<TSelf> where TSelf : Serializable<TSelf>
 {
-    public static readonly Type type;
     public static readonly PropertyInfo[] properties;
     public static readonly FieldInfo[] fields;
     public static readonly Dictionary<string, int> memberIndices = [];
@@ -16,7 +15,7 @@ public abstract class Serializable<TSelf> where TSelf : Serializable<TSelf>
 
     static Serializable()
     {
-        type = typeof(TSelf);
+        Type type = typeof(TSelf);
 
         properties = (from p in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                       where p.GetCustomAttribute<DontSerializeAttribute>() is null

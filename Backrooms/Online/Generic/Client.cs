@@ -4,7 +4,6 @@ using System.Threading;
 
 namespace Backrooms.Online.Generic;
 
-#pragma warning disable CS0067
 public class Client(int bufSize = 256, bool printDebug = false)
 {
     public int bufSize = bufSize;

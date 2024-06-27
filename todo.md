@@ -2,6 +2,7 @@
 
 ---
 ## Features
+1. Implement arrays/lists into serialization system
 1. Add inventory functionality
 1. Finish up main menu
 1. Actual gameplay
