@@ -171,9 +171,9 @@ public unsafe class Renderer
             y1 = Utils.Clamp(virtCenter.y + halfHeight, 0, virtRes.y-1);
 
         float brightness = (vert ? .75f : .5f) * GetDistanceFog(normDist);
-        const float light_spacing = 10f, light_strength = 3.5f;
-        float lightDistSqr = Utils.Sqr(hitPos.x - (hitPos.x / light_spacing).Round() * light_spacing) + Utils.Sqr(hitPos.y - (hitPos.y / light_spacing).Round() * light_spacing);
-        brightness = Utils.Clamp01(brightness * light_strength / (1f + lightDistSqr));
+        //const float light_spacing = 20f, light_strength = 2f;
+        //float lightDistSqr = Utils.Sqr(hitPos.x - (hitPos.x / light_spacing).Round() * light_spacing) + Utils.Sqr(hitPos.y - (hitPos.y / light_spacing).Round() * light_spacing);
+        //brightness = Utils.Clamp01(brightness * light_strength / (1f + lightDistSqr));
 
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
