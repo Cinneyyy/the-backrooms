@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
@@ -51,7 +52,7 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
 
         return compressedStream.ToArray();
     }
-    public static byte[] Serialize(T instance, string[] members, CompressionLevel compression = CompressionLevel.Optimal)
+    public static byte[] SerializeMembers(T instance, string[] members, CompressionLevel compression = CompressionLevel.Optimal)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
@@ -106,7 +107,9 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
             stream.Position = 0;
         }
         else
-            stream = new(data);
+            stream = new(data) {
+                Position = 0
+            };
 
         using BinaryReader reader = new(stream);
 
@@ -131,63 +134,81 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
 
         stream.Dispose();
     }
-    public static void Deserialize(byte[] data, out T target, bool decompress = true)
+    public static void DeserializeTo(byte[] data, out T target, bool decompress = true)
     {
         target = new();
         DeserializeRef(data, ref target, decompress);
     }
     public static T Deserialize(byte[] data, bool decompress = true)
     {
-        Deserialize(data, out T target, decompress);
+        DeserializeTo(data, out T target, decompress);
         return target;
     }
 
 
     private static void WriteSerializedTypeData(Type type, object value, BinaryWriter writer, int index)
     {
+        writer.Write(index);
+
         if(type.IsSubclassOfGeneric(typeof(Serializable<>)))
         {
-            writer.Write(index);
-
             byte[] data = 
                 typeof(BinarySerializer<>)
                 .MakeGenericType(type)
-                .GetMethod("Serialize")
-                .Invoke(null, [value])
+                .GetMethod(nameof(Serialize))
+                .Invoke(null, [value, CompressionLevel.NoCompression])
                 as byte[];
 
             writer.Write(data.Length);
             writer.Write(data);
         }
-        else
-            WriteSerializedPrimitive(type, value, writer, index);
-
-    }
-
-    private static void WriteSerializedPrimitive(Type type, object value, BinaryWriter writer, int index)
-    {
-        writer.Write(index);
-
-        switch(Type.GetTypeCode(type))
+        else if(type.IsArray)
         {
-            case TypeCode.Byte: writer.Write((byte)value); break;
-            case TypeCode.SByte: writer.Write((sbyte)value); break;
-            case TypeCode.Int16: writer.Write((short)value); break;
-            case TypeCode.UInt16: writer.Write((ushort)value); break;
-            case TypeCode.Int32: writer.Write((int)value); break;
-            case TypeCode.UInt32: writer.Write((uint)value); break;
-            case TypeCode.Int64: writer.Write((long)value); break;
-            case TypeCode.UInt64: writer.Write((ulong)value); break;
-            case TypeCode.Single: writer.Write((float)value); break;
-            case TypeCode.Double: writer.Write((double)value); break;
-            case TypeCode.Decimal: writer.Write((decimal)value); break;
-            case TypeCode.Boolean: writer.Write((bool)value); break;
-            case TypeCode.String: writer.Write((string)value); break;
-            case TypeCode.Char: writer.Write((char)value); break;
-            case var _ when type == typeof(Vec2f): writer.Write((Vec2f)value); break;
-            case var _ when type == typeof(Vec2i): writer.Write((Vec2i)value); break;
-            default: throw new InvalidCastException($"Tried serializing non-primitive and non-serializable type '{type.FullName}'");
+            Type baseType = type.GetElementType();
+            if(!baseType.IsSubclassOfGeneric(typeof(Serializable<>)))
+                throw new($"Cannot deserialize array elments, of which the element type does not derive from Serializable<TSelf>");
+
+            MethodInfo serialize = 
+                typeof(BinarySerializer<>)
+                .MakeGenericType(baseType)
+                .GetMethod(nameof(Serialize));
+
+            using MemoryStream arrStream = new();
+            using BinaryWriter arrWriter = new(arrStream);
+
+            Array arrValue = value as Array;
+            for(int i = 0; i < arrValue.Length; i++)
+            {
+                byte[] elemData = serialize.Invoke(null, [arrValue.GetValue(i), CompressionLevel.NoCompression]) as byte[];
+                arrWriter.Write(elemData.Length);
+                arrWriter.Write(elemData);
+            }
+
+            byte[] arrData = arrStream.ToArray();
+            writer.Write(arrValue.Length);
+            writer.Write(arrData);
         }
+        else
+            switch(Type.GetTypeCode(type))
+            {
+                case TypeCode.Byte: writer.Write((byte)value); break;
+                case TypeCode.SByte: writer.Write((sbyte)value); break;
+                case TypeCode.Int16: writer.Write((short)value); break;
+                case TypeCode.UInt16: writer.Write((ushort)value); break;
+                case TypeCode.Int32: writer.Write((int)value); break;
+                case TypeCode.UInt32: writer.Write((uint)value); break;
+                case TypeCode.Int64: writer.Write((long)value); break;
+                case TypeCode.UInt64: writer.Write((ulong)value); break;
+                case TypeCode.Single: writer.Write((float)value); break;
+                case TypeCode.Double: writer.Write((double)value); break;
+                case TypeCode.Decimal: writer.Write((decimal)value); break;
+                case TypeCode.Boolean: writer.Write((bool)value); break;
+                case TypeCode.String: writer.Write((string)value); break;
+                case TypeCode.Char: writer.Write((char)value); break;
+                case var _ when type == typeof(Vec2f): writer.Write((Vec2f)value); break;
+                case var _ when type == typeof(Vec2i): writer.Write((Vec2i)value); break;
+                default: throw new InvalidCastException($"Tried serializing non-primitive, non-array and non-serializable type '{type.FullName}'");
+            }
     }
 
     private static void ReadSerializedTypeData(Type type, string memName, ref T target, BinaryReader reader)
@@ -200,33 +221,53 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
             object deserializedMember =
                 typeof(BinarySerializer<>)
                 .MakeGenericType(type)
-                .GetMethod("Deserialize")
-                .Invoke(null, [data]);
+                .GetMethod(nameof(Deserialize))
+                .Invoke(null, [data, false]);
 
             target.SetMember(memName, deserializedMember);
         }
+        else if(type.IsArray)
+        {
+            Type baseType = type.GetElementType();
+            if(!baseType.IsGenericType || baseType.GetGenericTypeDefinition() != typeof(ArrElem<>))
+                throw new($"Cannot serialize array elments which are not boxed in ArrElem<T> (current type: {baseType.Name})");
+
+            int length = reader.ReadInt32();
+            Array array = Array.CreateInstance(baseType, length);
+            MethodInfo deserialize =
+                typeof(BinarySerializer<>)
+                .MakeGenericType(baseType)
+                .GetMethod(nameof(Deserialize));
+
+            for(int i = 0; i < length; i++)
+            {
+                int elemLength = reader.ReadInt32();
+                byte[] data = reader.ReadBytes(elemLength);
+
+                array.SetValue(deserialize.Invoke(null, [data, false]), i);
+            }
+
+            target.SetMember(memName, array);
+        }
         else
-            ReadSerializedPrimitive(type, memName, ref target, reader);
+            target.SetMember(memName, Type.GetTypeCode(type) switch {
+                TypeCode.Byte => reader.ReadByte(),
+                TypeCode.SByte => reader.ReadSByte(),
+                TypeCode.Int16 => reader.ReadInt16(),
+                TypeCode.UInt16 => reader.ReadUInt16(),
+                TypeCode.Int32 => reader.ReadInt32(),
+                TypeCode.UInt32 => reader.ReadUInt32(),
+                TypeCode.Int64 => reader.ReadInt64(),
+                TypeCode.UInt64 => reader.ReadUInt64(),
+                TypeCode.Single => reader.ReadSingle(),
+                TypeCode.Double => reader.ReadDouble(),
+                TypeCode.Decimal => reader.ReadDecimal(),
+                TypeCode.Boolean => reader.ReadBoolean(),
+                TypeCode.String => reader.ReadString(),
+                TypeCode.Char => reader.ReadChar(),
+                _ when type == typeof(Vec2f) => reader.ReadVec2f(),
+                _ when type == typeof(Vec2i) => reader.ReadVec2i(),
+                _ => throw new InvalidCastException($"Tried serializing non-primitive, non-array and non-serializable type '{type.FullName}'")
+            });
     }
-    
-    private static void ReadSerializedPrimitive(Type type, string memName, ref T target, BinaryReader reader)
-        => target.SetMember(memName, Type.GetTypeCode(type) switch {
-            TypeCode.Byte => reader.ReadByte(),
-            TypeCode.SByte => reader.ReadSByte(),
-            TypeCode.Int16 => reader.ReadInt16(),
-            TypeCode.UInt16 => reader.ReadUInt16(),
-            TypeCode.Int32 => reader.ReadInt32(),
-            TypeCode.UInt32 => reader.ReadUInt32(),
-            TypeCode.Int64 => reader.ReadInt64(),
-            TypeCode.UInt64 => reader.ReadUInt64(),
-            TypeCode.Single => reader.ReadSingle(),
-            TypeCode.Double => reader.ReadDouble(),
-            TypeCode.Decimal => reader.ReadDecimal(),
-            TypeCode.Boolean => reader.ReadBoolean(),
-            TypeCode.String => reader.ReadString(),
-            TypeCode.Char => reader.ReadChar(),
-            _ when type == typeof(Vec2f) => reader.ReadVec2f(),
-            _ when type == typeof(Vec2i) => reader.ReadVec2i(),
-            _ => throw new InvalidCastException($"Tried serializing non-primitive and non-serializable type '{type.FullName}'")
-        });
 }

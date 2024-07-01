@@ -37,19 +37,6 @@ public abstract class Serializable<TSelf> where TSelf : Serializable<TSelf>
     }
 
 
-    public object this[int index]
-    {
-        get => GetMember(index);
-        set => SetMember(index, value);
-    }
-
-    public object this[string name]
-    {
-        get => GetMember(name);
-        set => SetMember(name, value);
-    }
-
-
     public void SetMember(int index, object value)
     {
         if(IsProperty(index))

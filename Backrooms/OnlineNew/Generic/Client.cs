@@ -70,7 +70,7 @@ public class Client(CommonState commonState)
         {
             byte[] data = members is null or []
                 ? BinarySerializer<T>.Serialize(packet, commonState.packetCompression)
-                : BinarySerializer<T>.Serialize(packet, members, commonState.packetCompression);
+                : BinarySerializer<T>.SerializeMembers(packet, members, commonState.packetCompression);
 
             if(data.Length > commonState.bufSize)
                 throw new($"Attempted to send packet with a larger size than the buffer size allows {data.Length} / {commonState.bufSize}");
