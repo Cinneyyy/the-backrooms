@@ -1,6 +1,6 @@
 ﻿namespace Backrooms.Serialization;
 
-public sealed class ArrElem<T>(T value) : Serializable<ArrElem<T>>
+public sealed class ArrElem<T>(T value) : Serializable<ArrElem<T>>()
 {
     public T value = value;
 

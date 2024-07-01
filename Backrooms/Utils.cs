@@ -227,4 +227,9 @@ public static class Utils
 
         return type.BaseType.IsSubclassOfGeneric(genericType);
     }
+
+    public static byte[] ToTwoBytes(this ushort uint16)
+        => [(byte)(uint16 >> 8), (byte)(uint16 & 255)];
+    public static ushort ToUint16(this byte[] twoBytes)
+        => (ushort)((ushort)(twoBytes[0] << 8) | twoBytes[1]);
 }

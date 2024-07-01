@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -7,12 +8,14 @@ using Backrooms.Serialization;
 
 namespace Backrooms.OnlineNew.Generic;
 
-public class Server<TSState, TCState>(CommonState commonState) where TSState : Packet<TSState> where TCState : Packet<TCState>
+public class Server<TSState, TCState>(MpManager<TSState, TCState> mpManager) where TSState : Packet<TSState>, new() where TCState : Packet<TCState>, new()
 {
     public delegate void ReceivePacketHandler(PacketType type, byte[] data, ushort clientId);
 
 
-    public readonly CommonState commonState = commonState;
+    public readonly CommonState commonState = mpManager.commonState;
+    public readonly MpManager<TSState, TCState> mpManager = mpManager;
+    public readonly List<ushort> clientIds = [];
     public event ReceivePacketHandler receivePacket;
 
     private TcpListener listener;
@@ -81,14 +84,38 @@ public class Server<TSState, TCState>(CommonState commonState) where TSState : P
         }
     }
 
+    public void BroadcastPacket<T>(PacketType type, T packet, string[] members, ushort[] excludedClientIds) where T : Packet<T>, new()
+        => SendPacket(type, packet, members, (from id in clientIds where !excludedClientIds.Contains(id) select id).ToArray());
+    
+    public void SendPacketRaw(byte[] data, ushort[] clientIds)
+    {
+        try
+        {
+            foreach(ushort clientId in clientIds)
+                remoteClients[clientId].GetStream().Write(data, 0, data.Length);
+        }
+        catch(Exception exc)
+        {
+            Out($"{exc.GetType()} in Client.SendPacketRaw ;; {exc.Message}", ConsoleColor.Red);
+        }
+    }
+
+    public void BroadcastPacketRaw(byte[] data, ushort[] excludedClientIds)
+        => SendPacketRaw(data, (from id in clientIds where !excludedClientIds.Contains(id) select id).ToArray());
+
 
     private void WelcomeClients()
     {
         while(isHosting)
         {
             TcpClient client = listener.AcceptTcpClient();
-            ushort clientId = (ushort)RNG.Range(ushort.MaxValue);
+
+            ushort clientId;
+            do clientId = (ushort)RNG.Range(ushort.MaxValue);
+            while(!clientIds.Contains(clientId));
+
             remoteClients[clientId] = client;
+            clientIds.Add(clientId);
 
             Out($"New client connected: {client.Client.RemoteEndPoint}");
 
@@ -103,11 +130,12 @@ public class Server<TSState, TCState>(CommonState commonState) where TSState : P
 
         WelcomePacket<TSState, TCState> welcomePacket = new() {
             clientId = clientId,
-            //serverState = 
+            serverState = mpManager.serverState,
+            clientStateValues = [..mpManager.clientStates.Values],
+            clientStateKeys = [..mpManager.clientStates.Keys]
         };
 
         SendPacket(PacketType.WelcomePacket, welcomePacket, null, [clientId]);
-        // TODO: set all fields, receive welcome packet
 
         while(isHosting && client.Connected && stream.Read(buf, 0, buf.Length) is int bytesRead && bytesRead > 0)
         {
@@ -116,7 +144,19 @@ public class Server<TSState, TCState>(CommonState commonState) where TSState : P
                 OutIf(commonState.printDebug, $"Received client packet from client #{clientId} with size {bytesRead} bytes");
 
                 PacketType type = (PacketType)buf[0];
-                receivePacket?.Invoke(type, buf[1..bytesRead], clientId);
+                byte[] data = buf[1..bytesRead];
+
+                switch(type)
+                {
+                    case PacketType.ClientState or PacketType.ServerState:
+                        BroadcastPacketRaw(buf[..bytesRead], [clientId]);
+                        break;
+                    case PacketType.WelcomePacket:
+                        throw new($"Server should not receive packet of type 'WelcomPacket', as it is only meant for clients");
+                    default: 
+                        receivePacket?.Invoke(type, buf[1..bytesRead], clientId); 
+                        break;
+                }
             }
             catch(Exception exc)
             {

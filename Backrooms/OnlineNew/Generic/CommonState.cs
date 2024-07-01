@@ -7,4 +7,7 @@ public class CommonState(int bufSize = 1024, bool printDebug = false, Compressio
     public readonly int bufSize = bufSize;
     public bool printDebug = printDebug;
     public CompressionLevel packetCompression = packetCompression;
+
+
+    public bool decompress => packetCompression != CompressionLevel.NoCompression;
 }

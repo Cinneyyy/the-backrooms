@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Backrooms.Serialization;
 
-public sealed class Arr<T>(ArrElem<T>[] elems) : Serializable<Arr<T>>, IEnumerable<ArrElem<T>>, IEnumerable<T>
+public sealed class Arr<T>(ArrElem<T>[] elems) : Serializable<Arr<T>>(), IEnumerable<ArrElem<T>>, IEnumerable<T>
 {
     public ArrElem<T>[] elems = elems;
+
+
+    public int length => elems.Length;
 
 
     public Arr(int length) : this(new ArrElem<T>[length]) { }
@@ -17,11 +21,13 @@ public sealed class Arr<T>(ArrElem<T>[] elems) : Serializable<Arr<T>>, IEnumerab
     public Arr() : this(null) { }
 
 
-    public T this[int index]
+    public T this[Index index]
     {
         get => elems[index];
         set => elems[index].value = value;
     }
+
+    public T[] this[Range range] => (from e in elems[range] select (T)e).ToArray();
 
 
     public override string ToString() => $"{{{elems.FormatStr(", ")}}}";

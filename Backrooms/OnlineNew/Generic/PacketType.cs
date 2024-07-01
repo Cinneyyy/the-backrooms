@@ -2,7 +2,7 @@
 
 public enum PacketType : byte
 {
+    WelcomePacket,
     ServerState,
-    ClientState,
-    WelcomePacket
+    ClientState
 }

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Backrooms.Serialization;
 
-public abstract class Serializable<TSelf> where TSelf : Serializable<TSelf>
+public abstract class Serializable<TSelf>() where TSelf : Serializable<TSelf>, new()
 {
     public static readonly PropertyInfo[] properties;
     public static readonly FieldInfo[] fields;

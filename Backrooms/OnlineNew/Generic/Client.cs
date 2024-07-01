@@ -5,12 +5,13 @@ using Backrooms.Serialization;
 
 namespace Backrooms.OnlineNew.Generic;
 
-public class Client(CommonState commonState)
+public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) where TSState : Packet<TSState>, new() where TCState : Packet<TCState>, new()
 {
     public delegate void ReceivePacketHandler(PacketType type, byte[] data);
 
 
-    public readonly CommonState commonState = commonState;
+    public readonly CommonState commonState = mpManager.commonState;
+    public readonly MpManager<TSState, TCState> mpManager = mpManager;
     public event ReceivePacketHandler receivePacket;
 
     private TcpClient remoteHost;
@@ -18,7 +19,7 @@ public class Client(CommonState commonState)
 
 
     public bool isConnected { get; private set; }
-    public byte clientId { get; private set; }
+    public ushort clientId { get; private set; }
     public string remoteIpAddress { get; private set; }
     public int remotePort { get; private set; }
 
@@ -64,7 +65,7 @@ public class Client(CommonState commonState)
     }
 
     /// <summary>If members is null or [], it will serialize all members</summary>
-    public void SendPacket<T>(PacketType type, T packet, string[] members) where T : Packet<T>, new()
+    public void SendPacket<T>(PacketType type, T packet, string[] members, byte[] prepend = null) where T : Packet<T>, new()
     {
         try
         {
@@ -75,13 +76,17 @@ public class Client(CommonState commonState)
             if(data.Length > commonState.bufSize)
                 throw new($"Attempted to send packet with a larger size than the buffer size allows {data.Length} / {commonState.bufSize}");
 
-            remoteHost.GetStream().Write([(byte)type, ..data], 0, data.Length+1);
+            data = [(byte)type, ..(prepend ?? []), ..data];
+            remoteHost.GetStream().Write(data, 0, data.Length);
         }
         catch(Exception exc)
         {
             Out($"{exc.GetType()} in Client.SendPacket ;; {exc.Message}", ConsoleColor.Red);
         }
     }
+
+    public void SendClientStateChanges(string[] members)
+        => SendPacket(PacketType.ClientState, mpManager.ownClientState, members);
 
 
     private void HandleServerCommunication()
@@ -96,7 +101,30 @@ public class Client(CommonState commonState)
                 OutIf(commonState.printDebug, $"Received server packet with size {bytesRead} bytes");
 
                 PacketType type = (PacketType)buf[0];
-                receivePacket?.Invoke(type, buf[1..bytesRead]);
+                byte[] data = buf[1..bytesRead];
+
+                switch(type)
+                {
+                    case PacketType.WelcomePacket:
+                    {
+                        WelcomePacket<TSState, TCState> packet = BinarySerializer<WelcomePacket<TSState, TCState>>.Deserialize(data, commonState.decompress);
+                        mpManager.HandleWelcomePacket(packet);
+                        break;
+                    }
+                    case PacketType.ClientState:
+                    {
+                        TCState state = mpManager.clientStates[clientId];
+                        BinarySerializer<TCState>.DeserializeRef(data, ref state, commonState.decompress);
+                        break;
+                    }
+                    case PacketType.ServerState:
+                    {
+                        TSState state = mpManager.serverState;
+                        BinarySerializer<TSState>.DeserializeRef(data, ref state, commonState.decompress);
+                        break;
+                    }
+                    default: receivePacket?.Invoke(type, data); break;
+                }
             }
             catch(Exception exc)
             {
