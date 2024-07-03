@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using Backrooms.Serialization;
 
-namespace Backrooms.OnlineNew;
+namespace Backrooms.Online;
 
 public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mpManager) 
     where TSState : Packet<TSState>, new() 

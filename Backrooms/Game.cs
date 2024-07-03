@@ -1,4 +1,4 @@
-﻿global using MpManager = Backrooms.OnlineNew.MpManager<Backrooms.OnlineNew.ServerState, Backrooms.OnlineNew.ClientState, Backrooms.OnlineNew.Request>;
+﻿global using MpManager = Backrooms.Online.MpManager<Backrooms.Online.ServerState, Backrooms.Online.ClientState, Backrooms.Online.Request>;
 
 using System.Diagnostics;
 using System.Windows.Forms;
@@ -7,7 +7,7 @@ using Backrooms.Gui;
 using Backrooms.ItemManagement;
 using Backrooms.InputSystem;
 using Backrooms.Entities;
-using Backrooms.OnlineNew;
+using Backrooms.Online;
 using System.Threading;
 
 namespace Backrooms;

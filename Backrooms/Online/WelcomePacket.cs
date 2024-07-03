@@ -1,6 +1,6 @@
 ﻿using Backrooms.Serialization;
 
-namespace Backrooms.OnlineNew;
+namespace Backrooms.Online;
 
 public sealed class WelcomePacket<TSState, TCState>() : Packet<WelcomePacket<TSState, TCState>>() where TSState : Packet<TSState>, new() where TCState : Packet<TCState>, new()
 {

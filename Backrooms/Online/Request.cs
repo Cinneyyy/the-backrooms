@@ -1,4 +1,4 @@
-﻿namespace Backrooms.OnlineNew;
+﻿namespace Backrooms.Online;
 
 public enum Request : byte
 {

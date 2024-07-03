@@ -1,4 +1,4 @@
-﻿namespace Backrooms.OnlineNew;
+﻿namespace Backrooms.Online;
 
 public class IntegrationPacket<TCState>() : Packet<IntegrationPacket<TCState>>() where TCState : Packet<TCState>, new()
 {

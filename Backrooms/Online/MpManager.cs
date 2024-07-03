@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Backrooms.Serialization;
 
-namespace Backrooms.OnlineNew;
+namespace Backrooms.Online;
 
 public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
     where TSState : Packet<TSState>, new() 
