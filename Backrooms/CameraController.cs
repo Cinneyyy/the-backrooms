@@ -1,5 +1,4 @@
 ﻿using Backrooms.InputSystem;
-using Backrooms.Online;
 
 namespace Backrooms;
 
@@ -8,7 +7,7 @@ public class CameraController
     public const float HITBOX_RADIUS = .25f;
 
     public readonly Camera camera;
-    public readonly MpHandler mpHandler;
+    public readonly MpManager mpManager;
     public readonly InputGetter input;
     public readonly Map map;
     public readonly Renderer renderer;
@@ -22,21 +21,19 @@ public class CameraController
         set {
             camera.pos = value;
             
-            if(mpHandler.ready)
+            if(mpManager.isConnected)
                 SendClientPosition();
         }
     }
 
 
-    public CameraController(Camera camera, MpHandler mpHandler, Window window, InputGetter input, Map map, Renderer renderer)
+    public CameraController(Camera camera, MpManager mpManager, Window window, InputGetter input, Map map, Renderer renderer)
     {
         this.camera = camera;
-        this.mpHandler = mpHandler;
+        this.mpManager = mpManager;
         this.input = input;
         this.map = map;
         this.renderer = renderer;
-
-        mpHandler.onFinishConnect += SendClientPosition;
 
         window.tick += Tick;
     }
@@ -44,8 +41,8 @@ public class CameraController
 
     public void SendClientPosition()
     {
-        mpHandler.ownClientState.pos = pos;
-        mpHandler.SendClientStateChange(StateKey.C_Pos);
+        mpManager.clientState.pos = pos;
+        mpManager.SyncClientState("pos");
     }
 
     

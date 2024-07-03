@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace Backrooms.OnlineNew.Generic;
+namespace Backrooms.OnlineNew;
 
 public class CommonState(int bufSize = 1024, bool printDebug = false, CompressionLevel packetCompression = CompressionLevel.Optimal)
 {

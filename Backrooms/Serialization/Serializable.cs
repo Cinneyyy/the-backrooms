@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Text;
 
 namespace Backrooms.Serialization;
 
@@ -55,6 +56,49 @@ public abstract class Serializable<TSelf>() where TSelf : Serializable<TSelf>, n
             return fields[index - properties.Length].GetValue(this);
     }
     public object GetMember(string name) => GetMember(memberIndices[name]);
+
+    public override string ToString()
+    {
+        StringBuilder sb = new();
+        sb.Append('[');
+
+        void stringifyMember(string name, Type type, object value, bool isLast)
+        {
+            sb.Append(name);
+            sb.Append(": ");
+
+            if(type == typeof(string))
+                sb.Append($"\"{value as string}\"");
+            else if(type.IsArray)
+            {
+                sb.Append('{');
+
+                Array arrInstance = value as Array;
+                int i = 0;
+                foreach(object o in arrInstance)
+                {
+                    sb.Append(o.ToString());
+                    if(i < arrInstance.Length - 1)
+                        sb.Append(", ");
+                }
+
+                sb.Append('}');
+            }
+            else
+                sb.Append(value.ToString());
+
+            if(!isLast)
+                sb.Append(", ");
+        }
+
+        foreach(PropertyInfo info in properties)
+            stringifyMember(info.Name, info.PropertyType, info.GetValue(this), info == properties[^1]);
+        foreach(FieldInfo info in fields)
+            stringifyMember(info.Name, info.FieldType, info.GetValue(this), info == fields[^1]);
+
+        sb.Append(']');
+        return sb.ToString();
+    }
 
 
     public static bool IsProperty(int index) => index < properties.Length;

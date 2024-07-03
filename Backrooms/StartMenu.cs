@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Drawing;
 using Backrooms.Gui;
-using Backrooms.Online;
 using System.Collections;
 using Backrooms.Coroutines;
 
@@ -10,7 +9,7 @@ namespace Backrooms;
 
 public class StartMenu
 {
-    public MpHandler mpHandler;
+    public MpManager mpManager;
 
     private readonly Window win;
     private readonly FontFamily font;
@@ -22,10 +21,10 @@ public class StartMenu
     public readonly GuiGroup startGui, settingsGui;
 
 
-    public StartMenu(Window win, Renderer rend, Camera cam, CameraController camController, Map map, MpHandler mpHandler, string fontFamily = "cascadia_code")
+    public StartMenu(Window win, Renderer rend, Camera cam, CameraController camController, Map map, MpManager mpManager, string fontFamily = "cascadia_code")
     {
         this.win = win;
-        this.mpHandler = mpHandler;
+        this.mpManager = mpManager;
         this.cam = cam;
         this.camController = camController;
         this.map = map;
@@ -71,20 +70,23 @@ public class StartMenu
             // TODO: sp screen
 
             backgroundSequenceCoroutine.Cancel();
-
             startGui.enabled = false;
             win.SetCursor(false);
-
-            mpHandler.isHost = true;
-            mpHandler.ipAddress = "127.0.0.1";
-            mpHandler.port = 8080;
-
-            mpHandler.Start();
             camController.canMove = true;
+
+            mpManager.Start(true, "127.0.0.1", 8080);
+
         }
         else
         {
             // TODO: mp screen
+
+            backgroundSequenceCoroutine.Cancel();
+            startGui.enabled = false;
+            win.SetCursor(false);
+            camController.canMove = true;
+
+            mpManager.Start(false, "127.0.0.1", 8080);
         }
     }
 

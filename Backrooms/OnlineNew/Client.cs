@@ -3,16 +3,20 @@ using System.Net.Sockets;
 using System.Threading;
 using Backrooms.Serialization;
 
-namespace Backrooms.OnlineNew.Generic;
+namespace Backrooms.OnlineNew;
 
-public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) where TSState : Packet<TSState>, new() where TCState : Packet<TCState>, new()
+public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mpManager)
+    where TSState : Packet<TSState>, new()
+    where TCState : Packet<TCState>, new()
+    where TReq : Enum
 {
     public delegate void ReceivePacketHandler(PacketType type, byte[] data);
 
 
     public readonly CommonState commonState = mpManager.commonState;
-    public readonly MpManager<TSState, TCState> mpManager = mpManager;
+    public readonly MpManager<TSState, TCState, TReq> mpManager = mpManager;
     public event ReceivePacketHandler receivePacket;
+    public event MpManager<TSState, TCState, TReq>.RequestHandler receiveRequest;
 
     private TcpClient remoteHost;
     private bool receiveInput;
@@ -22,6 +26,8 @@ public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) whe
     public ushort clientId { get; private set; }
     public string remoteIpAddress { get; private set; }
     public int remotePort { get; private set; }
+    public long outgoingPacketData { get; private set; }
+    public long incomingPacketData { get; private set; }
 
 
     public void Connect(string ipAddress, int port)
@@ -31,10 +37,11 @@ public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) whe
             if(isConnected)
                 throw new($"Client is already connected");
 
-            remoteHost = new(ipAddress, port);
             remoteIpAddress = ipAddress;
             remotePort = port;
             receiveInput = true;
+
+            remoteHost = new(ipAddress, port);
 
             new Thread(HandleServerCommunication).Start();
 
@@ -76,8 +83,11 @@ public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) whe
             if(data.Length > commonState.bufSize)
                 throw new($"Attempted to send packet with a larger size than the buffer size allows {data.Length} / {commonState.bufSize}");
 
-            data = [(byte)type, ..(prepend ?? []), ..data];
+            data = [(byte)type, ..(type == PacketType.ClientState ? clientId.ToTwoBytes() : []), ..(prepend ?? []), ..data];
             remoteHost.GetStream().Write(data, 0, data.Length);
+
+            outgoingPacketData += data.Length;
+            OutIf(commonState.printDebug, $"Sent {data.Length} byte long packet to server, packet type: {type} // {typeof(T)}");
         }
         catch(Exception exc)
         {
@@ -85,8 +95,28 @@ public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) whe
         }
     }
 
-    public void SendClientStateChanges(string[] members)
-        => SendPacket(PacketType.ClientState, mpManager.ownClientState, members);
+    public void SendPacketRaw(byte[] data)
+    {
+        try
+        {
+            remoteHost.GetStream().Write(data, 0, data.Length);
+
+            outgoingPacketData += data.Length;
+            OutIf(commonState.printDebug, $"Sent {data.Length} byte long raw packet to server");
+        }
+        catch(Exception exc)
+        {
+            Out($"{exc.GetType()} in Client.SendPacketRaw ;; {exc.Message}", ConsoleColor.Red);
+        }
+    }
+
+    public void SendStateChanges(bool serverState, params string[] members)
+    {
+        if(serverState)
+            SendPacket(PacketType.ServerState, mpManager.serverState, members);
+        else
+            SendPacket(PacketType.ClientState, mpManager.clientState, members);
+    }
 
 
     private void HandleServerCommunication()
@@ -98,23 +128,32 @@ public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) whe
         {
             try
             {
-                OutIf(commonState.printDebug, $"Received server packet with size {bytesRead} bytes");
-
                 PacketType type = (PacketType)buf[0];
+                incomingPacketData += bytesRead;
+
+                if(!mpManager.isConnected && type != PacketType.WelcomePacket)
+                {
+                    Out($"Discarding packet of type {type}, as this client has not yet received welcome packet");
+                    continue;
+                }
+
                 byte[] data = buf[1..bytesRead];
+                OutIf(commonState.printDebug, $"Received server packet with size {bytesRead} bytes and of type {type}");
 
                 switch(type)
                 {
                     case PacketType.WelcomePacket:
                     {
                         WelcomePacket<TSState, TCState> packet = BinarySerializer<WelcomePacket<TSState, TCState>>.Deserialize(data, commonState.decompress);
+                        clientId = packet.clientId;
                         mpManager.HandleWelcomePacket(packet);
                         break;
                     }
                     case PacketType.ClientState:
                     {
-                        TCState state = mpManager.clientStates[clientId];
-                        BinarySerializer<TCState>.DeserializeRef(data, ref state, commonState.decompress);
+                        ushort targetId = data[..2].ToUint16();
+                        TCState state = mpManager.clientStates[targetId];
+                        BinarySerializer<TCState>.DeserializeRef(data[2..], ref state, commonState.decompress);
                         break;
                     }
                     case PacketType.ServerState:
@@ -123,13 +162,33 @@ public class Client<TSState, TCState>(MpManager<TSState, TCState> mpManager) whe
                         BinarySerializer<TSState>.DeserializeRef(data, ref state, commonState.decompress);
                         break;
                     }
-                    default: receivePacket?.Invoke(type, data); break;
+                    case PacketType.ClientReq:
+                    {
+                        TReq req = PrimitiveSerializer.Deserialize<TReq>(data);
+                        receiveRequest?.Invoke(req);
+                        break;
+                    }
+                    case PacketType.IntegrateClient:
+                    {
+                        IntegrationPacket<TCState> packet = BinarySerializer<IntegrationPacket<TCState>>.Deserialize(data, commonState.decompress);
+                        mpManager.clientStates[packet.id] = packet.state;
+                        Out($"Integrating client: {packet}");
+                        break;
+                    }
+                    case PacketType.Misc:
+                        receivePacket?.Invoke(type, data);
+                        break;
+                    default:
+                        throw new($"Invalid packet type for server to receive: {type}");
                 }
             }
             catch(Exception exc)
             {
-                Out($"{exc.GetType()} in HandleServerCommunication ;; {exc.Message}", ConsoleColor.Red);
+                Out($"{exc.GetType()} in HandleServerCommunication ;; {exc}", ConsoleColor.Red);
             }
         }
+
+        Out($"Disconnected from server");
+        remoteHost.Close();
     }
 }

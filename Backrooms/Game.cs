@@ -1,13 +1,14 @@
-﻿using System;
+﻿global using MpManager = Backrooms.OnlineNew.MpManager<Backrooms.OnlineNew.ServerState, Backrooms.OnlineNew.ClientState, Backrooms.OnlineNew.Request>;
+
 using System.Diagnostics;
-using System.Threading;
 using System.Windows.Forms;
-using Backrooms.Online;
 using System.Drawing;
 using Backrooms.Gui;
 using Backrooms.ItemManagement;
 using Backrooms.InputSystem;
 using Backrooms.Entities;
+using Backrooms.OnlineNew;
+using System.Threading;
 
 namespace Backrooms;
 
@@ -19,7 +20,7 @@ public class Game
     public Input input;
     public InputGetter inputGetter;
     public EntityManager entityManager;
-    public MpHandler mpHandler;
+    public MpManager mpManager;
     public Map map;
     public StartMenu startMenu;
     public CameraController cameraController;
@@ -35,9 +36,22 @@ public class Game
         this.window = window;
         renderer = window.renderer;
         input = window.input;
+
         inputGetter = new(input);
 
-        mpHandler = new(this);
+        mpManager = new();
+        mpManager.connectedToServer += () => {
+            GenerateMap(mpManager.serverState.levelSeed);
+            camera.pos = mpManager.clientState.pos;
+        };
+        mpManager.receiveClientRequest += req => {
+            switch(req)
+            {
+                case Request.GenerateMap: GenerateMap(mpManager.serverState.levelSeed); break;
+                default: break;
+            }
+        };
+
         playerStats = new(100f, 100f, 100f, 100f);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
@@ -56,15 +70,15 @@ public class Game
         };
 
         renderer.camera = camera = new(90f, 20f, 0f);
-        cameraController = new(camera, mpHandler, window, inputGetter, map, renderer);
+        cameraController = new(camera, mpManager, window, inputGetter, map, renderer);
 
         GenerateMap(RNG.signedInt);
 
-        startMenu = new(window, renderer, camera, cameraController, map, mpHandler);
+        startMenu = new(window, renderer, camera, cameraController, map, mpManager);
 
         fpsDisplay = new("fps", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
         renderer.guiGroups.Add(new(renderer, "fps", true) { 
-            fpsDisplay 
+            fpsDisplay
         });
 
         window.tick += Tick;
@@ -111,7 +125,7 @@ public class Game
     private void Tick(float dt)
     {
         if(fpsDisplay.enabled)
-            fpsDisplay.text = $"{window.currFps} fps";
+            fpsDisplay.text = $"{window.currFps} fps{(mpManager.isConnected ? $"\nclient #{mpManager.clientId}" : "")}";
 
         if(input.KeyDown(Keys.F1))
             window.ToggleCursor();
@@ -139,16 +153,13 @@ public class Game
             DevConsole.Restore();
 
         if(input.KeyDown(Keys.F5))
-            GenerateMap(RNG.signedInt);
-        //if(mpHandler is { ready: true } && input.KeyDown(Keys.F5))
-        //    if(!mpHandler.isHost)
-        //        Out("You must be host to refresh the map!");
-        //    else
-        //    {
-        //        mpHandler.serverState.levelSeed = new Random().Next();
-        //        mpHandler.SendServerStateChange(StateKey.S_LevelSeed);
-        //        Thread.Sleep(1);
-        //        mpHandler.SendServerRequest(RequestKey.S_RegenerateMap);
-        //    }
+        {
+            int seed = RNG.signedInt;
+            GenerateMap(seed);
+            mpManager.serverState.levelSeed = seed;
+            mpManager.SyncServerState("levelSeed");
+            Thread.Sleep(1);
+            mpManager.SendClientReq(Request.GenerateMap);
+        }
     }
 }
