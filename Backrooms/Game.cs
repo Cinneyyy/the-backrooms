@@ -40,17 +40,7 @@ public class Game
         inputGetter = new(input);
 
         mpManager = new();
-        mpManager.connectedToServer += () => {
-            GenerateMap(mpManager.serverState.levelSeed);
-            camera.pos = mpManager.clientState.pos;
-        };
-        mpManager.receiveClientRequest += req => {
-            switch(req)
-            {
-                case Request.GenerateMap: GenerateMap(mpManager.serverState.levelSeed); break;
-                default: break;
-            }
-        };
+        SetUpMpManager();
 
         playerStats = new(100f, 100f, 100f, 100f);
 
@@ -161,5 +151,49 @@ public class Game
             Thread.Sleep(1);
             mpManager.SendClientReq(Request.GenerateMap);
         }
+    }
+
+    private void SetUpMpManager()
+    {
+        mpManager.connectedToServer += () => {
+            GenerateMap(mpManager.serverState.levelSeed);
+            camera.pos = mpManager.clientState.pos;
+        };
+
+        mpManager.receiveClientRequest += req => {
+            switch(req)
+            {
+                case Request.GenerateMap:
+                    GenerateMap(mpManager.serverState.levelSeed);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        mpManager.clientConnected += id => {
+            if(id == mpManager.clientId)
+                return;
+
+            ClientState state = mpManager.clientStates[id];
+
+            state.renderer = new(state.pos, new Vec2f(.4f, .9f), new UnsafeGraphic("hazmat_suit"));
+            renderer.sprites.Add(state.renderer);
+
+            state.updaterDelegate = _ => state.renderer.pos = state.pos;
+            window.tick += state.updaterDelegate;
+        };
+
+        mpManager.clientDisconnected += id => {
+            if(id == mpManager.clientId)
+                return;
+
+            ClientState state = mpManager.clientStates[id];
+
+            renderer.sprites.Remove(state.renderer);
+            state.renderer = null;
+
+            window.tick -= state.updaterDelegate;
+        };
     }
 }

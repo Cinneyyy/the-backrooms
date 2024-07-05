@@ -158,43 +158,52 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
 
         Out($"Sending welcome packet to client #{clientId} and integration packet to all other clients");
         SendPacket(PacketType.WelcomePacket, welcomePacket, null, [clientId]);
-        BroadcastPacket(PacketType.IntegrateClient, integrationPacket, null, [clientId, mpManager.clientId]);
+        BroadcastPacket(PacketType.IntegrateClient, integrationPacket, null, [clientId]);
 
-        while(isHosting && client.Connected && stream.Read(buf, 0, buf.Length) is int bytesRead && bytesRead > 0)
+        try
         {
-            try
-            {
-                PacketType type = (PacketType)buf[0];
-                byte[] data = buf[1..bytesRead];
-
-                OutIf(commonState.printDebug, $"Received client packet from client #{clientId} with size {bytesRead} bytes and of type {type}");
-
-                switch(type)
+            while(isHosting && client.Connected && stream.Read(buf, 0, buf.Length) is int bytesRead && bytesRead > 0)
+                try
                 {
-                    case PacketType.ClientState or PacketType.ServerState or PacketType.ClientReq:
-                        BroadcastPacketRaw(buf[..bytesRead], [clientId]);
-                        break;
-                    case PacketType.ServerReq:
-                    {
-                        TReq req = PrimitiveSerializer.Deserialize<TReq>(data);
-                        receiveRequest?.Invoke(req);
-                        break;
-                    }
-                    case PacketType.Misc:
-                        receivePacket?.Invoke(type, data, clientId);
-                        break;
-                    default:
-                        throw new($"Invalid packet type for server to receive: {type}");
-                }
-            }
-            catch(Exception exc)
-            {
-                Out($"{exc.GetType()} in Server.ManageClient (client {clientId}) ;; {exc.Message}", ConsoleColor.Red);
-            }
-        }
+                    PacketType type = (PacketType)buf[0];
+                    byte[] data = buf[1..bytesRead];
 
-        Out($"Client disconnected: {client.Client.RemoteEndPoint}");
-        remoteClients.Remove(clientId);
-        client.Close();
+                    OutIf(commonState.printDebug, $"Received client packet from client #{clientId} with size {bytesRead} bytes and of type {type}");
+
+                    switch(type)
+                    {
+                        case PacketType.ClientState or PacketType.ServerState or PacketType.ClientReq:
+                            BroadcastPacketRaw(buf[..bytesRead], [clientId]);
+                            break;
+                        case PacketType.ServerReq:
+                        {
+                            TReq req = PrimitiveSerializer.Deserialize<TReq>(data);
+                            receiveRequest?.Invoke(req);
+                            break;
+                        }
+                        case PacketType.Misc:
+                            receivePacket?.Invoke(type, data, clientId);
+                            break;
+                        default:
+                            throw new($"Invalid packet type for server to receive: {type}");
+                    }
+                }
+                catch(Exception exc)
+                {
+                    Out($"{exc.GetType()} in Server.ManageClient (client #{clientId}) ;; {exc.Message}", ConsoleColor.Red);
+                }
+        }
+        catch(Exception exc)
+        {
+            OutErr(exc, $"{exc.GetType()} in Server.ManageClient, outside while stream (client #{clientId}) ;; $e");
+        }
+        finally
+        {
+            Out($"Client disconnected: {client.Client.RemoteEndPoint}");
+            remoteClients.Remove(clientId);
+            clientIds.Remove(clientId);
+            client.Close();
+            BroadcastPacket(PacketType.RemoveClient, new ClientMetaPacket(clientId), null, []);
+        }
     }
 }

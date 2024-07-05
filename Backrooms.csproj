@@ -35,11 +35,6 @@
     <None Remove="Resources\Textures\nocursor.cur" />
     <None Remove="Resources\Textures\oli.png" />
     <None Remove="Resources\Textures\pillar.png" />
-    <None Remove="Resources\Textures\Skins\entity.png" />
-    <None Remove="Resources\Textures\Skins\freddy_fazbear.png" />
-    <None Remove="Resources\Textures\Skins\hazmat_suit.png" />
-    <None Remove="Resources\Textures\Skins\huggy_wuggy.png" />
-    <None Remove="Resources\Textures\Skins\purple_guy.png" />
     <None Remove="Resources\Textures\square.png" />
     <None Remove="Resources\Textures\up_arrow.png" />
     <None Remove="Resources\Textures\vodka.png" />
@@ -71,11 +66,7 @@
     <EmbeddedResource Include="Resources\Textures\nocursor.cur" />
     <EmbeddedResource Include="Resources\Textures\oli.png" />
     <EmbeddedResource Include="Resources\Textures\pillar.png" />
-    <EmbeddedResource Include="Resources\Textures\Skins\entity.png" />
-    <EmbeddedResource Include="Resources\Textures\Skins\freddy_fazbear.png" />
-    <EmbeddedResource Include="Resources\Textures\Skins\hazmat_suit.png" />
-    <EmbeddedResource Include="Resources\Textures\Skins\huggy_wuggy.png" />
-    <EmbeddedResource Include="Resources\Textures\Skins\purple_guy.png" />
+    <EmbeddedResource Include="Resources\Textures\hazmat_suit.png" />
     <EmbeddedResource Include="Resources\Textures\square.png" />
     <EmbeddedResource Include="Resources\Textures\up_arrow.png" />
     <EmbeddedResource Include="Resources\Textures\vodka.png" />

@@ -20,6 +20,7 @@
 
 ---
 ## Bugfixes
+1. Fix player sprites not showing up via adding logic to the welcome handler
 1. Custom entity audio is sometimes stuttery
 1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
     - May have something to do with screenOffset

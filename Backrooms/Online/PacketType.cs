@@ -12,6 +12,10 @@ public enum PacketType : byte
     ServerReq,
     /// <summary>Packet containing info about a request to a client/multiple clients</summary>
     ClientReq,
+    /// <summary>Packet sent when a new client joins and needs to be integrated into all other connected states</summary>
     IntegrateClient,
+    /// <summary>Packet sent when a client disconnects and needs all its data removed on all other connected states</summary>
+    RemoveClient,
+    /// <summary>Custom packets that do not have hardcoded functionality</summary>
     Misc
 }

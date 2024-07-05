@@ -10,9 +10,11 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
     where TReq : Enum
 {
     public delegate void RequestHandler(TReq req);
+    public delegate void ClientEvent(ushort id);
 
 
     public event Action connectedToServer;
+    public event ClientEvent clientConnected, clientDisconnected;
     public event RequestHandler receiveClientRequest, receiveServerRequest;
     public readonly CommonState commonState = commonState ?? new();
     public readonly Dictionary<ushort, TCState> clientStates = [];
@@ -44,6 +46,8 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
 
         client = new(this);
         client.receiveRequest += receiveClientRequest;
+        client.clientConnected += clientConnected;
+        client.clientDisconnected += clientDisconnected;
         client.Connect(ipAddress, port);
     }
 

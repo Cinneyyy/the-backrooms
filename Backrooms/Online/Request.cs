@@ -1,6 +1,6 @@
 ﻿namespace Backrooms.Online;
 
-public enum Request : byte
+public enum Request
 {
     GenerateMap
 }
