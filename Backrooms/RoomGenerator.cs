@@ -65,7 +65,7 @@ public class RoomGenerator : IEnumerable
                 frontier.RemoveAt(idx);
 
                 visited.Add(cell);
-                this[cell.x, cell.y] = Tile.Empty;
+                this[cell.x, cell.y] = Tile.Air;
 
                 List<Vec2i> neighbors = [];
                 Vec2i c;
@@ -86,7 +86,7 @@ public class RoomGenerator : IEnumerable
                     if(rand.NextDouble() > collResolveChance || Map.IsCollidingTile(this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2]))
                     {
                         frontier.Add(nextCell);
-                        this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2] = Tile.Empty;
+                        this[(cell.x + nextCell.x) / 2, (cell.y + nextCell.y) / 2] = Tile.Air;
                     }
                     neighbors.Remove(nextCell);
                 }
@@ -106,7 +106,7 @@ public class RoomGenerator : IEnumerable
 
             for(int y = loc.y; y < loc.y + size.y; y++)
                 for(int x = loc.x; x < loc.x + size.x; x++)
-                    this[x, y] = Tile.Empty;
+                    this[x, y] = Tile.BigRoomAir;
         }
     }
 
@@ -122,7 +122,7 @@ public class RoomGenerator : IEnumerable
 
             for(int y = loc.y; y < loc.y + size.y; y++)
                 for(int x = loc.x; x < loc.x + size.x; x++)
-                    this[x, y] = Tile.Empty;
+                    this[x, y] = Tile.PillarRoomAir;
 
             if(Rand(100) >= staggeredPillarRoomChance) // staggered
             {

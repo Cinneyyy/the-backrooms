@@ -35,7 +35,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     {
         for(int x = 0; x < tiles.Length0(); x++)
             for(int y = 0; y < tiles.Length1(); y++)
-                this.tiles[x, y] = tiles[x, y] ? Tile.Wall : Tile.Empty;
+                this.tiles[x, y] = tiles[x, y] ? Tile.Wall : Tile.Air;
     }
 
     public Map(byte[,] tiles) : this(new Tile[tiles.GetLength(0), tiles.GetLength(1)])
@@ -48,7 +48,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 
     public Tile this[int x, int y]
     {
-        get => InBounds(x, y) ? tiles[x, y] : Tile.Empty;
+        get => InBounds(x, y) ? tiles[x, y] : Tile.Air;
         set {
             if(InBounds(x, y))
                 tiles[x, y] = value;
@@ -104,7 +104,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 
         if(idx.x < 0 || idx.x >= _size.x || idx.y < 0 || idx.y >= _size.y)
         {
-            tile = Tile.Empty;
+            tile = Tile.Air;
             return false;
         } 
 
@@ -137,7 +137,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
              collC = this[tile + offset];
 
         // sorry
-        return IsCollidingTile(type = IsCollidingTile(collA) ? collA : IsCollidingTile(collB) ? collB : IsCollidingTile(collC) ? collC : Tile.Empty);
+        return IsCollidingTile(type = IsCollidingTile(collA) ? collA : IsCollidingTile(collB) ? collB : IsCollidingTile(collC) ? collC : Tile.Air);
     }
 
     public Vec2f ResolveIntersectionIfNecessery(Vec2f oldPt, Vec2f newPt, float radius, out bool didCollide)
@@ -201,7 +201,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 
 
     public static bool IsEmptyTile(Tile tile)
-        => tile == Tile.Empty;
+        => tile is Tile.Air or Tile.BigRoomAir or Tile.PillarRoomAir;
     public static bool IsCollidingTile(Tile tile)
         => !IsEmptyTile(tile);
 }

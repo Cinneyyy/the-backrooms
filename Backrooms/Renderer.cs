@@ -148,7 +148,7 @@ public unsafe class Renderer
             if(!map.InBounds(mPos))
                 return;
 
-            if(map[mPos] != Tile.Empty)
+            if(map[mPos] != Tile.Air)
                 hit = true;
         }
 

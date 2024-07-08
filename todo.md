@@ -15,13 +15,12 @@
     - Maybe more efficient ones also
 1. Out() categories
     - e.g. Debug, Load, Error, etc.
-1. GUI edit mode
+1. Make floor/ceil rendering horizontal again (#MRHA)
+1. Graffitis
 1. Switch from wolfenstein-style-rendering to doom-style-rendering
-1. Remove fisheye-non-fixed mode to mitigate branching
 
 ---
 ## Bugfixes
-1. Checkboxes don't work
 1. Fix player sprites not showing up via adding logic to the welcome handler
 1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
     - May have something to do with screenOffset
