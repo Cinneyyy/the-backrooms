@@ -27,13 +27,16 @@ public class Entity
             // Tags
             tags = JsonSerializer.Deserialize<EntityTags>(File.ReadAllText($"{dataPath}/tags.json"));
 
-            // Sprite & audio (only loaded if sprite/audio is not null respectively)
-            UnsafeGraphic sprite = new(tags.sprite is null ? Resources.sprites["empty"] : Image.FromFile(tags.sprite));
+            // Sprite
+            UnsafeGraphic sprite = new(tags.sprite is null ? Resources.sprites["empty"] : Image.FromFile($"{dataPath}/{tags.sprite}"));
             SpriteRenderer sprRend = new(Vec2f.zero, tags.size, sprite) {
                 enabled = false
             };
             manager.rend.sprites.Add(sprRend);
-            AudioSource audioSrc = tags.audio is null ? new(Resources.audios["silence"], true) : new(tags.audio, true);
+
+            // Audio
+            AudioSource audioSrc = tags.audio is null ? new(Resources.audios["silence"], true) : new($"{dataPath}/{tags.audio}", true);
+            audioSrc.disposeStream = true;
             audioSrc.volume = 0f;
 
             // Find source files
@@ -55,10 +58,14 @@ public class Entity
             bool isOverriden(string name) 
                 => behaviourType.GetMethod(name).DeclaringType != baseType;
             if(isOverriden(nameof(EntityBase.Tick))) manager.entityTick += instance.Tick;
-            if(isOverriden(nameof(EntityBase.FixedTick))) manager.fixedEntityTick += instance.FixedTick;
-            if(isOverriden(nameof(EntityBase.Awake))) manager.entityActivate += instance.Awake;
+            if(isOverriden(nameof(EntityBase.FixedTick))) manager.entityFixedTick += instance.FixedTick;
             if(isOverriden(nameof(EntityBase.Pulse))) manager.entityPulse += instance.Pulse;
             if(isOverriden(nameof(EntityBase.GenerateMap))) manager.game.generateMap += instance.GenerateMap;
+
+            manager.entityAwake += instance.Awake;
+
+            if(tags.manageSprRendPos) manager.entityTick += _ => sprRend.pos = pos;
+            if(tags.manageAudioVol) manager.entityTick += _ => audioSrc.volume = instance.GetVolume(instance.playerDist);
 
             // Initiate pathfinding, if managed
             if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)

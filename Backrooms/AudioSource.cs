@@ -7,6 +7,8 @@ namespace Backrooms;
 
 public class AudioSource : IDisposable
 {
+    public bool disposeStream;
+
     private WaveStream stream;
     private readonly WaveOutEvent device;
 
@@ -47,13 +49,13 @@ public class AudioSource : IDisposable
     public AudioSource(string fileName, bool loop = false) : this(Utils.FileToWaveStream(fileName), loop) { }
 
 
-    void IDisposable.Dispose()
+    public void Dispose()
     {
-        stream.Dispose();
+        if(disposeStream)
+            stream.Dispose();
         device.Dispose();
         GC.SuppressFinalize(this);
     }
-
 
     public void SetWaveStream(WaveStream stream, bool disposePrev)
     {

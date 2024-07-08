@@ -22,6 +22,7 @@
 
 ---
 ## Bugfixes
+1. camera.pos can maybe be canceled out in the sprite rendering distance sorter
 1. Checkboxes don't work
 1. Fix player sprites not showing up via adding logic to the welcome handler
 1. Custom entity audio is sometimes stuttery

@@ -13,8 +13,8 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
     public readonly Game game = game;
     public readonly Camera camera = camera;
     public readonly Renderer rend = rend;
-    public event Action entityActivate, entityPulse;
-    public event Action<float> entityTick, fixedEntityTick;
+    public event Action entityAwake, entityPulse;
+    public event Action<float> entityTick, entityFixedTick;
 
 
     public Entity[] entities { get; private set; }
@@ -29,9 +29,25 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
                     select new Entity(this, d))
                     .ToArray();
 
-        mpHandler.connectedToServer += entityActivate;
+        mpHandler.connectedToServer += entityAwake;
         window.tick += entityTick;
-        window.fixedTick += fixedEntityTick;
+        window.fixedTick += entityFixedTick;
         window.pulse += entityPulse;
+    }
+
+    public void UnloadEntities()
+    {
+        foreach(Entity e in entities)
+        {
+            rend.sprites.Remove(e.instance.sprRend);
+            e.instance.sprRend.Dispose();
+            e.instance.audioSrc.Dispose();
+            e.instance.Destroy();
+        }
+
+        entityAwake = null;
+        entityPulse = null;
+        entityTick = null;
+        entityFixedTick = null;
     }
 }

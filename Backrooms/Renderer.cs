@@ -93,6 +93,7 @@ public unsafe class Renderer
             for(int x = 0; x < virtRes.x; x++)
                 DrawColumn(data, x);
 
+        // Can possibly remove the subtraction of cam.pos, as it may cancel out but idk
         sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         if(camera.fixFisheyeEffect)
         {

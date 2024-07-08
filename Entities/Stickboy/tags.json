@@ -10,5 +10,7 @@
         "speed": 1.0
     },
     "sprite": "sprite.png",
-    "audio": "audio.mp3"
+    "audio": "audio.mp3",
+    "manageSprRendPos": true,
+    "manageAudioVol": true
 }
