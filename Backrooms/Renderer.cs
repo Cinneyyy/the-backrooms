@@ -93,20 +93,10 @@ public unsafe class Renderer
             for(int x = 0; x < virtRes.x; x++)
                 DrawColumn(data, x);
 
-        // Can possibly remove the subtraction of cam.pos, as it may cancel out but idk
         sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
-        if(camera.fixFisheyeEffect)
-        {
-            foreach(SpriteRenderer spr in sprites)
-                if(spr.enabled)
-                    DrawSpriteFisheyeFixed(data, spr);
-        }
-        else
-        {
-            foreach(SpriteRenderer spr in sprites)
-                if(spr.enabled)
-                    DrawSprite(data, spr);
-        }
+        foreach(SpriteRenderer spr in sprites)
+            if(spr.enabled)
+                DrawSprite(data, spr);
 
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);
@@ -125,12 +115,7 @@ public unsafe class Renderer
 
     private void DrawColumn(BitmapData data, int x)
     {
-        Vec2f dir;
-        if(camera.fixFisheyeEffect)
-            dir = camera.forward + camera.plane * (2f*x / (virtRes.x-1f) - 1f);
-        else
-            dir = Vec2f.FromAngle(camera.fov * (x / (virtRes.x-1f) - .5f) + camera.angle);
-
+        Vec2f dir = camera.forward + camera.plane * (2f*x / (virtRes.x-1f) - 1f);
         Vec2i mPos = camera.pos.Floor();
 
         Vec2f deltaDist = new(
@@ -258,77 +243,6 @@ public unsafe class Renderer
     }
 
     private void DrawSprite(BitmapData data, SpriteRenderer spr)
-    {
-        Vec2f dir = camera.forward;
-
-        Vec2f relPos = spr.pos - camera.pos;
-        Vec2f camSpace = new(
-                relPos.x * dir.x + relPos.y * dir.y,
-                -relPos.x * dir.y + relPos.y * dir.x);
-
-        float dist = relPos.length;
-        if(dist >= camera.maxDist || dist <= 0f)
-            return;
-
-        Vec2f sizeF = spr.size * virtRes.y / dist;
-
-        if(sizeF.x <= 0f || sizeF.y <= 0f)
-            return;
-
-        Vec2i size = sizeF.Floor();
-        Vec2i hSize = size/2;
-        int locX = ((camSpace.toAngle/camera.fov + .5f) * (virtRes.x-1) - sizeF.x/2f).Floor();
-
-        int x0 = Math.Max(locX - hSize.x, 0),
-            x1 = Math.Min(locX + hSize.x, virtRes.x);
-
-        if(x0 >= x1)
-            return;
-
-        float normDist = dist / camera.maxDist;
-        if(normDist >= 1f || normDist <= 0f)
-            return;
-
-        float brightness = GetDistanceFog(normDist);
-        int y0 = Math.Max(virtCenter.y - hSize.y, 0),
-            y1 = Math.Min(virtCenter.y + hSize.y, virtRes.y);
-
-        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
-        int backpaddle = (y1-y0) * data.Stride;
-
-        Vec2f texOffset = new(hSize.x - locX, hSize.y - virtCenter.y);
-        Vec2f texMappingFactor = (Vec2f)spr.graphic.bounds / size;
-        for(int x = x0; x < x1; x++)
-        {
-            if(normDist > depthBuf[x])
-            {
-                scan += 3;
-                continue;
-            }
-
-            int texX = Utils.Clamp(((x + texOffset.x) * texMappingFactor.x).Floor(), 0, spr.graphic.wb);
-            byte* texScan = spr.graphic.scan0 + texX*4;
-
-            for(int y = y0; y < y1; y++)
-            {
-                int texY = Utils.Clamp(((y + texOffset.y) * texMappingFactor.y).Floor(), 0, spr.graphic.hb);
-                byte* colScan = texScan + texY*spr.graphic.stride;
-
-                if(*(colScan+3) > 0x80)
-                {
-                    *scan = (byte)(*colScan * brightness);
-                    *(scan+1) = (byte)(*(colScan+1) * brightness);
-                    *(scan+2) = (byte)(*(colScan+2) * brightness);
-                }
-
-                scan += data.Stride;
-            }
-
-            scan += 3 - backpaddle;
-        }
-    }
-
-    private void DrawSpriteFisheyeFixed(BitmapData data, SpriteRenderer spr)
     {
         Vec2f dir = camera.forward, plane = camera.plane;
 

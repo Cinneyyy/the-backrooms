@@ -18,6 +18,7 @@ public abstract class EntityBase(Entity entity, Game game, SpriteRenderer sprRen
         get => entity.pos;
         set => entity.pos = value;
     }
+    public bool linOfSightToPlayer => game.map.LineOfSight(pos, playerPos);
 
 
     public virtual void Tick(float dt) { }

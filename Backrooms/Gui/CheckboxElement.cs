@@ -21,6 +21,9 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     {
         get => _isOn;
         set {
+            if(_isOn == value)
+                return;
+
             _isOn = value;
             checkmarkElem.enabled = value;
             valueChanged?.Invoke(value);

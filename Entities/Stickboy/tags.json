@@ -7,7 +7,7 @@
     "managedPathfinding": {
         "builtinAlgorithm": true,
         "algorithmName": "Backrooms.Pathfinding.BreadthFirstSearch",
-        "speed": 1.0
+        "speed": 0.0
     },
     "sprite": "sprite.png",
     "audio": "audio.mp3",

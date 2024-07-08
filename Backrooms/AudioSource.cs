@@ -17,7 +17,7 @@ public class AudioSource : IDisposable
     public float volume
     {
         get => device.Volume;
-        set => device.Volume = Utils.Clamp(value, 0f, 1f);
+        set => device.Volume = Utils.Clamp01(value);
     }
     public float time
     {

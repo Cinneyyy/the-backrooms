@@ -162,6 +162,31 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
         _size = new(tiles.Length0(), tiles.Length1());
     }
 
+    public bool LineOfSight(Vec2f a, Vec2f b)
+    {
+        if(IsCollidingTile(this[a.Floor()]) || IsCollidingTile(this[b.Floor()]))
+            return false;
+
+        Vec2f dir = (b - a).normalized;
+
+        const float step_size = .1f;
+        Vec2f step = dir * step_size;
+
+        Vec2f curr = a;
+        float distTraveled = 0f, totalDist = (b - a).length;
+        while(distTraveled < totalDist)
+        {
+            distTraveled += step_size;
+            curr += step;
+            Vec2i tile = curr.Floor();
+
+            if(IsCollidingTile(this[tile]))
+                return false;
+        }
+
+        return true;
+    }
+
     public IEnumerable<Vec2i> GetNeighbors(Vec2i cell)
         => from delta in Vec2i.directions
            let neighbor = cell + delta

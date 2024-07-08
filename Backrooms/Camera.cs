@@ -6,11 +6,8 @@ public class Camera(float fovDegrees, float maxDist, float angle = 0f)
 {
     public Vec2f pos;
     public float maxDist = maxDist;
-    public bool fixFisheyeEffect = true;
 
-#pragma warning disable IDE0032
-    private float _angle = angle, _fov = fovDegrees * Utils.Deg2Rad, _fovFactor = MathF.Tan(fovDegrees * Utils.Deg2Rad / 2f);
-#pragma warning restore
+    private float _angle = angle, _fov = fovDegrees * Utils.Deg2Rad;
     private Vec2f _plane = Vec2f.PlaneFromFov(angle, fovDegrees * Utils.Deg2Rad), _forward = Vec2f.FromAngle(angle), _right = Vec2f.FromAngle(angle - MathF.PI/2f);
 
 
@@ -34,10 +31,11 @@ public class Camera(float fovDegrees, float maxDist, float angle = 0f)
         get => _fov;
         set { 
             _fov = value;
-            _fovFactor = MathF.Tan(_fov/2f);
+            fovFactor = MathF.Tan(_fov/2f);
             _plane = Vec2f.PlaneFromFovFactor(forward, fovFactor);
         }
     }
+    public float fovFactor { get; private set; } = MathF.Tan(fovDegrees * Utils.Deg2Rad / 2f);
     public float fovDeg
     {
         get => _fov * Utils.Rad2Deg;
@@ -45,7 +43,6 @@ public class Camera(float fovDegrees, float maxDist, float angle = 0f)
     }
     public Vec2f forward => _forward;
     public Vec2f right => _right;
-    public float fovFactor => _fovFactor;
     public Vec2f plane => _plane;
 
 

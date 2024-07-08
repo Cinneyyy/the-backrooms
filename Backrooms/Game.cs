@@ -30,7 +30,7 @@ public class Game
     public event Action<Vec2f> generateMap;
 
     private readonly RoomGenerator generator = new();
-    private readonly TextElement fpsDisplay;
+    private readonly TextElement debugTextLhs;
 
 
     public Game(Window window)
@@ -68,9 +68,9 @@ public class Game
 
         startMenu = new(window, renderer, camera, cameraController, map, mpManager);
 
-        fpsDisplay = new("fps", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
-        renderer.guiGroups.Add(new(renderer, "fps", true) { 
-            fpsDisplay
+        debugTextLhs = new("lhs", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
+        renderer.guiGroups.Add(new(renderer, "debug", true) { 
+            debugTextLhs
         });
 
         window.tick += Tick;
@@ -118,8 +118,8 @@ public class Game
 
     private void Tick(float dt)
     {
-        if(fpsDisplay.enabled)
-            fpsDisplay.text = $"{window.currFps} fps{(mpManager.isConnected ? $"\nclient #{mpManager.clientId}" : "")}";
+        if(debugTextLhs.enabled)
+            debugTextLhs.text = $"{window.currFps} fps{(mpManager.isConnected ? $"\nclient #{mpManager.clientId}" : "")}";
 
         if(input.KeyDown(Keys.F1))
             window.ToggleCursor();
@@ -139,9 +139,6 @@ public class Game
 
         if(input.KeyDown(Keys.F3))
             Debugger.Break();
-
-        if(input.KeyDown(Keys.F))
-            camera.fixFisheyeEffect ^= true;
 
         if(input.KeyDown(Keys.C))
             DevConsole.Restore();
