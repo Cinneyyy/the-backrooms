@@ -6,13 +6,13 @@ public class Behaviour(Game game, Entity entity)
     public Game game = game;
     public Entity entity = entity;
     public EntityTags tags = entity.tags;
-    public bool awoken = false;
+    public bool woke = false;
     public SpriteRenderer spriteRend;
 
 
     public void Tick(float dt)
     {
-        if(!awoken)
+        if(!woke)
             return;
 
         spriteRend.pos = entity.pos;
@@ -20,7 +20,7 @@ public class Behaviour(Game game, Entity entity)
 
     public void Awake()
     {
-        awoken = true;
+        woke = true;
 
         spriteRend = new(entity.pos, new(tags.size), entity.sprite);
         game.renderer.sprites.Add(spriteRend);
