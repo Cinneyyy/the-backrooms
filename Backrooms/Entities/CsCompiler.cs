@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using System.Reflection;
 using System.IO;
 using Microsoft.CodeAnalysis.Emit;
+using System.Collections.Generic;
 
 namespace Backrooms;
 
@@ -16,9 +17,9 @@ public static class CsCompiler
 
         Compilation compilation = CSharpCompilation.Create(assemblyName)
             .WithOptions(options)
-            .AddReferences(from ass in AppDomain.CurrentDomain.GetAssemblies() // ass is for assembly obv
-                           where !ass.IsDynamic
-                           select MetadataReference.CreateFromFile(ass.Location));
+            .AddReferences(from asm in AppDomain.CurrentDomain.GetAssemblies()
+                           where !asm.IsDynamic
+                           select MetadataReference.CreateFromFile(asm.Location));
 
         compilation = compilation.AddSyntaxTrees(from f in sourceFiles
                                                  select CSharpSyntaxTree.ParseText(f));
@@ -28,15 +29,22 @@ public static class CsCompiler
 
         if(!emit.Success)
         {
-            foreach(Diagnostic err in from d in emit.Diagnostics
-                                      where d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error
-                                      select d)
-                Out($"{err.Id} error: {err.GetMessage()}", ConsoleColor.Red);
+            IEnumerable<Diagnostic> errors = from d in emit.Diagnostics
+                                             where d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error
+                                             select d;
+
+            if(errors.Count() == 1)
+                Out($"There has been an error when trying to compile dynamic assembly '{assemblyName}'");
+            else
+                Out($"There have been {errors.Count()} errors when trying to compile dynamic assembly '{assemblyName}'");
+              
+
+            foreach(Diagnostic err in errors)
+                Out($"{err.Id} ;; {err.GetMessage()}\n", ConsoleColor.Red);
 
             return null;
         }
 
-        stream.Seek(0, SeekOrigin.Begin);
         return Assembly.Load(stream.ToArray());
     }
 }

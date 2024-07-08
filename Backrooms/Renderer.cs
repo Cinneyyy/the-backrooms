@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.InputSystem;
@@ -94,11 +95,17 @@ public unsafe class Renderer
 
         sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
         if(camera.fixFisheyeEffect)
+        {
             foreach(SpriteRenderer spr in sprites)
-                DrawSpriteFisheyeFixed(data, spr);
+                if(spr.enabled)
+                    DrawSpriteFisheyeFixed(data, spr);
+        }
         else
+        {
             foreach(SpriteRenderer spr in sprites)
-                DrawSprite(data, spr);
+                if(spr.enabled)
+                    DrawSprite(data, spr);
+        }
 
         foreach(PostProcessEffect effect in postProcessEffects)
             effect.Apply(data);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
@@ -21,11 +20,10 @@ public class Window : Form
     public event Action visible;
     public readonly Screen screen;
     public float fpsCountFreq = 1f;
-    public float fixedDeltaTime = 1/30f;
+    public float fixedDeltaTime = 1/32f;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
-    private readonly Thread pulseThread;
     private bool _cursorVisible;
     private int lastFrameCount;
     private float fpsTimer;
@@ -38,6 +36,7 @@ public class Window : Form
     }
     public float timeElapsed { get; private set; }
     public float fixedTimeElapsed { get; private set; }
+    public int pulsesElapsed { get; private set; }
     public float deltaTime { get; private set; }
     public bool cursorVisible
     {
@@ -116,25 +115,6 @@ public class Window : Form
         if(hideCursor)
             Shown += (_, _) => SetCursor(false);
 
-        // Start pulse timer
-        pulseThread = new(() => {
-            AppDomain.CurrentDomain.UnhandledException += (_, _) => DevConsole.Restore();
-
-            async void invoke()
-                => await Task.Run(pulse);
-
-            while(Visible)
-            {
-                Thread.Sleep(1000);
-                
-                if(pulse is not null)
-                    invoke();
-            }
-        }) {
-            IsBackground = true
-        };
-        Shown += (_, _) => pulseThread.Start();
-
         // Start processes
         load?.Invoke(this);
         new Thread(() => {
@@ -191,6 +171,13 @@ public class Window : Form
                 {
                     fixedTick?.Invoke(fixedDeltaTime);
                     fixedTimeElapsed += fixedDeltaTime;
+                }
+
+                // Invoke pulse, while delta between real time and fixed time > 1
+                while(timeElapsed - pulsesElapsed > 1f)
+                {
+                    pulse?.Invoke();
+                    pulsesElapsed++;
                 }
 
                 Bitmap renderResult = renderer.Draw();

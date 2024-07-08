@@ -14,88 +14,74 @@ public class Entity
 {
     public Vec2f pos;
     public readonly EntityTags tags;
-    public readonly UnsafeGraphic sprite;
-    public readonly AudioSource audio;
-    public readonly Assembly behaviour;
+    public readonly Assembly behaviourAsm;
     public readonly Type behaviourType;
-    public readonly object instance;
-    public readonly Dictionary<string, MethodInfo> functions = [];
-    public readonly PathfindingEntity pathfinding;
+    public readonly EntityBase instance;
+    public readonly PathfindingEntity managedPathfinding;
 
 
     public Entity(EntityManager manager, string dataPath)
     {
         try
         {
-            string path(string fileName)
-                => $"{dataPath}/{fileName}";
-            IEnumerable<string> fromPattern(string pattern)
-                => Directory.GetFiles(dataPath, pattern, SearchOption.AllDirectories);
-            IEnumerable<string> fromExtensions(string name, IEnumerable<string> extensions)
-                => from f in fromPattern($"{name}.*")
-                   from e in extensions
-                   where f.EndsWith(e, StringComparison.OrdinalIgnoreCase)
-                   select f;
-            string text(string fileName)
-                => File.ReadAllText(path(fileName));
-
             // Tags
-            if(text("tags.json") is string tagsJson)
-                tags = JsonSerializer.Deserialize<EntityTags>(tagsJson);
+            tags = JsonSerializer.Deserialize<EntityTags>(File.ReadAllText($"{dataPath}/tags.json"));
 
-            // Sprite
-            if(fromExtensions("sprite", [".png", ".jpg", ".jpeg"]).FirstOrDefault() is string spritePath and not null)
-                using(Stream stream = new FileStream(spritePath, FileMode.Open))
-                    sprite = new(Image.FromStream(stream));
-            else
-                sprite = new(Resources.sprites["missing"]);
+            // Sprite & audio (only loaded if sprite/audio is not null respectively)
+            UnsafeGraphic sprite = new(tags.sprite is null ? Resources.sprites["empty"] : Image.FromFile(tags.sprite));
+            SpriteRenderer sprRend = new(Vec2f.zero, tags.size, sprite) {
+                enabled = false
+            };
+            manager.rend.sprites.Add(sprRend);
+            AudioSource audioSrc = tags.audio is null ? new(Resources.audios["silence"], true) : new(tags.audio, true);
+            audioSrc.volume = 0f;
 
-            // Audio
-            if(fromExtensions("audio", [".mp3", ".wav", ".aiff"]).FirstOrDefault() is string audioPath and not null)
-            {
-                audio = new(audioPath, true) {
-                    volume = 0f
-                };
+            // Find source files
+            IEnumerable<string> srcFiles = from f in Directory.GetFiles(dataPath, "*.cs", SearchOption.AllDirectories)
+                                           select File.ReadAllText(f);
 
-                manager.entityActivate += audio.Play;
-            }
+            // Compile behaviour code
+            Type baseType = typeof(EntityBase);
+            behaviourAsm = CsCompiler.BuildAssembly([..srcFiles], IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLower());
+            behaviourType = behaviourAsm.GetType(tags.instance);
+            if(!behaviourType.IsAssignableTo(baseType))
+                throw new($"The behaviour instance type must be derived from EntityBase");
 
-            // Behaviour
-            IEnumerable<string> sourceFiles = from f in fromExtensions("*", [".cs"])
-                                              select File.ReadAllText(f);
+            // Instantiate instance
+            object[] instanceArgs = [/*entity*/this, /*game*/manager.game, /*sprRend*/sprRend, /*audioSrc*/audioSrc];
+            instance = Activator.CreateInstance(behaviourType, instanceArgs) as EntityBase;
 
-            behaviour = CsCompiler.BuildAssembly([..sourceFiles], IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLower());
-            behaviourType = behaviour.GetType(tags.instance);
-            instance = Activator.CreateInstance(behaviourType, manager.game, this);
+            // Add callbacks to overriden methods
+            bool isOverriden(string name) 
+                => behaviourType.GetMethod(name).DeclaringType != baseType;
+            if(isOverriden(nameof(EntityBase.Tick))) manager.entityTick += instance.Tick;
+            if(isOverriden(nameof(EntityBase.FixedTick))) manager.fixedEntityTick += instance.FixedTick;
+            if(isOverriden(nameof(EntityBase.Awake))) manager.entityActivate += instance.Awake;
+            if(isOverriden(nameof(EntityBase.Pulse))) manager.entityPulse += instance.Pulse;
+            if(isOverriden(nameof(EntityBase.GenerateMap))) manager.game.generateMap += instance.GenerateMap;
 
-
-            foreach(EntityTags.Function func in tags.functions)
-            {
-                MethodInfo method = behaviourType.GetMethod(func.name);
-                functions[func.id] = method;
-
-                switch(func.id)
-                {
-                    case "tick_dt": manager.entityTick += dt => method.Invoke(instance, [dt]); break;
-                    case "tick": manager.entityTick += _ => method.Invoke(instance, null); break;
-                    case "awake": manager.entityActivate += () => method.Invoke(instance, null); break;
-                    case "get_volume": manager.entityTick += _ => audio.volume = Utils.Clamp01((float)method.Invoke(instance, [(manager.camera.pos - pos).length])); break;
-                }
-            }
-
+            // Initiate pathfinding, if managed
             if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)
             {
-                Assembly pathfindingAssembly = pathfindingData.builtinAlgorithm ? Assembly.GetExecutingAssembly() : behaviour;
-                pathfinding = new(manager.map, Activator.CreateInstance(pathfindingAssembly.GetType(pathfindingData.algorithmName)) as IPathfindingAlgorithm);
+                IEnumerable<Type> algorithmTypes = from asm in AppDomain.CurrentDomain.GetAssemblies()
+                                                   let pType = asm.GetType(pathfindingData.algorithmName)
+                                                   where pType is not null
+                                                   select pType;
 
-                manager.entityTick += dt => pos = pathfinding.MoveTowards(pos, tags.size/2f, pathfindingData.speed, dt);
+                if(algorithmTypes.Count() > 1) 
+                    throw new($"Found more than one ({algorithmTypes.Count()}) types matching the type name '{pathfindingData.algorithmName}'");
+                if(!algorithmTypes.Any())
+                    throw new($"Found no suitable type with the name '{pathfindingData.algorithmName}'");
+
+                managedPathfinding = new(manager.map, Activator.CreateInstance(algorithmTypes.First()) as IPathfindingAlgorithm);
+                manager.entityTick += dt => pos = managedPathfinding.MoveTowards(pos, tags.size.x/2f, pathfindingData.speed, dt);
             }
 
             Out($"Successfully loaded entity at {dataPath}");
         }
         catch(Exception exc)
         {
-            Out($"There was an error loading entity at {dataPath}: {exc}", ConsoleColor.Red);
+            OutErr(exc, $"There was an error loading entity at {dataPath}: $e", ConsoleColor.Red);
         }
     }
 }

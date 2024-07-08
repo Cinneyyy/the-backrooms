@@ -9,6 +9,7 @@ using Backrooms.InputSystem;
 using Backrooms.Entities;
 using Backrooms.Online;
 using System.Threading;
+using System;
 
 namespace Backrooms;
 
@@ -26,6 +27,7 @@ public class Game
     public CameraController cameraController;
     public Inventory inventory;
     public PlayerStats playerStats;
+    public event Action<Vec2f> generateMap;
 
     private readonly RoomGenerator generator = new();
     private readonly TextElement fpsDisplay;
@@ -73,8 +75,8 @@ public class Game
 
         window.tick += Tick;
 
-        //entityManager = new(mpHandler, window, map, camera, this);
-        //entityManager.LoadEntities("Entities");
+        entityManager = new(mpManager, window, map, camera, this, renderer);
+        entityManager.LoadEntities("Entities");
     }
 
 
@@ -108,7 +110,9 @@ public class Game
             }
 
         Out($"Generated map with seed {seed}");
-        cameraController.pos = camPos + Vec2f.half;
+        Vec2f center = camPos + Vec2f.half;
+        cameraController.pos = center;
+        generateMap?.Invoke(center);
     }
 
 

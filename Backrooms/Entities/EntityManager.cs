@@ -5,15 +5,16 @@ using System;
 
 namespace Backrooms.Entities;
 
-public class EntityManager(MpManager mpManager, Window window, Map map, Camera camera, Game game)
+public class EntityManager(MpManager mpManager, Window window, Map map, Camera camera, Game game, Renderer rend)
 {
     public readonly MpManager mpHandler = mpManager;
     public readonly Window window = window;
     public readonly Map map = map;
     public readonly Game game = game;
     public readonly Camera camera = camera;
-    public event Action entityActivate;
-    public event Action<float> entityTick;
+    public readonly Renderer rend = rend;
+    public event Action entityActivate, entityPulse;
+    public event Action<float> entityTick, fixedEntityTick;
 
 
     public Entity[] entities { get; private set; }
@@ -30,5 +31,7 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
 
         mpHandler.connectedToServer += entityActivate;
         window.tick += entityTick;
+        window.fixedTick += fixedEntityTick;
+        window.pulse += entityPulse;
     }
 }

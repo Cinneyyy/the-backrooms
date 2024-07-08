@@ -7,7 +7,7 @@ namespace Backrooms;
 
 public class AudioSource : IDisposable
 {
-    private readonly WaveStream stream;
+    private WaveStream stream;
     private readonly WaveOutEvent device;
 
 
@@ -42,19 +42,9 @@ public class AudioSource : IDisposable
         this.loop = loop;
     }
 
-    public AudioSource(Stream dataStream, string fileType, bool loop = false) : this(fileType.ToLower() switch {
-        ".mp3" => new Mp3FileReader(dataStream),
-        ".wav" => new WaveFileReader(dataStream),
-        ".aiff" => new AiffFileReader(dataStream),
-        _ => throw new($"Unsupported audio format: {fileType}")
-    }, loop) { }
+    public AudioSource(Stream dataStream, string codec, bool loop = false) : this(Utils.StreamToWaveStream(dataStream, codec), loop) { }
 
-    public AudioSource(string fileName, bool loop = false) : this(Path.GetExtension(fileName).ToLower() switch {
-        ".mp3" => new Mp3FileReader(fileName),
-        ".wav" => new WaveFileReader(fileName),
-        ".aiff" => new AiffFileReader(fileName),
-        string f => throw new ($"Unsupported audio format: {f}")
-    }, loop) { }
+    public AudioSource(string fileName, bool loop = false) : this(Utils.FileToWaveStream(fileName), loop) { }
 
 
     void IDisposable.Dispose()
@@ -64,6 +54,31 @@ public class AudioSource : IDisposable
         GC.SuppressFinalize(this);
     }
 
+
+    public void SetWaveStream(WaveStream stream, bool disposePrev)
+    {
+        if(disposePrev)
+            this.stream.Dispose();
+
+        this.stream = stream;
+        device.Init(stream);
+    }
+    public void SetWaveStream(Stream dataStream, string codec, bool disposePrev)
+    {
+        if(disposePrev)
+            stream.Dispose();
+
+        stream = Utils.StreamToWaveStream(dataStream, codec);
+        device.Init(stream);
+    }
+    public void SetWaveStream(string fileName, bool disposePrev)
+    {
+        if(disposePrev)
+            stream.Dispose();
+
+        stream = Utils.FileToWaveStream(fileName);
+        device.Init(stream);
+    }
 
     public void Play()
     {

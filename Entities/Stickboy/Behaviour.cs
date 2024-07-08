@@ -1,34 +1,29 @@
 using System;
 using Backrooms;
+using Backrooms.Debug;
+using Backrooms.Entities;
 
-public class Behaviour(Game game, Entity entity)
+public class Behaviour(Entity entity, Game game, SpriteRenderer sprRend, AudioSource audioSrc) : EntityBase(entity, game, sprRend, audioSrc)
 {
-    public Game game = game;
-    public Entity entity = entity;
-    public EntityTags tags = entity.tags;
     public bool woke = false;
-    public SpriteRenderer spriteRend;
 
 
-    public void Tick(float dt)
+    public override void Awake()
+    {
+        woke = true;
+        maxAudioDist = 7.5f;
+        sprRend.enabled = true;
+
+        pos = playerPos;
+        game.window.pulse += () => entity.managedPathfinding.FindPath(pos, playerPos);
+    }
+
+    public override void Tick(float dt)
     {
         if(!woke)
             return;
 
-        spriteRend.pos = entity.pos;
+        Logger.Out($"PlayerPos: {playerPos} ;; EntityPos: {pos}");
+        sprRend.pos = pos;
     }
-
-    public void Awake()
-    {
-        woke = true;
-
-        spriteRend = new(entity.pos, new(tags.size), entity.sprite);
-        game.renderer.sprites.Add(spriteRend);
-        entity.pos = game.camera.pos;
-
-        game.window.pulse += () => entity.pathfinding.FindPath(entity.pos, game.camera.pos);
-    }
-
-    public float GetVolume(float dist)
-        => 1f - dist/7.5f;
 }

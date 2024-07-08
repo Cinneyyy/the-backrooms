@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using Backrooms.Coroutines;
 using Backrooms.Gui;
+using NAudio.Wave;
 
 namespace Backrooms;
 
@@ -232,4 +233,20 @@ public static class Utils
         => [(byte)(uint16 >> 8), (byte)(uint16 & 255)];
     public static ushort ToUint16(this byte[] twoBytes)
         => (ushort)((ushort)(twoBytes[0] << 8) | twoBytes[1]);
+
+    public static WaveStream FileToWaveStream(string fileName)
+        => Path.GetExtension(fileName).ToLower() switch {
+        ".mp3" => new Mp3FileReader(fileName),
+        ".wav" => new WaveFileReader(fileName),
+        ".aiff" => new AiffFileReader(fileName),
+        string f => throw new($"Unsupported audio format: {f}")
+    };
+
+    public static WaveStream StreamToWaveStream(Stream stream, string codec)
+        => codec.ToLower() switch {
+            ".mp3" or "mp3" => new Mp3FileReader(stream),
+            ".wav" or "wav" => new WaveFileReader(stream),
+            ".aiff" or "aiff" => new AiffFileReader(stream),
+            _ => throw new($"Unsupported audio format: {codec}")
+        };
 }

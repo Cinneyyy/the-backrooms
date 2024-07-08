@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <None Remove="Resources\Audio\scholz_speech_1.mp3" />
+    <None Remove="Resources\Audio\silence.mp3" />
     <None Remove="Resources\Fonts\cascadia_code.ttf" />
     <None Remove="Resources\Fonts\cascadia_mono.ttf" />
     <None Remove="Resources\Fonts\consolas.TTF" />
@@ -42,6 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\Audio\silence.mp3" />
     <EmbeddedResource Include="Resources\Textures\missing.png" />
   </ItemGroup>
 
