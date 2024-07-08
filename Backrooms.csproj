@@ -26,6 +26,7 @@
     <None Remove="Resources\Fonts\ponderosa.ttf" />
     <None Remove="Resources\Fonts\ticketing.ttf" />
     <None Remove="Resources\oli_appicon.ico" />
+    <None Remove="Resources\Textures\biggus_dickus.png" />
     <None Remove="Resources\Textures\carpet.jpg" />
     <None Remove="Resources\Textures\ceiling.png" />
     <None Remove="Resources\Textures\checkmark.png" />
@@ -43,6 +44,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Audio\silence.mp3" />
+    <EmbeddedResource Include="Resources\Textures\biggus_dickus.png" />
     <EmbeddedResource Include="Resources\Textures\missing.png" />
   </ItemGroup>
 
