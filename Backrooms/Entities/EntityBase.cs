@@ -7,7 +7,7 @@ public abstract class EntityBase(Entity entity, Game game, SpriteRenderer sprRen
     public readonly EntityTags tags = entity.tags;
     public readonly SpriteRenderer sprRend = sprRend;
     public readonly AudioSource audioSrc = audioSrc;
-    public float audioMinDist = .65f, falloffBegin = 7.5f, falloffEnd = 10f;
+    public float audioMinDist = .65f, absFalloffBegin = 7.5f, absFalloffEnd = 10f;
 
 
     public Vec2f playerPos => game.camera.pos;
@@ -24,8 +24,8 @@ public abstract class EntityBase(Entity entity, Game game, SpriteRenderer sprRen
     public virtual void Tick(float dt) { }
     public virtual void FixedTick(float fdt) { }
     public virtual void Pulse() { }
-    public virtual float GetVolume(float dist) => AudioRolloff.ForcedFalloff(dist, AudioRolloff.GetVolumeSqr(dist, audioMinDist), falloffBegin, falloffEnd);
     public virtual void GenerateMap(Vec2f center) { }
+    public virtual float GetVolume(float dist) => AudioRolloff.ForcedFalloff(dist, AudioRolloff.GetVolumeSqr(dist, audioMinDist), absFalloffBegin, absFalloffEnd);
 
     public abstract void Awake();
     public abstract void Destroy();
