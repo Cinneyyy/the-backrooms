@@ -1,16 +1,17 @@
 ﻿global using MpManager = Backrooms.Online.MpManager<Backrooms.Online.ServerState, Backrooms.Online.ClientState, Backrooms.Online.Request>;
 
+using System;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Threading;
+using System.Linq;
 using Backrooms.Gui;
 using Backrooms.ItemManagement;
 using Backrooms.InputSystem;
 using Backrooms.Entities;
 using Backrooms.Online;
-using System.Threading;
-using System;
-using System.Linq;
+using Backrooms.Debugging;
 
 namespace Backrooms;
 
@@ -32,6 +33,7 @@ public class Game
 
     private readonly RoomGenerator generator = new();
     private readonly TextElement debugTextLhs;
+    private readonly Atlas atlas;
 
 
     public Game(Window window)
@@ -77,6 +79,10 @@ public class Game
         });
 
         window.tick += Tick;
+
+        atlas = new(map, camera, new(renderer.virtRes.y - 32), new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16));
+        window.tick += dt => atlas.enabled = input.KeyHelt(Keys.Tab);
+        renderer.postProcessEffects.Add(atlas);
 
         //entityManager = new(mpManager, window, map, camera, this, renderer);
         //entityManager.LoadEntities("Entities");

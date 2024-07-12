@@ -1,7 +1,7 @@
-﻿global using static Backrooms.Debug.Logger;
+﻿global using static Backrooms.Debugging.Logger;
 using System;
 
-namespace Backrooms.Debug;
+namespace Backrooms.Debugging;
 
 public static class Logger
 {

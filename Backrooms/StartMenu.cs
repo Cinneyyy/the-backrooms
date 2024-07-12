@@ -3,6 +3,7 @@ using System.Linq;
 using System.Drawing;
 using Backrooms.Gui;
 using System.Collections;
+using Backrooms.Debugging;
 using Backrooms.Coroutines;
 
 namespace Backrooms;

@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Backrooms.Gui;
 
-namespace Backrooms;
+namespace Backrooms.Debugging;
 
 public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 {
