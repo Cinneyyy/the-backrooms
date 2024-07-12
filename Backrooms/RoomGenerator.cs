@@ -6,7 +6,7 @@ namespace Backrooms;
 
 public class RoomGenerator : IEnumerable
 {
-    public Vec2i gridSize = new(192*2, 108*2); // 192, 108
+    public Vec2i gridSize = new(192, 192); // 192, 108
     public float mazeFill = .5f; // .8f
     public int mazeCount = 1000; // 1000
     public float collResolveChance = .5f; // .5;
@@ -17,7 +17,7 @@ public class RoomGenerator : IEnumerable
     public Vec2i pillarSpacing = new(2, 4); // 2, 6
     public int staggeredPillarRoomChance = 50; // 50
     public Vec2i staggeredPillarStep = new(1, 4);
-    public int[] frontierAttempts = [ 1 ]; // [ 1 ]
+    public int[] frontierAttempts = [1]; // [1]
     public List<(Vec2i loc, Vec2i size)> rooms = [], pillarRooms = [];
 
     private Random rand = new();
