@@ -7,7 +7,7 @@ public readonly record struct EntityTags
         public static implicit operator Vec2f(Vector2 v) => new(v.x, v.y);
     }
 
-    public readonly record struct ManagedPathfinding(float speed, bool builtinAlgorithm, string algorithmName);
+    public readonly record struct ManagedPathfinding(string algorithmName, float speed);
 
 
     public string instance { get; init; }

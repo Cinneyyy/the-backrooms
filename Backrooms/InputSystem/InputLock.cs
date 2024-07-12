@@ -14,6 +14,6 @@ public readonly struct InputLock()
     public override int GetHashCode() => value.GetHashCode();
 
 
-    public static bool operator ==(InputLock a, InputLock b) => a == adminLock || b == adminLock || a.value == b.value;
+    public static bool operator ==(InputLock a, InputLock b) => a.value == adminLock.value || b.value == adminLock.value || a.value == b.value;
     public static bool operator !=(InputLock a, InputLock b) => !(a == b);
 }

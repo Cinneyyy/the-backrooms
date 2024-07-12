@@ -6,7 +6,7 @@ namespace Backrooms;
 
 public static class RNG
 {
-    private static Random rand;
+    private static Random rand = new();
     private static readonly object syncLock = new();
 
 
@@ -20,9 +20,6 @@ public static class RNG
                 return rand.NextSingle();
         }
     }
-
-
-    static RNG() => rand = new();
 
 
     public static void SetSeed(int seed)

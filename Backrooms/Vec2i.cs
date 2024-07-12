@@ -41,7 +41,9 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
 
 
     public readonly override string ToString() => $"({x}; {y})";
-    public readonly string ToString(string format) => string.Format(format, x, y);
+    public readonly string ToString(string format) => format.Replace("$x", x.ToString()).Replace("$y", y.ToString());
+    public readonly string ToString(string format, string intFormat) => format.Replace("$x", x.ToString(intFormat)).Replace("$y", y.ToString(intFormat));
+    public readonly string ToStringIntFormat(string intFormat) => $"({x.ToString(intFormat)}; {y.ToString(intFormat)})";
 
     public readonly void Deconstruct(out int x, out int y)
     {
@@ -65,7 +67,6 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
         => new(int.Parse(x), int.Parse(y));
     public static Vec2i Parse(string[] compontents)
         => Parse(compontents[0], compontents[1]);
-
 
     public static Vec2i operator +(Vec2i a, Vec2i b) => new(a.x + b.x, a.y + b.y);
     public static Vec2i operator -(Vec2i a, Vec2i b) => new(a.x - b.x, a.y - b.y);

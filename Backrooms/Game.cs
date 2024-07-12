@@ -10,6 +10,7 @@ using Backrooms.Entities;
 using Backrooms.Online;
 using System.Threading;
 using System;
+using System.Linq;
 
 namespace Backrooms;
 
@@ -52,7 +53,7 @@ public class Game
         inventory.AddItem("oli");
 
         renderer.map = map = new(new Tile[0, 0]) {
-            texturesStr = [null, "wall", "pillar"],
+            texturesStr = [null, null, null, "wall", "pillar"],
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
             floorTexScale = .1f,
@@ -68,15 +69,17 @@ public class Game
 
         startMenu = new(window, renderer, camera, cameraController, map, mpManager);
 
-        debugTextLhs = new("lhs", "0 fps", FontFamily.GenericMonospace, 17.5f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
+        window.console.Add(new(["noclip", "no_clip"], args => window.console.ParseBool(args.FirstOrDefault(), ref cameraController.noClip), "NO_CLIP <enabled>", [0, 1]));
+
+        debugTextLhs = new("lhs", "0 fps", FontFamily.GenericMonospace, 15f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
         renderer.guiGroups.Add(new(renderer, "debug", true) { 
             debugTextLhs
         });
 
         window.tick += Tick;
 
-        entityManager = new(mpManager, window, map, camera, this, renderer);
-        entityManager.LoadEntities("Entities");
+        //entityManager = new(mpManager, window, map, camera, this, renderer);
+        //entityManager.LoadEntities("Entities");
     }
 
 
@@ -119,7 +122,14 @@ public class Game
     private void Tick(float dt)
     {
         if(debugTextLhs.enabled)
-            debugTextLhs.text = $"{window.currFps} fps{(mpManager.isConnected ? $"\nclient #{mpManager.clientId}" : "")}";
+            debugTextLhs.text =
+                $"""
+                {window.currFps} fps
+                {(mpManager.isConnected ? $"Client #{mpManager.clientId}" : "Not connected")}
+                Pos: {camera.pos.Floor():$x, $y}
+                Map size: {map.size}
+                Seed: {generator.seed}
+                """;
 
         if(input.KeyDown(Keys.F1))
             window.ToggleCursor();

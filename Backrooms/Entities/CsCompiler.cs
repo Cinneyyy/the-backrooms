@@ -33,10 +33,10 @@ public static class CsCompiler
                                              where d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error
                                              select d;
 
-            if(errors.Count() == 1)
+            if(errors.Count() is int errCount && errCount == 1)
                 Out($"There has been an error when trying to compile dynamic assembly '{assemblyName}'");
             else
-                Out($"There have been {errors.Count()} errors when trying to compile dynamic assembly '{assemblyName}'");
+                Out($"There have been {errCount} errors when trying to compile dynamic assembly '{assemblyName}'");
               
 
             foreach(Diagnostic err in errors)

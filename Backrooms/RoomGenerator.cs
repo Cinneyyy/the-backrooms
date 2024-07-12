@@ -25,6 +25,9 @@ public class RoomGenerator : IEnumerable
     private Tile[,] tiles;
 
 
+    public int seed { get; private set; }
+
+
     public Tile this[int x, int y]
     {
         get => tiles[y, x];
@@ -35,6 +38,7 @@ public class RoomGenerator : IEnumerable
     public void Initiate(int seed = 0)
     {
         rand = new(seed);
+        this.seed = seed;
 
         rooms.Clear();
         pillarRooms.Clear();

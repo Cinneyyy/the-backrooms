@@ -24,7 +24,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     }
 
 
-    public Window win;
+    public readonly Window win;
     public Cmd[] cmds;
     public Func<bool> run;
     public bool queryIfEmpty = true;
@@ -109,7 +109,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "ALIASES <cmd>", [1]),
 
             new(["query_if_empty", "emptyquery"],
-            args => ParseBool(args.ElementAtOrDefault(0), ref queryIfEmpty),
+            args => ParseBool(args.FirstOrDefault(), ref queryIfEmpty),
             "QUERY_IF_EMPTY <value>", [0, 1]),
 
             new(["resolution", "res", "set_resolution", "set_res"], 
@@ -200,19 +200,19 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "HIDE", [0]),
 
             new(["fps_display", "fps", "show_fps"], 
-            args => ParseBool(args.ElementAtOrDefault(0), win.renderer.FindGuiGroup("hud").GetElement("fps"), e => e.enabled), 
+            args => ParseBool(args.FirstOrDefault(), win.renderer.FindGuiGroup("hud").GetElement("fps"), e => e.enabled), 
             "SHOW_FPS <enabled>", [0, 1]),
 
             new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], 
-            args => ParseBool(args.ElementAtOrDefault(0), ref win.renderer.useParallelRendering), 
+            args => ParseBool(args.FirstOrDefault(), ref win.renderer.useParallelRendering), 
             "PARALLEL_RENDER <enabled>", [0, 1]),
 
             new(["cursor", "cursor_visible", "show_cursor"], 
-            args => ParseBool(args.ElementAtOrDefault(0), () => win.cursorVisible, b => win.SetCursor(b)),
+            args => ParseBool(args.FirstOrDefault(), () => win.cursorVisible, b => win.SetCursor(b)),
             "CURSOR_VISIBLE <enabled>", [0, 1]),
 
             new(["wall_height", "wheight", "wallh"],
-            args => ParseNumber(args.ElementAtOrDefault(0), ref win.renderer.wallHeight),
+            args => ParseNumber(args.FirstOrDefault(), ref win.renderer.wallHeight),
             "WALL_HEIGHT <height>", [0, 1]),
 
             new(["gui_elem_size", "elem_size"],

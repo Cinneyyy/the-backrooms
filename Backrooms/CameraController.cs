@@ -11,8 +11,8 @@ public class CameraController
     public readonly InputGetter input;
     public readonly Map map;
     public readonly Renderer renderer;
-    public float moveSpeed = 2f, sensitivity = 1/5000f;
-    public bool canMove = false;
+    public float walkSpeed = 1.5f, sprintSpeed = 2.75f, sensitivity = 1/5000f;
+    public bool canMove = false, noClip = false;
 
     
     public Vec2f pos
@@ -56,10 +56,11 @@ public class CameraController
             + camera.forward * (input.KeyHelt(InputAction.MoveBackward) ? -1f : input.KeyHelt(InputAction.MoveForward) ? 1f : 0f))
             .normalized;
 
+        float moveSpeed = input.KeyHelt(InputAction.Sprint) ? sprintSpeed : walkSpeed;
         Vec2f currPos = pos;
         Vec2f newPos = pos + moveSpeed * dt * move;
 
-        pos = map.ResolveIntersectionIfNecessery(currPos, newPos, HITBOX_RADIUS, out _);
+        pos = noClip ? newPos : map.ResolveIntersectionIfNecessery(currPos, newPos, HITBOX_RADIUS, out _);
 
         if(input.unlockedInput.lockCursor)
             camera.angle += input.unlockedInput.mouseDelta.x * renderer.singleDownscaleFactor * sensitivity / dt;

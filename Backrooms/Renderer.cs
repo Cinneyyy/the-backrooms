@@ -129,6 +129,8 @@ public unsafe class Renderer
         Vec2i step = new(MathF.Sign(dir.x), MathF.Sign(dir.y));
 
         bool hit = false, vert = false;
+        int steps = 0;
+        const int max_steps = 256;
 
         while(!hit)
         {
@@ -145,10 +147,10 @@ public unsafe class Renderer
                 vert = false;
             }
 
-            if(!map.InBounds(mPos))
+            if(steps++ >= max_steps) // this instead of map.IsOutOfBounds(...), because I want rendering outside of map to be cool
                 return;
 
-            if(map[mPos] != Tile.Air)
+            else if(Map.IsCollidingTile(map[mPos]))
                 hit = true;
         }
 
