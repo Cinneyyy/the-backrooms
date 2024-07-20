@@ -81,6 +81,10 @@ public class Game
         window.tick += Tick;
 
         atlas = new(map, camera, new(renderer.virtRes.y - 32), new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16));
+        renderer.dimensionsChanged += () => {
+            atlas.size = new(renderer.virtRes.y - 32);
+            atlas.loc = new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16);
+        };
         window.tick += dt => atlas.enabled = input.KeyHelt(Keys.Tab);
         renderer.postProcessEffects.Add(atlas);
 

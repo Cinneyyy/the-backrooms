@@ -23,11 +23,11 @@
 ---
 ## Bugfixes
 1. Fix player sprites not showing up via adding logic to the welcome handler
-1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
-    - May have something to do with screenOffset
 1. Multiplayer
     - Client disconnect handling
 1. Ceiling/floor rendering is **extremely** slow
 1. Fix pathfinding bugs
     - Dijkstra's shortest path
     - Pathfinding shortcuts
+1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
+    - May have something to do with screenOffset

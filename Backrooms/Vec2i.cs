@@ -68,6 +68,7 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
     public static Vec2i Parse(string[] compontents)
         => Parse(compontents[0], compontents[1]);
 
+
     public static Vec2i operator +(Vec2i a, Vec2i b) => new(a.x + b.x, a.y + b.y);
     public static Vec2i operator -(Vec2i a, Vec2i b) => new(a.x - b.x, a.y - b.y);
     public static Vec2i operator *(Vec2i a, Vec2i b) => new(a.x * b.x, a.y * b.y);

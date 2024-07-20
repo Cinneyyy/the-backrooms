@@ -17,21 +17,18 @@ public static class CsCompiler
 
         Compilation compilation = CSharpCompilation.Create(assemblyName)
             .WithOptions(options)
-            .AddReferences(from asm in AppDomain.CurrentDomain.GetAssemblies()
-                           where !asm.IsDynamic
-                           select MetadataReference.CreateFromFile(asm.Location));
-
-        compilation = compilation.AddSyntaxTrees(from f in sourceFiles
-                                                 select CSharpSyntaxTree.ParseText(f));
+            .AddReferences(
+                AppDomain.CurrentDomain.GetAssemblies()
+                .Where(asm => !asm.IsDynamic)
+                .Select(asm => MetadataReference.CreateFromFile(asm.Location)))
+            .AddSyntaxTrees(sourceFiles.Select(f => CSharpSyntaxTree.ParseText(f)));
 
         using MemoryStream stream = new();
         EmitResult emit = compilation.Emit(stream);
 
         if(!emit.Success)
         {
-            IEnumerable<Diagnostic> errors = from d in emit.Diagnostics
-                                             where d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error
-                                             select d;
+            IEnumerable<Diagnostic> errors = emit.Diagnostics.Where(d => d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error);
 
             if(errors.Count() is int errCount && errCount == 1)
                 Out($"There has been an error when trying to compile dynamic assembly '{assemblyName}'");
