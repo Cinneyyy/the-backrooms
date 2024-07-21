@@ -4,6 +4,7 @@
         "x": 0.5,
         "y": 0.8
     },
+    "elevation": -0.1,
     "managedPathfinding": {
         "algorithmName": "Backrooms.Pathfinding.BreadthFirstSearch",
         "speed": 0.0

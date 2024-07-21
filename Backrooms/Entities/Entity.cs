@@ -30,7 +30,8 @@ public class Entity
             // Sprite
             UnsafeGraphic sprite = new(tags.sprite is null ? Resources.sprites["empty"] : Image.FromFile($"{dataPath}/{tags.sprite}"));
             SpriteRenderer sprRend = new(Vec2f.zero, tags.size, sprite) {
-                enabled = false
+                enabled = false,
+                elevation = tags.elevation
             };
             manager.rend.sprites.Add(sprRend);
 
@@ -40,14 +41,12 @@ public class Entity
             audioSrc.volume = 0f;
 
             // Find source files
-            IEnumerable<string> srcFiles = from f in Directory.GetFiles(dataPath, "*.cs", SearchOption.AllDirectories)
-                                           select File.ReadAllText(f);
+            IEnumerable<string> srcFiles = Directory.GetFiles(dataPath, "*.cs", SearchOption.AllDirectories).Select(File.ReadAllText);
 
             // Compile behaviour code
-            Type baseType = typeof(EntityBase);
             behaviourAsm = CsCompiler.BuildAssembly([..srcFiles], IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLower());
             behaviourType = behaviourAsm.GetType(tags.instance);
-            if(!behaviourType.IsAssignableTo(baseType))
+            if(!behaviourType.IsAssignableTo(typeof(EntityBase)))
                 throw new($"The behaviour instance type must be derived from EntityBase");
 
             // Instantiate instance
@@ -55,12 +54,12 @@ public class Entity
             instance = Activator.CreateInstance(behaviourType, instanceArgs) as EntityBase;
 
             // Add callbacks to overriden methods
-            bool isOverriden(string name)
-                => behaviourType.GetMethod(name).DeclaringType != baseType;
-            if(isOverriden(nameof(EntityBase.Tick))) manager.entityTick += instance.Tick;
-            if(isOverriden(nameof(EntityBase.FixedTick))) manager.entityFixedTick += instance.FixedTick;
-            if(isOverriden(nameof(EntityBase.Pulse))) manager.entityPulse += instance.Pulse;
-            if(isOverriden(nameof(EntityBase.GenerateMap))) manager.game.generateMap += instance.GenerateMap;
+            bool isOverridden(string name)
+                => behaviourType.GetMethod(name).DeclaringType != typeof(EntityBase);
+            if(isOverridden(nameof(EntityBase.Tick))) manager.entityTick += instance.Tick;
+            if(isOverridden(nameof(EntityBase.FixedTick))) manager.entityFixedTick += instance.FixedTick;
+            if(isOverridden(nameof(EntityBase.Pulse))) manager.entityPulse += instance.Pulse;
+            if(isOverridden(nameof(EntityBase.GenerateMap))) manager.game.generateMap += instance.GenerateMap;
 
             manager.entityAwake += instance.Awake;
 
@@ -70,10 +69,9 @@ public class Entity
             // Initiate pathfinding, if managed
             if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)
             {
-                IEnumerable<Type> algorithmTypes = from asm in AppDomain.CurrentDomain.GetAssemblies()
-                                                   let pType = asm.GetType(pathfindingData.algorithmName)
-                                                   where pType is not null
-                                                   select pType;
+                IEnumerable<Type> algorithmTypes = AppDomain.CurrentDomain.GetAssemblies()
+                                                   .Select(asm => asm.GetType(pathfindingData.algorithmName))
+                                                   .Where(t => t is not null);
 
                 if(algorithmTypes.Count() > 1)
                     throw new($"Found more than one ({algorithmTypes.Count()}) types matching the type name '{pathfindingData.algorithmName}'");

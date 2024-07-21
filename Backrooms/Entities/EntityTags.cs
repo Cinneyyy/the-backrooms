@@ -13,6 +13,7 @@ public readonly record struct EntityTags
     public string instance { get; init; }
     public ManagedPathfinding? managedPathfinding { get; init; }
     public Vector2 size { get; init; }
+    public float elevation { get; init; }
     public string sprite { get; init; }
     public string audio { get; init; }
     public bool manageSprRendPos { get; init; }

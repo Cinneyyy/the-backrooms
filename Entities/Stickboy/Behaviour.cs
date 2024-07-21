@@ -1,6 +1,6 @@
 using System;
 using Backrooms;
-using Backrooms.Debug;
+using Backrooms.Debugging;
 using Backrooms.Entities;
 
 public class Behaviour(Entity entity, Game game, SpriteRenderer sprRend, AudioSource audioSrc) : EntityBase(entity, game, sprRend, audioSrc)

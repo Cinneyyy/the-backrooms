@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.InputSystem;
@@ -47,15 +48,12 @@ public unsafe class Renderer
         UpdateResolution(virtRes, physRes);
 
         sprComparison = (a, b) => {
-            if(a is null || b is null)
-                return 0;
-
             float aDist = (camera.pos - a.pos).sqrLength, bDist = (camera.pos - b.pos).sqrLength;
 
-            if(Utils.RoughlyEquals(aDist, bDist, 0.01f))
-                return a.importance - b.importance;
+            if(bDist.CompareTo(aDist) is int comparison && comparison != 0)
+                return comparison;
             else
-                return (bDist - aDist).Round();
+                return b.importance.CompareTo(a.importance);
         };
     }
 
@@ -90,7 +88,7 @@ public unsafe class Renderer
 
         dimensionsChanged?.Invoke();
     }
-
+    static readonly object syncLock = new();
     public unsafe Bitmap Draw()
     {
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
@@ -106,8 +104,7 @@ public unsafe class Renderer
             for(int x = 0; x < virtRes.x; x++)
                 DrawColumn(data, x);
 
-        sprites.Sort(sprComparison);
-        foreach(SpriteRenderer spr in sprites)
+        foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
             if(spr.enabled)
                 DrawSprite(data, spr);
 

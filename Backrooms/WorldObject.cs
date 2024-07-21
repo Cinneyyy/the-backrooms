@@ -3,7 +3,7 @@ using Backrooms.InputSystem;
 
 namespace Backrooms;
 
-public class WorldObject : IDisposable
+public class WorldObject
 {
     public const float MaxInteractionDist = 1.25f;
     public const float SqrMaxInteractionDist = MaxInteractionDist * MaxInteractionDist;
@@ -43,17 +43,6 @@ public class WorldObject : IDisposable
 
         win.tick += Tick;
     }
-
-
-    public void Dispose()
-    {
-        rend.sprites.Remove(sprRend);
-        OnDispose();
-        GC.SuppressFinalize(this);
-    }
-
-
-    protected virtual void OnDispose() { }
 
 
     private void Tick(float dt)

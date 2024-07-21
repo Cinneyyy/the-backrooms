@@ -28,12 +28,11 @@ public class BreadthFirstSearch : IPathfindingAlgorithm
 
         List<Vec2i> nodes = [];
         Vec2i node = end;
-        while(node != start)
-            if(visited.TryGetValue(node, out Vec2i newNode))
-            {
-                nodes.Add(node);
-                node = newNode;
-            }
+        while(node != start && visited.TryGetValue(node, out Vec2i newNode))
+        {
+            nodes.Add(node);
+            node = newNode;
+        }
 
         nodes.Reverse();
         nodes = IPathfindingAlgorithm.ShortenPath(map, nodes);

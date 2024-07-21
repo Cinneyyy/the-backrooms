@@ -33,10 +33,6 @@ public class ItemWorldObject : WorldObject
     }
 
 
-    protected override void OnDispose()
-        => rend.sprites.Remove(itemRend);
-
-
     private void OnInteract()
     {
         if(itemRend.enabled)

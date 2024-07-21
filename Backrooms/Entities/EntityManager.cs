@@ -25,9 +25,9 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
         foreach(string zip in Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly))
             ZipFile.ExtractToDirectory(zip, Path.GetFileNameWithoutExtension(zip));
 
-        entities = (from d in Directory.GetDirectories(directoryPath, "*", SearchOption.TopDirectoryOnly)
-                    select new Entity(this, d))
-                    .ToArray();
+        entities = Directory.GetDirectories(directoryPath, "*", SearchOption.TopDirectoryOnly)
+                   .Select(d => new Entity(this, d))
+                   .ToArray();
 
         mpHandler.connectedToServer += entityAwake;
         window.tick += entityTick;

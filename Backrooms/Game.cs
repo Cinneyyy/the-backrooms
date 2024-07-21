@@ -46,7 +46,7 @@ public class Game
         mpManager = new();
         SetUpMpManager();
 
-        playerStats = new(100f, 100f, 100f, 100f);
+        playerStats = new();
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
         inventory = new(window, renderer, this, input, new(5, 2), invColors);
@@ -92,15 +92,15 @@ public class Game
         renderer.postProcessEffects.Add(atlas);
         renderer.postProcessEffects.Add(zBufDisplay);
 
-        HVDistortion distortion = new(x => {
-            float strength = 1f - playerStats.sanity/100f;
-            float fac = strength < 5f ? Utils.Sqr(strength/5f) : MathF.Cbrt(strength/5f);
-            return Utils.Clamp(MathF.Sin(MathF.Sqrt(MathF.Abs(2f * strength)) * (window.timeElapsed + x)) * fac, -2f, 2f);
-        });
-        renderer.postProcessEffects.Add(distortion);
+        //HVDistortion distortion = new(x => {
+        //    float strength = 1f - playerStats.sanity;
+        //    float fac = strength < 5f ? Utils.Sqr(strength/5f) : MathF.Cbrt(strength/5f);
+        //    return Utils.Clamp(MathF.Sin(MathF.Sqrt(MathF.Abs(2f * strength)) * (window.timeElapsed + x)) * fac, -2f, 2f);
+        //});
+        //renderer.postProcessEffects.Add(distortion);
 
-        //entityManager = new(mpManager, window, map, camera, this, renderer);
-        //entityManager.LoadEntities("Entities");
+        entityManager = new(mpManager, window, map, camera, this, renderer);
+        entityManager.LoadEntities("Entities");
     }
 
 
@@ -140,13 +140,25 @@ public class Game
 
         if(worldObjects is not [])
         {
-            worldObjects.ForEach(w => w.Dispose());
-            worldObjects[0].sprRend.Dispose();
+            foreach(ItemWorldObject w in worldObjects)
+            {
+                renderer.sprites.Remove(w.sprRend);
+                renderer.sprites.Remove(w.itemRend);
+            }
+
             worldObjects.Clear();
         }
         UnsafeGraphic table = new("table");
+        HashSet<Vec2i> positions = [];
         for(int i = 0; i < 1000; i++)
-            worldObjects.Add(new(renderer, window, cameraController, input, inventory, new(RNG.Range(map.size.x) + .5f, RNG.Range(map.size.y) + .5f), table, Item.items["vodka"]));
+        {
+            Vec2i pos = new(RNG.Range(map.size.x), RNG.Range(map.size.y));
+            if(positions.Contains(pos))
+                continue;
+
+            positions.Add(pos);
+            worldObjects.Add(new(renderer, window, cameraController, input, inventory, pos + Vec2f.half, table, Item.items["vodka"]));
+        }
     }
 
 
