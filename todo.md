@@ -17,8 +17,9 @@
 1. Out() categories
     - e.g. Debug, Load, Error, etc.
 1. Make floor/ceil rendering horizontal again (#MRHA)
+    - Also, there is probably so much possible optimization inside the Renderer
 1. Graffitis
-1. Switch from wolfenstein-style-rendering to doom-style-rendering
+1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
 
 ---
 ## Bugfixes

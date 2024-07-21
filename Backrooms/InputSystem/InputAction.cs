@@ -6,5 +6,6 @@ public enum InputAction : byte
     MoveBackward,
     MoveRight,
     MoveLeft,
-    Sprint
+    Sprint,
+    Interact
 }

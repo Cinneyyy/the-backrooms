@@ -17,7 +17,7 @@ public class Logger(Log log, Color32 color, bool enabled = true)
     }
 
 
-    private const int ErrBackground = 0x240000;
+    private const int ErrBackground = 0x480000;
     private const int AssertBackground = 0x2d3000;
 
     public readonly string name = log.ToString();
@@ -29,9 +29,9 @@ public class Logger(Log log, Color32 color, bool enabled = true)
         new(Log.Log, new(0xbfbfbf)),
         new(Log.DevCmd, new(0x5465ff)),
         new(Log.GameEvent, new(0xd84dff)),
-        new(Log.Client, new(0xff7f3b)),
-        new(Log.Server, new(0xffb73b)),
-        new(Log.MpManager, new(0xff3b3b)),
+        new(Log.Client, new(0xf8ff3b)),
+        new(Log.Server, new(0xfc8a26)),
+        new(Log.MpManager, new(0xfc4823)),
         new(Log.Entity, new(0x3bffe8))
     ];
 
@@ -39,16 +39,16 @@ public class Logger(Log log, Color32 color, bool enabled = true)
     public void Out(object message, string prefix = "[$n]")
     {
         if(enabled)
-            DevConsole.WriteLine($"{prefix.Replace("$n", name)} {message}", color, Color32.black);
+            DevConsole.WriteLine($"{prefix.Replace("$n", name)} {message}", fore: color);
     }
 
     public void OutErr(Exception exc, string format = "$e")
     {
         if(enabled)
 #if DEBUG
-            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.ToString())}", color, new(ErrBackground));
+            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.ToString())}", fore: color, back: new(ErrBackground));
 #else
-            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.Message)}", color, new(ErrBackground));
+            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.Message)}", fore: color, back: new(ErrBackground));
 #endif
     }
 
@@ -66,12 +66,12 @@ public class Logger(Log log, Color32 color, bool enabled = true)
     public void Assert(bool assertion, object assertionFailed)
     {
         if(!assertion)
-            DevConsole.WriteLine($"[{name}] {assertionFailed}", color, new(AssertBackground));
+            DevConsole.WriteLine($"[{name}] {assertionFailed}", fore: color, back: new(AssertBackground));
     }
     public void Assert(bool assertion, Func<object> assertionFailed)
     {
         if(!assertion)
-            DevConsole.WriteLine($"[{name}] {assertionFailed()}", color, new(AssertBackground));
+            DevConsole.WriteLine($"[{name}] {assertionFailed()}", fore: color, back: new(AssertBackground));
     }
 
 

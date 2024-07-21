@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using Backrooms.Gui;
 
@@ -27,7 +28,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     public readonly Window win;
     public Cmd[] cmds;
     public Func<bool> run;
-    public bool queryIfEmpty = true;
+    public bool queryIfEmpty = false;
 
     private readonly Thread thread;
     private Action nextTick;
@@ -97,13 +98,13 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 if(args.Length == 1)
                 {
                     Cmd cmd = cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First();
-                    Out(Log.DevCmd, Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                    Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
                 }
                 else if(args.Length == 0)
                 {
-                    Out(Log.DevCmd, Log.DevCmd, "-- List of commands --");
+                    Out(Log.DevCmd, "-- List of commands --");
                     foreach(Cmd cmd in cmds)
-                        Out(Log.DevCmd, Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                        Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
                 }
             },
             "HELP [<command>]", [0, 1]),
@@ -293,24 +294,26 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
         switch(strVal.ToLower())
         {
-            case "true" or "t" or "1" or "1b" or "yes" or "y":
+            case "true" or "t" or "1" or "1b" or "yes" or "y" or "on" or "✅":
                 target = true;
                 break;
-            case "false" or "f" or "0" or "0b" or "no" or "n":
+            case "false" or "f" or "0" or "0b" or "no" or "n" or "off" or "❌":
                 target = false;
                 break;
-            case "switch" or "s" or "~" or "!" or "^":
+            case "switch" or "s" or "~" or "!" or "^" or "toggle" or "🔁":
                 target ^= true;
                 break;
             case "q" or "query" or "?":
                 Out(Log.DevCmd, $"The current value is {target}");
-                break;
+                return;
             default:
                 if(throwExcIfFailed)
                     throw new($"Invalid input for ParseBool: \"{strVal}\"");
                 else
                     break;
         }
+
+        Out(Log.DevCmd, $"The value is now set to {target}");
     }
     public void ParseBool(string strVal, Func<bool> get, Action<bool> set, bool throwExcIfFailed = true)
     {
@@ -338,8 +341,21 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     public static void ParseVector<T>(string str, ref T field) where T : IVector<T>
         => field = T.Parse(str.Split(','));
 
-    public static void WriteLine(object message, Color32 fore, Color32 back)
-        => Console.WriteLine($"\x1b[48;2;{back.r};{back.g};{back.b}m\x1b[38;2;{fore.r};{fore.g};{fore.b}m{message}");
+    public static void WriteLine(object message, Color32? fore = null, Color32? back = null)
+    {
+        StringBuilder sb = new();
+
+        if(fore is Color32 fc)
+            sb.Append($"\x1b[38;2;{fc.r};{fc.g};{fc.b}m");
+        if(back is Color32 bc)
+            sb.Append($"\x1b[48;2;{bc.r};{bc.g};{bc.b}m");
+
+        sb.Append(message.ToString());
+        Console.WriteLine(sb.ToString());
+
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.BackgroundColor = ConsoleColor.Black;
+    }
 
     #region P/Invoke Interfacing
     public static nint PostMessage(ConsoleKey key, uint msg = 0x100u)

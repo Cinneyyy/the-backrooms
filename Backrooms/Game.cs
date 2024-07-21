@@ -21,7 +21,6 @@ public class Game
     public Renderer renderer;
     public Camera camera;
     public Input input;
-    public InputGetter inputGetter;
     public EntityManager entityManager;
     public MpManager mpManager;
     public Map map;
@@ -42,15 +41,13 @@ public class Game
         renderer = window.renderer;
         input = window.input;
 
-        inputGetter = new(input);
-
         mpManager = new();
         SetUpMpManager();
 
         playerStats = new(100f, 100f, 100f, 100f);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
-        inventory = new(window, renderer, this, inputGetter, new(5, 2), invColors);
+        inventory = new(window, renderer, this, input, new(5, 2), invColors);
         inventory.AddItem("vodka");
         inventory.AddItem("oli");
 
@@ -65,7 +62,7 @@ public class Game
         };
 
         renderer.camera = camera = new(90f, 20f, 0f);
-        cameraController = new(camera, mpManager, window, inputGetter, map, renderer);
+        cameraController = new(camera, mpManager, window, input, map, renderer);
 
         GenerateMap(RNG.signedInt);
 
@@ -90,6 +87,10 @@ public class Game
 
         //entityManager = new(mpManager, window, map, camera, this, renderer);
         //entityManager.LoadEntities("Entities");
+
+        WorldObject worldObject = new(renderer, window, camera, input, new(93f, 93f), new(.5f, .85f), new("vodka"), () => Out(Log.Log, "Interacted"));
+        worldObject.sprRend.elevation = 1f;
+        window.tick += dt => worldObject.sprRend.elevation += dt * (input.KeyHelt(Keys.N) ? -1f : input.KeyHelt(Keys.M) ? 1f : 0f);
     }
 
 

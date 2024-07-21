@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.InputSystem;
@@ -155,10 +154,10 @@ public unsafe class Renderer
         }
 
         float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
-        float normDist = Utils.Clamp01(dist / camera.maxDist);
+        float normDist = Utils.Clamp01(dist / camera.maxRenderDist);
         Vec2f hitPos = camera.pos + dir * dist;
 
-        bool drawWall = depthBuf[x] > normDist && dist < camera.maxDist && dist > 0f;
+        bool drawWall = depthBuf[x] > normDist && dist < camera.maxRenderDist && dist > 0f;
         depthBuf[x] = normDist;
 
         float height = wallHeight * virtRes.y / dist;
@@ -221,7 +220,7 @@ public unsafe class Renderer
             (byte r, byte g, byte b) floorCol = map.floorTex.GetPixelRgb(floorTex.x, floorTex.y);
             (byte r, byte g, byte b) ceilCol = map.ceilTex.GetPixelRgb(ceilTex.x, ceilTex.y);
 
-            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - currFloor).length / camera.maxDist));
+            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - currFloor).length / camera.maxRenderDist));
             float floorBrightness = map.floorLuminance * fog;
             float ceilBrightness = map.ceilLuminance * fog;
 
@@ -251,20 +250,22 @@ public unsafe class Renderer
         Vec2f relPos = spr.pos - camera.pos;
         Vec2f transform = new Vec2f(dir.y*relPos.x - dir.x*relPos.y, plane.x*relPos.y - plane.y*relPos.x) / (dir.y*plane.x - dir.x*plane.y);
 
-        if(transform.y >= camera.maxDist || transform.y <= 0)
+        if(transform.y >= camera.maxRenderDist || transform.y <= 0)
             return;
 
-        float normDist = transform.y/camera.maxDist;
+        float normDist = transform.y/camera.maxRenderDist;
         float brightness = GetDistanceFog(normDist);
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();
+        float elevation = spr.elevation / transform.y;
+        int drawCenter = (int)((1f - elevation)/2f * virtRes.y);
 
         int x0 = Math.Max(locX - size.x/2, 0),
             x1 = Math.Min(locX + size.x/2, virtRes.x);
 
-        int y0 = Math.Max(virtCenter.y - size.y/2, 0),
-            y1 = Math.Min(virtCenter.y + size.y/2, virtRes.y);
+        int y0 = Math.Max(drawCenter - size.y/2, 0),
+            y1 = Math.Min(drawCenter + size.y/2, virtRes.y);
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1 - y0) * data.Stride;
@@ -282,14 +283,19 @@ public unsafe class Renderer
 
             for(int y = y0; y < y1; y++)
             {
-                int texY = Utils.Clamp(((y - virtCenter.y + size.y/2f) * spr.graphic.hb / size.y).Floor(), 0, spr.graphic.hb);
-                byte* colScan = texScan + texY*spr.graphic.stride;
+                bool draw = Utils.InBetweenIncl((y - virtCenter.y + size.y/2f) / size.y, 0f, 1f);
 
-                if(*(colScan+3) > 0x80)
+                if(draw)
                 {
-                    *scan = (byte)(*colScan * brightness);
-                    *(scan+1) = (byte)(*(colScan+1) * brightness);
-                    *(scan+2) = (byte)(*(colScan+2) * brightness);
+                    int texY = Utils.Clamp(((y - drawCenter + size.y/2f) * spr.graphic.hb / size.y).Floor(), 0, spr.graphic.hb);
+                    byte* colScan = texScan + texY*spr.graphic.stride;
+
+                    if(*(colScan+3) > 0x80)
+                    {
+                        *scan = (byte)(*colScan * brightness);
+                        *(scan+1) = (byte)(*(colScan+1) * brightness);
+                        *(scan+2) = (byte)(*(colScan+2) * brightness);
+                    }
                 }
 
                 scan += data.Stride;

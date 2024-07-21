@@ -270,4 +270,13 @@ public static class Utils
             ConsoleColor.White => 0xffffff,
             _ => throw new($"Invalid ConsoleColor ;; {color} ({(int)color})")
         });
+
+    public static bool InBetweenIncl(float x, float min, float max)
+        => x <= max && x >= min;
+    public static bool InBetweenIncl(int x, int min, int max)
+        => x <= max && x >= min;
+    public static bool InBetweenExcl(float x, float min, float max)
+        => x < max && x > min;
+    public static bool InBetweenExcl(int x, int min, int max)
+        => x < max && x > min;
 }

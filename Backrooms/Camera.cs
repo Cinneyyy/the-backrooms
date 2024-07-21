@@ -5,7 +5,7 @@ namespace Backrooms;
 public class Camera(float fovDegrees, float maxDist, float angle = 0f)
 {
     public Vec2f pos;
-    public float maxDist = maxDist;
+    public float maxRenderDist = maxDist;
 
     private float _angle = angle, _fov = fovDegrees * Utils.Deg2Rad;
     private Vec2f _plane = Vec2f.PlaneFromFov(angle, fovDegrees * Utils.Deg2Rad), _forward = Vec2f.FromAngle(angle), _right = Vec2f.FromAngle(angle - MathF.PI/2f);

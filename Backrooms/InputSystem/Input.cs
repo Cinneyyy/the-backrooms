@@ -38,7 +38,8 @@ public partial class Input
             [InputAction.MoveBackward] = Keys.S,
             [InputAction.MoveLeft] = Keys.A,
             [InputAction.MoveRight] = Keys.D,
-            [InputAction.Sprint] = Keys.ShiftKey
+            [InputAction.Sprint] = Keys.ShiftKey,
+            [InputAction.Interact] = Keys.J
         };
     }
 

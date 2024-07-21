@@ -98,8 +98,8 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
 
     public static float Dot(Vec2f a, Vec2f b)
         => a.x*b.x + a.y*b.y;
-    public static float Dot(float a, float b)
-        => MathF.Cos(a)*MathF.Cos(b) + MathF.Sin(a)*MathF.Sin(b);
+    public static float Dot(float angleA, float angleB)
+        => MathF.Cos(angleA)*MathF.Cos(angleB) + MathF.Sin(angleA)*MathF.Sin(angleB);
 
     public static Vec2f Lerp(Vec2f min, Vec2f max, float t) 
         => new(Utils.Lerp(min.x, max.x, t), Utils.Lerp(min.y, max.y, t));
