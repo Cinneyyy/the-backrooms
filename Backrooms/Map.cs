@@ -13,8 +13,6 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     public float floorLuminance = .5f, ceilLuminance = .5f;
 
     private Tile[,] tiles = tiles;
-    private FloorType[,] floorTiles;
-    private CeilType[,] ceilTiles;
     private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
 
 

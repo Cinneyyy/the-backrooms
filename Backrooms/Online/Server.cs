@@ -8,9 +8,9 @@ using Backrooms.Serialization;
 
 namespace Backrooms.Online;
 
-public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mpManager) 
-    where TSState : Packet<TSState>, new() 
-    where TCState : Packet<TCState>, new() 
+public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mpManager)
+    where TSState : Packet<TSState>, new()
+    where TCState : Packet<TCState>, new()
     where TReq : Enum
 {
     public delegate void ReceivePacketHandler(PacketType type, byte[] data, ushort clientId);
@@ -43,13 +43,13 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             listener = new(IPAddress.Any, port);
             listener.Start();
 
-            Out($"Hosting on port {port}");
+            Out(Log.Server, $"Hosting on port {port}");
 
             new Thread(WelcomeClients).Start();
         }
         catch(Exception exc)
         {
-            Out($"{exc.GetType()} in Server.StartHost ;; {exc.Message}", ConsoleColor.Red);
+            OutErr(Log.Server, exc, $"{exc.GetType()} in Server.StartHost ;; $e");
         }
     }
 
@@ -57,14 +57,14 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
     {
         if(!isHosting)
         {
-            Out($"Cannot stop host while server is not hosting");
+            Out(Log.Server, $"Cannot stop host while server is not hosting");
             return;
         }
 
         isHosting = false;
         listener.Stop();
 
-        Out($"Stopped hosting on port {openPort}");
+        Out(Log.Server, $"Stopped hosting on port {openPort}");
 
         openPort = 0;
     }
@@ -87,11 +87,11 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             foreach(ushort clientId in clientIds)
                 remoteClients[clientId].GetStream().Write(data, 0, data.Length);
 
-            OutIf(commonState.printDebug, $"Sent {data.Length} byte long packet to {clientIds} clients, packet type: {type} // {typeof(T)}");
+            OutIf(Log.Server, commonState.logPackets, $"Sent {data.Length} byte long packet to {clientIds} clients, packet type: {type} // {typeof(T)}");
         }
         catch(Exception exc)
         {
-            Out($"{exc.GetType()} in Client.SendPacket ;; {exc.Message}", ConsoleColor.Red);
+            OutErr(Log.Server, exc, $"{exc.GetType()} in Client.SendPacket ;; $e");
         }
     }
 
@@ -108,11 +108,11 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             foreach(ushort clientId in clientIds)
                 remoteClients[clientId].GetStream().Write(data, 0, data.Length);
 
-            OutIf(commonState.printDebug, $"Sent {data.Length} byte long raw packet to {clientIds.Length} clients");
+            OutIf(Log.Server, commonState.logPackets, $"Sent {data.Length} byte long raw packet to {clientIds.Length} clients");
         }
         catch(Exception exc)
         {
-            Out($"{exc.GetType()} in Server.SendPacketRaw ;; {exc.Message}", ConsoleColor.Red);
+            OutErr(Log.Server, exc, $"{exc.GetType()} in Server.SendPacketRaw ;; $e");
         }
     }
 
@@ -134,7 +134,7 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             clientIds.Add(clientId);
             mpManager.clientStates[clientId] = new();
 
-            Out($"New client connected: {client.Client.RemoteEndPoint}, id #{clientId}");
+            Out(Log.Server, $"New client connected: {client.Client.RemoteEndPoint}, id #{clientId}");
 
             new Thread(() => ManageClient(client, clientId)).Start();
         }
@@ -156,7 +156,7 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             state = mpManager.clientStates[clientId]
         };
 
-        Out($"Sending welcome packet to client #{clientId} and integration packet to all other clients");
+        Out(Log.Server, $"Sending welcome packet to client #{clientId} and integration packet to all other clients");
         SendPacket(PacketType.WelcomePacket, welcomePacket, null, [clientId]);
         BroadcastPacket(PacketType.IntegrateClient, integrationPacket, null, [clientId]);
 
@@ -168,7 +168,7 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
                     PacketType type = (PacketType)buf[0];
                     byte[] data = buf[1..bytesRead];
 
-                    OutIf(commonState.printDebug, $"Received client packet from client #{clientId} with size {bytesRead} bytes and of type {type}");
+                    OutIf(Log.Server, commonState.logPackets, $"Received client packet from client #{clientId} with size {bytesRead} bytes and of type {type}");
 
                     switch(type)
                     {
@@ -190,16 +190,16 @@ public class Server<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
                 }
                 catch(Exception exc)
                 {
-                    Out($"{exc.GetType()} in Server.ManageClient (client #{clientId}) ;; {exc.Message}", ConsoleColor.Red);
+                    OutErr(Log.Server, exc, $"{exc.GetType()} in Server.ManageClient (client #{clientId}) ;; $e");
                 }
         }
         catch(Exception exc)
         {
-            OutErr(exc, $"{exc.GetType()} in Server.ManageClient, outside while stream (client #{clientId}) ;; $e");
+            OutErr(Log.Server, exc, $"{exc.GetType()} in Server.ManageClient, outside while stream (client #{clientId}) ;; $e");
         }
         finally
         {
-            Out($"Client disconnected: {client.Client.RemoteEndPoint}");
+            Out(Log.Server, $"Client disconnected: {client.Client.RemoteEndPoint}");
             remoteClients.Remove(clientId);
             clientIds.Remove(clientId);
             client.Close();

@@ -55,7 +55,7 @@ public class Entity
             instance = Activator.CreateInstance(behaviourType, instanceArgs) as EntityBase;
 
             // Add callbacks to overriden methods
-            bool isOverriden(string name) 
+            bool isOverriden(string name)
                 => behaviourType.GetMethod(name).DeclaringType != baseType;
             if(isOverriden(nameof(EntityBase.Tick))) manager.entityTick += instance.Tick;
             if(isOverriden(nameof(EntityBase.FixedTick))) manager.entityFixedTick += instance.FixedTick;
@@ -75,7 +75,7 @@ public class Entity
                                                    where pType is not null
                                                    select pType;
 
-                if(algorithmTypes.Count() > 1) 
+                if(algorithmTypes.Count() > 1)
                     throw new($"Found more than one ({algorithmTypes.Count()}) types matching the type name '{pathfindingData.algorithmName}'");
                 if(!algorithmTypes.Any())
                     throw new($"Found no suitable type with the name '{pathfindingData.algorithmName}'");
@@ -84,11 +84,11 @@ public class Entity
                 manager.entityTick += dt => pos = managedPathfinding.MoveTowards(pos, tags.size.x/2f, pathfindingData.speed, dt);
             }
 
-            Out($"Successfully loaded entity at {dataPath}");
+            Out(Log.Entity, $"Successfully loaded entity at {dataPath}");
         }
         catch(Exception exc)
         {
-            OutErr(exc, $"There was an error loading entity at {dataPath}: $e", ConsoleColor.Red);
+            OutErr(Log.Entity, exc, $"There was an error loading entity at {dataPath}: $e");
         }
     }
 }

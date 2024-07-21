@@ -27,13 +27,18 @@ public struct Color32(byte r, byte g, byte b, byte a = 0xff)
 
     public Color32(byte v) : this(v, v, v, v) { }
 
+    public Color32(int hex, byte a = 0xff) : this(
+        (byte)((hex >> 16) & 0xff),
+        (byte)((hex >> 8) & 0xff),
+        (byte)(hex & 0xff), a) { }
+
 
     public readonly override bool Equals([NotNullWhen(true)] object obj) => base.Equals(obj);
     public readonly override int GetHashCode() => base.GetHashCode();
 
 
     public static unsafe Color32 FromData24(byte* scan)
-        => new(*(scan+2), (*scan+1), *scan);
+        => new(*(scan+2), *(scan+1), *scan);
 
 
     public static Color32 operator +(Color32 a, Color32 b) => new(a.r + b.r, a.g + b.g, a.b + b.b);

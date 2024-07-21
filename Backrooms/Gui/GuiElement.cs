@@ -71,7 +71,7 @@ public abstract class GuiElement
         _anchor = anchor ?? Vec2f.half;
 
         Type type = GetType();
-        Assert(type.Name.EndsWith("element", StringComparison.OrdinalIgnoreCase), $"All GUI element type names should end with the 'Element' suffix for clarity");
+        Assert(Log.Log, type.Name.EndsWith("element", StringComparison.OrdinalIgnoreCase), $"All GUI element type names should end with the 'Element' suffix for clarity");
 
         safetyAttr = type.GetCustomAttribute<GuiElementAttribute>();
         if(safetyAttr is null)

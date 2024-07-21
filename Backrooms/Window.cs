@@ -187,7 +187,8 @@ public class Window : Form
             }
             catch(Exception exc)
             {
-                Out($"{exc.GetType()} in main UpdateLoop (Window.cs) ;; {exc.Message}", ConsoleColor.Red);
+                // Intentional formatting abuse ("{exc.Message}" instead of "$e"), because this issue is just console-spam otherwise
+                OutErr(Log.Log, exc, $"{exc.GetType()} in main UpdateLoop (Window.cs) ;; {exc.Message}");
             }
     }
 

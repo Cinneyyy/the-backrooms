@@ -30,7 +30,7 @@ public abstract class Item(string name, string desc, bool consumeOnUse, UnsafeGr
 
     public void Use(InvSlot itemSlot, Game game)
     {
-        Out($"Used '{name}'");
+        Out(Log.GameEvent, $"Used item '{name}'");
 
         if(consumeOnUse)
             itemSlot.item = null;

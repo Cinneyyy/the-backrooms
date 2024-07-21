@@ -5,8 +5,8 @@ using Backrooms.Serialization;
 namespace Backrooms.Online;
 
 public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
-    where TSState : Packet<TSState>, new() 
-    where TCState : Packet<TCState>, new() 
+    where TSState : Packet<TSState>, new()
+    where TCState : Packet<TCState>, new()
     where TReq : Enum
 {
     public delegate void RequestHandler(TReq req);
@@ -62,7 +62,7 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
 
         clientState = clientStates[clientId];
 
-        Out($"Handled welcome packet and was assigned id #{clientId}");
+        Out(Log.MpManager, $"Handled welcome packet and was assigned id #{clientId}");
 
         isConnected = true;
         connectedToServer?.Invoke();

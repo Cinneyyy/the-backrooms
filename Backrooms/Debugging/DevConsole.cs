@@ -33,6 +33,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     private Action nextTick;
 
     private static readonly nint consoleHandle = GetConsoleWindow();
+    private static readonly nint stdHandle = GetStdHandle(-11);
     private static WindowMode _windowMode = WindowMode.Restore;
 
 
@@ -47,6 +48,9 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     {
         this.win = win;
         win.tick += Tick;
+
+        GetConsoleMode(stdHandle, out int consoleMode);
+        SetConsoleMode(stdHandle, consoleMode | 0b100);
 
         thread = new(() => {
             while(run())
@@ -88,40 +92,40 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
         win.Shown += (_, _) => thread.Start();
 
         cmds = [
-            new(["help", "?", "cmd_list", "cmds", "commands", "command_list"], 
+            new(["help", "?", "cmd_list", "cmds", "commands", "command_list"],
             args => {
                 if(args.Length == 1)
                 {
                     Cmd cmd = cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First();
-                    Out($"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                    Out(Log.DevCmd, Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
                 }
                 else if(args.Length == 0)
                 {
-                    Out("-- List of commands --");
+                    Out(Log.DevCmd, Log.DevCmd, "-- List of commands --");
                     foreach(Cmd cmd in cmds)
-                        Out($"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                        Out(Log.DevCmd, Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
                 }
-            }, 
+            },
             "HELP [<command>]", [0, 1]),
 
-            new(["aliases", "alias"], 
-            args => Out($"Aliases of the {args[0].ToUpper()} command: {cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First().identifiers.FormatStr(", ", id => id.ToUpper())}"),
+            new(["aliases", "alias"],
+            args => Out(Log.DevCmd, $"Aliases of the {args[0].ToUpper()} command: {cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First().identifiers.FormatStr(", ", id => id.ToUpper())}"),
             "ALIASES <cmd>", [1]),
 
             new(["query_if_empty", "emptyquery"],
             args => ParseBool(args.FirstOrDefault(), ref queryIfEmpty),
             "QUERY_IF_EMPTY <value>", [0, 1]),
 
-            new(["resolution", "res", "set_resolution", "set_res"], 
+            new(["resolution", "res", "set_resolution", "set_res"],
             args => {
                 if(args[0] is "query" or "q" or "?")
                 {
-                    Out($"The current resolution is {win.renderer.virtRes.ToString("{0}x{1}")}");
+                    Out(Log.DevCmd, $"The current resolution is {win.renderer.virtRes.ToString("{0}x{1}")}");
                     return;
                 }
-                
+
                 string xStr, yStr;
-                
+
                 if(args.Length == 1)
                 {
                     string[] split = args[0].Split(':', 'x', '/');
@@ -136,7 +140,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                         Vec2i physRes = win.renderer.physRes;
                         Vec2i virtRes = (args[0] == "/" ? (physRes / fac) : (physRes * fac)).Round();
                         win.renderer.UpdateResolution(virtRes, physRes);
-                        Out($"Set virtual resolution to {virtRes}");
+                        Out(Log.DevCmd, $"Set virtual resolution to {virtRes}");
                         return;
                     }
 
@@ -148,17 +152,17 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
                 Vec2i res = Vec2i.Parse(xStr, yStr);
                 win.renderer.UpdateResolution(res, win.renderer.physRes);
-                Out($"Set virtual resolution to {res}");
-            }, 
+                Out(Log.DevCmd, $"Set virtual resolution to {res}");
+            },
             "SET_RESOLUTION [<width[x|:|/]height> | <width height> | <[*|/] factor>]", [1, 2]),
 
-            new(["fov", "set_fov", "field_of_view", "set_field_of_view"], 
+            new(["fov", "set_fov", "field_of_view", "set_field_of_view"],
             args => {
                 args[0] = args[0].ToLower();
 
                 if(args[0] is "query" or "q" or "?")
                 {
-                    Out($"The current fov value is {win.renderer.camera.fov} ({win.renderer.camera.fov/MathF.PI :0.00}pi ;; {win.renderer.camera.fov*Utils.Rad2Deg :0.00}°)");
+                    Out(Log.DevCmd, $"The current fov value is {win.renderer.camera.fov} ({win.renderer.camera.fov/MathF.PI :0.00}pi ;; {win.renderer.camera.fov*Utils.Rad2Deg :0.00}°)");
                     return;
                 }
 
@@ -191,23 +195,23 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
                 Camera cam = win.renderer.camera;
                 cam.fov = rawValue;
-                Out($"Set FOV to {cam.fov:0.00} ({cam.fov/MathF.PI:0.00}pi ;; {cam.fov*Utils.Rad2Deg:0.00}°)");
+                Out(Log.DevCmd, $"Set FOV to {cam.fov:0.00} ({cam.fov/MathF.PI:0.00}pi ;; {cam.fov*Utils.Rad2Deg:0.00}°)");
             },
             "FOV <value[°|pi|deg|rad|]>", [1]),
 
-            new(["hide", "close", "hide_console", "close_console"], 
-            args => Hide(), 
+            new(["hide", "close", "hide_console", "close_console"],
+            args => Hide(),
             "HIDE", [0]),
 
-            new(["fps_display", "fps", "show_fps"], 
-            args => ParseBool(args.FirstOrDefault(), win.renderer.FindGuiGroup("hud").GetElement("fps"), e => e.enabled), 
+            new(["fps_display", "fps", "show_fps"],
+            args => ParseBool(args.FirstOrDefault(), win.renderer.FindGuiGroup("hud").GetElement("fps"), e => e.enabled),
             "SHOW_FPS <enabled>", [0, 1]),
 
-            new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"], 
-            args => ParseBool(args.FirstOrDefault(), ref win.renderer.useParallelRendering), 
+            new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"],
+            args => ParseBool(args.FirstOrDefault(), ref win.renderer.useParallelRendering),
             "PARALLEL_RENDER <enabled>", [0, 1]),
 
-            new(["cursor", "cursor_visible", "show_cursor"], 
+            new(["cursor", "cursor_visible", "show_cursor"],
             args => ParseBool(args.FirstOrDefault(), () => win.cursorVisible, b => win.SetCursor(b)),
             "CURSOR_VISIBLE <enabled>", [0, 1]),
 
@@ -234,15 +238,15 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "ELEM_LOC <group> <element>", [2, 3]),
 
             new(["list_gui_groups", "gui_groups"],
-            args => Out(win.renderer.guiGroups.FormatStr(", ", g => g.name)),
+            args => Out(Log.DevCmd, win.renderer.guiGroups.FormatStr(", ", g => g.name)),
             "LIST_GUI_GROUPS", [0]),
 
             new(["list_gui_elements", "gui_elements", "list_gui_elems", "gui_elems"],
-            args => Out(win.renderer.guiGroups.FormatStr(" ;; ", g => $"[{g.name}: {g.allElements.FormatStr(", ", e => $"{e.name}")}]")),
+            args => Out(Log.DevCmd, win.renderer.guiGroups.FormatStr(" ;; ", g => $"[{g.name}: {g.allElements.FormatStr(", ", e => $"{e.name}")}]")),
             "LIST_GUI_ELEMENTS", [0]),
 
             new(["count_tick_listeners", "tick_listeners", "tick_lists"],
-            args => Out($"{win.GetTickInvocationList().Length} listeners are subscribed to win.tick"),
+            args => Out(Log.DevCmd, $"{win.GetTickInvocationList().Length} listeners are subscribed to win.tick"),
             "COUNT_TICK_LISTENERS", [0])
         ];
     }
@@ -272,7 +276,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             }
             catch(Exception exc)
             {
-                Out($"{exc.GetType().Name}: {exc.Message}", ConsoleColor.Red);
+                OutErr(Log.DevCmd, exc);
             }
             finally
             {
@@ -292,14 +296,14 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             case "true" or "t" or "1" or "1b" or "yes" or "y":
                 target = true;
                 break;
-            case "false" or "f" or "0" or "0b" or "no" or "n": 
-                target = false; 
+            case "false" or "f" or "0" or "0b" or "no" or "n":
+                target = false;
                 break;
-            case "switch" or "s" or "~" or "!" or "^": 
-                target ^= true; 
+            case "switch" or "s" or "~" or "!" or "^":
+                target ^= true;
                 break;
             case "q" or "query" or "?":
-                Out($"The current value is {target}");
+                Out(Log.DevCmd, $"The current value is {target}");
                 break;
             default:
                 if(throwExcIfFailed)
@@ -326,16 +330,19 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     public static void ParseNumber<T>(string str, ref T field) where T : INumber<T>
     {
         if(string.IsNullOrWhiteSpace(str) || str is "q" or "query" or "?")
-            Out($"The current value is {field}");
+            Out(Log.DevCmd, $"The current value is {field}");
         else
             field = T.Parse(str, null);
     }
 
-    public static void ParseVector<T>(string str, ref T field)
-    {
-    }
+    public static void ParseVector<T>(string str, ref T field) where T : IVector<T>
+        => field = T.Parse(str.Split(','));
 
-    public static nint PostMessage(ConsoleKey key, uint msg = 0x100u) 
+    public static void WriteLine(object message, Color32 fore, Color32 back)
+        => Console.WriteLine($"\x1b[48;2;{back.r};{back.g};{back.b}m\x1b[38;2;{fore.r};{fore.g};{fore.b}m{message}");
+
+    #region P/Invoke Interfacing
+    public static nint PostMessage(ConsoleKey key, uint msg = 0x100u)
         => PostMessage(consoleHandle, msg, (nint)key, nint.Zero);
 
     public static bool ShowWindow(WindowMode windowMode)
@@ -350,6 +357,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     public static bool Maximize() => ShowWindow(WindowMode.Maximize);
     public static bool Minimize() => ShowWindow(WindowMode.Minimize);
     public static bool Restore() => ShowWindow(WindowMode.Restore);
+    #endregion
 
 
     #region P/Invokes
@@ -364,5 +372,17 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.SysInt)]
     private static partial nint PostMessage(nint hWnd, uint Msg, nint wParam, nint lParam);
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetConsoleMode(nint hWnd, int mode);
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool GetConsoleMode(nint hWnd, out int mode);
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.SysInt)]
+    private static partial nint GetStdHandle(int handle);
     #endregion
 }

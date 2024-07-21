@@ -18,7 +18,7 @@ public class ImageElement(string name, UnsafeGraphic graphic, Color color, Vec2f
         if(graphic is null)
             return;
 
-        Assert(graphic.useAlpha, "ImageElement.image has to use 32-bit format!");
+        Assert(Log.Log, graphic.useAlpha, "ImageElement.image has to use 32-bit format!");
 
         scan += Math.Max(screenLocation.y, 0) * stride + Math.Max(screenLocation.x, 0) * 3;
 

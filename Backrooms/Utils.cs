@@ -249,4 +249,25 @@ public static class Utils
             ".aiff" or "aiff" => new AiffFileReader(stream),
             _ => throw new($"Unsupported audio format: {codec}")
         };
+
+    public static Color32 ToColTableValue(this ConsoleColor color)
+        => new(color switch {
+            ConsoleColor.Black => 0x000000,
+            ConsoleColor.DarkBlue => 0x000080,
+            ConsoleColor.DarkGreen => 0x008000,
+            ConsoleColor.DarkCyan => 0x008080,
+            ConsoleColor.DarkRed => 0x800000,
+            ConsoleColor.DarkMagenta => 0x800080,
+            ConsoleColor.DarkYellow => 0x808000,
+            ConsoleColor.Gray => 0xc0c0c0,
+            ConsoleColor.DarkGray => 0x808080,
+            ConsoleColor.Blue => 0x0000ff,
+            ConsoleColor.Green => 0x00ff00,
+            ConsoleColor.Cyan => 0x00ffff,
+            ConsoleColor.Red => 0xff0000,
+            ConsoleColor.Magenta => 0xff00ff,
+            ConsoleColor.Yellow => 0xffff00,
+            ConsoleColor.White => 0xffffff,
+            _ => throw new($"Invalid ConsoleColor ;; {color} ({(int)color})")
+        });
 }

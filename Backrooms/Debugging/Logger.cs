@@ -3,39 +3,115 @@ using System;
 
 namespace Backrooms.Debugging;
 
-public static class Logger
+public class Logger(Log log, Color32 color, bool enabled = true)
 {
-    public static void Out(object message, ConsoleColor color = ConsoleColor.Gray)
+    public enum Log
     {
-        Console.ForegroundColor = color;
-        Console.WriteLine(message);
+        Log = 0,
+        DevCmd = 1,
+        GameEvent = 2,
+        Client = 3,
+        Server = 4,
+        MpManager = 5,
+        Entity = 6
     }
 
-    public static void OutErr(Exception exc, string format = "$e", ConsoleColor color = ConsoleColor.Red)
+
+    private const int ErrBackground = 0x240000;
+    private const int AssertBackground = 0x2d3000;
+
+    public readonly string name = log.ToString();
+    public readonly Color32 color = color;
+    public bool enabled = enabled;
+
+    /// <summary>Indices are values of the <see cref="Log"/> enum</summary>
+    public static readonly Logger[] loggers = [
+        new(Log.Log, new(0xbfbfbf)),
+        new(Log.DevCmd, new(0x5465ff)),
+        new(Log.GameEvent, new(0xd84dff)),
+        new(Log.Client, new(0xff7f3b)),
+        new(Log.Server, new(0xffb73b)),
+        new(Log.MpManager, new(0xff3b3b)),
+        new(Log.Entity, new(0x3bffe8))
+    ];
+
+
+    public void Out(object message, string prefix = "[$n]")
+    {
+        if(enabled)
+            DevConsole.WriteLine($"{prefix.Replace("$n", name)} {message}", color, Color32.black);
+    }
+
+    public void OutErr(Exception exc, string format = "$e")
+    {
+        if(enabled)
 #if DEBUG
-        => Out(format.Replace("$e", exc.ToString()), color);
+            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.ToString())}", color, new(ErrBackground));
 #else
-        => Out(format.Replace("$e", exc.Message), color);
+            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.Message)}", color, new(ErrBackground));
 #endif
-
-    public static void Assert(bool assertion, string assertionFailedMsg, ConsoleColor color = ConsoleColor.Yellow)
-    {
-        if (!assertion)
-            Out(assertionFailedMsg, color);
     }
 
-    public static void ThrowIf(bool predicate, string message, ConsoleColor color = ConsoleColor.Red)
+    public void OutIf(bool predicate, object message)
     {
-        if (predicate)
-        {
-            Out(message, color);
-            throw new(message);
-        }
+        if(predicate)
+            Out(message);
+    }
+    public void OutIf(bool predicate, Func<object> getMessage)
+    {
+        if(predicate)
+            Out(getMessage());
     }
 
-    public static void OutIf(bool condition, object msg, ConsoleColor color = ConsoleColor.Gray)
+    public void Assert(bool assertion, object assertionFailed)
     {
-        if (condition)
-            Out(msg, color);
+        if(!assertion)
+            DevConsole.WriteLine($"[{name}] {assertionFailed}", color, new(AssertBackground));
+    }
+    public void Assert(bool assertion, Func<object> assertionFailed)
+    {
+        if(!assertion)
+            DevConsole.WriteLine($"[{name}] {assertionFailed()}", color, new(AssertBackground));
+    }
+
+
+    public static void Out(Logger logger, object message, string prefix = "[$n]")
+        => logger.Out(message, prefix);
+    public static void Out(Log logger, object message, string prefix = "[$n]")
+        => loggers[(int)logger].Out(message, prefix);
+
+    public static void OutErr(Logger logger, Exception exc, string format = "$e")
+        => logger.OutErr(exc, format);
+    public static void OutErr(Log logger, Exception exc, string format = "$e")
+        => loggers[(int)logger].OutErr(exc, format);
+
+    public static void OutIf(Logger logger, bool predicate, object message)
+        => logger.OutIf(predicate, message);
+    public static void OutIf(Logger logger, bool predicate, Func<object> getMessage)
+        => logger.OutIf(predicate, getMessage);
+    public static void OutIf(Log logger, bool predicate, object message)
+        => loggers[(int)logger].OutIf(predicate, message);
+    public static void OutIf(Log logger, bool predicate, Func<object> getMessage)
+        => loggers[(int)logger].OutIf(predicate, getMessage);
+
+    public static void Assert(Logger logger, bool assertion, object assertionFailed)
+        => logger.Assert(assertion, assertionFailed);
+    public static void Assert(Logger logger, bool assertion, Func<object> assertionFailed)
+        => logger.Assert(assertion, assertionFailed);
+    public static void Assert(Log logger, bool assertion, object assertionFailed)
+        => loggers[(int)logger].Assert(assertion, assertionFailed);
+    public static void Assert(Log logger, bool assertion, Func<object> assertionFailed)
+        => loggers[(int)logger].Assert(assertion, assertionFailed);
+
+
+    public static object operator +(Logger logger, object msg)
+    {
+        logger.Out(msg);
+        return null;
+    }
+    public static object operator -(Logger logger, Exception exc)
+    {
+        logger.OutErr(exc);
+        return null;
     }
 }

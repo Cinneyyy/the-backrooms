@@ -46,11 +46,11 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
 
             new Thread(HandleServerCommunication).Start();
 
-            Out($"Connected to remote server at {ipAddress}:{port}");
+            Out(Log.Client, $"Connected to remote server at {ipAddress}:{port}");
         }
         catch(Exception exc)
         {
-            Out($"[{exc.GetType()}] Failed to connect to server ({ipAddress}:{port}) ;; {exc.Message}", ConsoleColor.Red);
+            OutErr(Log.Client, exc, $"Failed to connect to server ({ipAddress}:{port}) ;; $e");
         }
     }
 
@@ -58,7 +58,7 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
     {
         if(!isConnected)
         {
-            Out($"Cannot disconnect while client is not connected to a remote server");
+            Out(Log.Client, $"Cannot disconnect while client is not connected to a remote server");
             return;
         }
 
@@ -66,7 +66,7 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
         receiveInput = false;
         remoteHost.Close();
 
-        Out($"Disconnected from server at {remoteIpAddress}:{remotePort}");
+        Out(Log.Client, $"Disconnected from server at {remoteIpAddress}:{remotePort}");
 
         remoteIpAddress = null;
         remotePort = 0;
@@ -84,15 +84,16 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             if(data.Length > commonState.bufSize)
                 throw new($"Attempted to send packet with a larger size than the buffer size allows {data.Length} / {commonState.bufSize}");
 
+            // Sorry future me for the absolute byte-concatination abuse going on here
             data = [(byte)type, ..(type == PacketType.ClientState ? clientId.ToTwoBytes() : []), ..(prepend ?? []), ..data];
             remoteHost.GetStream().Write(data, 0, data.Length);
 
             outgoingPacketData += data.Length;
-            OutIf(commonState.printDebug, $"Sent {data.Length} byte long packet to server, packet type: {type} // {typeof(T)}");
+            OutIf(Log.Client, commonState.logPackets, $"Sent {data.Length} byte long packet to server, packet type: {type} // {typeof(T)}");
         }
         catch(Exception exc)
         {
-            Out($"{exc.GetType()} in Client.SendPacket ;; {exc.Message}", ConsoleColor.Red);
+            OutErr(Log.Client, exc, $"{exc.GetType()} in Client.SendPacket ;; $e");
         }
     }
 
@@ -103,11 +104,11 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             remoteHost.GetStream().Write(data, 0, data.Length);
 
             outgoingPacketData += data.Length;
-            OutIf(commonState.printDebug, $"Sent {data.Length} byte long raw packet to server");
+            OutIf(Log.Client, commonState.logPackets, $"Sent {data.Length} byte long raw packet to server");
         }
         catch(Exception exc)
         {
-            Out($"{exc.GetType()} in Client.SendPacketRaw ;; {exc.Message}", ConsoleColor.Red);
+            OutErr(Log.Client, exc, $"{exc.GetType()} in Client.SendPacketRaw ;; $e");
         }
     }
 
@@ -135,12 +136,12 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
 
                     if(!mpManager.isConnected && type != PacketType.WelcomePacket)
                     {
-                        Out($"Discarding packet of type {type}, as this client has not yet received welcome packet");
+                        Out(Log.Client, $"Discarding packet of type {type}, as this client has not yet received welcome packet");
                         continue;
                     }
 
                     byte[] data = buf[1..bytesRead];
-                    OutIf(commonState.printDebug, $"Received server packet with size {bytesRead} bytes and of type {type}");
+                    OutIf(Log.Client, commonState.logPackets, $"Received server packet with size {bytesRead} bytes and of type {type}");
 
                     switch(type)
                     {
@@ -175,7 +176,7 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
                             IntegrationPacket<TCState> packet = BinarySerializer<IntegrationPacket<TCState>>.Deserialize(data, commonState.decompress);
                             mpManager.clientStates[packet.id] = packet.state;
                             clientConnected?.Invoke(packet.id);
-                            Out($"Integrated client: {packet}");
+                            Out(Log.Client, $"Integrated client: {packet}");
                             break;
                         }
                         case PacketType.RemoveClient:
@@ -183,7 +184,7 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
                             ushort id = BinarySerializer<ClientMetaPacket>.Deserialize(data, commonState.decompress).clientId;
                             clientDisconnected?.Invoke(id);
                             mpManager.clientStates.Remove(id);
-                            Out($"Client disconnected: {id}");
+                            Out(Log.Client, $"Client disconnected: {id}");
                             break;
                         }
                         case PacketType.Misc:
@@ -195,17 +196,17 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
                 }
                 catch(Exception exc)
                 {
-                    Out($"{exc.GetType()} in HandleServerCommunication ;; {exc}", ConsoleColor.Red);
+                    OutErr(Log.Client, exc, $"{exc.GetType()} in HandleServerCommunication ;; $e");
                 }
         }
         catch(Exception exc)
         {
-            OutErr(exc, $"{exc.GetType()} in HandleServerCommunication ;; $e");
+            OutErr(Log.Client, exc, $"{exc.GetType()} in HandleServerCommunication ;; $e");
         }
         finally
         {
             Disconnect();
-            Out($"Disconnected from server");
+            Out(Log.Client, $"Disconnected from server");
         }
     }
 }

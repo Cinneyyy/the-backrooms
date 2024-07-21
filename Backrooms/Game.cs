@@ -74,7 +74,7 @@ public class Game
         window.console.Add(new(["noclip", "no_clip"], args => window.console.ParseBool(args.FirstOrDefault(), ref cameraController.noClip), "NO_CLIP <enabled>", [0, 1]));
 
         debugTextLhs = new("lhs", "0 fps", FontFamily.GenericMonospace, 15f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
-        renderer.guiGroups.Add(new(renderer, "debug", true) { 
+        renderer.guiGroups.Add(new(renderer, "debug", true) {
             debugTextLhs
         });
 
@@ -104,7 +104,7 @@ public class Game
             generator.GenerateRooms();
             generator.GeneratePillarRooms();
 
-            map.SetTiles(generator.FormatTiles());  
+            map.SetTiles(generator.FormatTiles());
             camPos = map.size/2f;
         }
 
@@ -122,7 +122,7 @@ public class Game
                 generate();
             }
 
-        Out($"Generated map with seed {seed}");
+        Out(Log.GameEvent, $"Generated map with seed {seed}");
         Vec2f center = camPos + Vec2f.half;
         cameraController.pos = center;
         generateMap?.Invoke(center);

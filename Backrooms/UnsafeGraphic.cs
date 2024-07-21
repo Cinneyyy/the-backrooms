@@ -34,7 +34,8 @@ public unsafe class UnsafeGraphic : IDisposable
 
     public UnsafeGraphic(BitmapData data)
     {
-        ThrowIf(data.PixelFormat is not PixelFormat.Format24bppRgb and not PixelFormat.Format32bppArgb, "Pixel format of bitmap data has to be either 24-bit RGB or 32-bit ARGB!");
+        if(data.PixelFormat is not PixelFormat.Format24bppRgb and not PixelFormat.Format32bppArgb)
+            throw new FormatException("Pixel format of bitmap data has to be either 24-bit RGB or 32-bit ARGB!");
 
         bitmap = null;
         this.data = data;

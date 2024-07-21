@@ -7,7 +7,7 @@ using System.IO;
 using Microsoft.CodeAnalysis.Emit;
 using System.Collections.Generic;
 
-namespace Backrooms;
+namespace Backrooms.Entities;
 
 public static class CsCompiler
 {
@@ -31,13 +31,12 @@ public static class CsCompiler
             IEnumerable<Diagnostic> errors = emit.Diagnostics.Where(d => d.IsWarningAsError || d.Severity == DiagnosticSeverity.Error);
 
             if(errors.Count() is int errCount && errCount == 1)
-                Out($"There has been an error when trying to compile dynamic assembly '{assemblyName}'");
+                Out(Log.Entity, $"There has been an error when trying to compile dynamic assembly '{assemblyName}'");
             else
-                Out($"There have been {errCount} errors when trying to compile dynamic assembly '{assemblyName}'");
-              
+                Out(Log.Entity, $"There have been {errCount} errors when trying to compile dynamic assembly '{assemblyName}'");
 
             foreach(Diagnostic err in errors)
-                Out($"{err.Id} ;; {err.GetMessage()}\n", ConsoleColor.Red);
+                Out(Log.Entity, $"{err.Id} ;; {err.GetMessage()}\n");
 
             return null;
         }

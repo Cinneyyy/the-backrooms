@@ -25,7 +25,8 @@ public class PictureBoxWithDrawOptions : PictureBox
         }
         catch(Exception exc)
         {
-            Out($"{exc.GetType()} in OnPaint (PictureBoxWithDrawOptions.cs) ;; {exc.Message}", ConsoleColor.Red);
+            // Intentional formatting abuse ("{exc.Message}" instead of "$e"), because this issue is just console-spam otherwise
+            OutErr(Log.Log, exc, $"{exc.GetType()} in OnPaint (PictureBoxWithDrawOptions.cs) ;; {exc.Message}");
         }
     }
 }
