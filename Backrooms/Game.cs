@@ -88,9 +88,7 @@ public class Game
         //entityManager = new(mpManager, window, map, camera, this, renderer);
         //entityManager.LoadEntities("Entities");
 
-        WorldObject worldObject = new(renderer, window, camera, input, new(93f, 93f), new(.5f, .85f), new("vodka"), () => Out(Log.Log, "Interacted"));
-        worldObject.sprRend.elevation = 1f;
-        window.tick += dt => worldObject.sprRend.elevation += dt * (input.KeyHelt(Keys.N) ? -1f : input.KeyHelt(Keys.M) ? 1f : 0f);
+        ItemWorldObject itemTest = new(renderer, window, cameraController, input, new(93f, 93f), new("table"), new("vodka"));
     }
 
 

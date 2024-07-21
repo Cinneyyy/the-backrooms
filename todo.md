@@ -14,8 +14,7 @@
 1. More varied enemies & enemy AI
 1. Post processing effects
     - Maybe more efficient ones also
-1. Out() categories
-    - e.g. Debug, Load, Error, etc.
+1. Controller input
 1. Make floor/ceil rendering horizontal again (#MRHA)
     - Also, there is probably so much possible optimization inside the Renderer
 1. Graffitis

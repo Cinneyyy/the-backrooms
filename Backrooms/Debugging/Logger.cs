@@ -13,7 +13,8 @@ public class Logger(Log log, Color32 color, bool enabled = true)
         Client = 3,
         Server = 4,
         MpManager = 5,
-        Entity = 6
+        Entity = 6,
+        Debug = 7
     }
 
 
@@ -32,7 +33,8 @@ public class Logger(Log log, Color32 color, bool enabled = true)
         new(Log.Client, new(0xf8ff3b)),
         new(Log.Server, new(0xfc8a26)),
         new(Log.MpManager, new(0xfc4823)),
-        new(Log.Entity, new(0x3bffe8))
+        new(Log.Entity, new(0x3bffe8)),
+        new(Log.Debug, new(0x35f0d7))
     ];
 
 

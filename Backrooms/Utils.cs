@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using Backrooms.Coroutines;
 using Backrooms.Gui;
+using Backrooms.InputSystem;
 using NAudio.Wave;
 
 namespace Backrooms;
@@ -279,4 +280,9 @@ public static class Utils
         => x < max && x > min;
     public static bool InBetweenExcl(int x, int min, int max)
         => x < max && x > min;
+
+    public static int ToTernary(bool negOneCond, bool posOneCond)
+        => negOneCond ? -1 : posOneCond ? 1 : 0;
+    public static int ToTernary(Input input, Keys negKey, Keys posKey)
+        => ToTernary(input.KeyHelt(negKey), input.KeyHelt(posKey));
 }

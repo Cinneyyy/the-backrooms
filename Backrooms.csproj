@@ -37,6 +37,7 @@
     <None Remove="Resources\Textures\oli.png" />
     <None Remove="Resources\Textures\pillar.png" />
     <None Remove="Resources\Textures\square.png" />
+    <None Remove="Resources\Textures\table.png" />
     <None Remove="Resources\Textures\up_arrow.png" />
     <None Remove="Resources\Textures\vodka.png" />
     <None Remove="Resources\wall.png" />
@@ -70,6 +71,7 @@
     <EmbeddedResource Include="Resources\Textures\pillar.png" />
     <EmbeddedResource Include="Resources\Textures\hazmat_suit.png" />
     <EmbeddedResource Include="Resources\Textures\square.png" />
+    <EmbeddedResource Include="Resources\Textures\table.png" />
     <EmbeddedResource Include="Resources\Textures\up_arrow.png" />
     <EmbeddedResource Include="Resources\Textures\vodka.png" />
     <EmbeddedResource Include="Resources\Textures\wall.png" />

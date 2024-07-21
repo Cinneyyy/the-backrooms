@@ -44,17 +44,17 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
         y = this.y;
     }
 
-    public void Normalize() 
+    public void Normalize()
         => this = normalized;
 
     public void Swap()
         => (x, y) = (y, x);
 
-    public readonly Vec2i Round() 
+    public readonly Vec2i Round()
         => new(x.Round(), y.Round());
-    public readonly Vec2i Ceil() 
+    public readonly Vec2i Ceil()
         => new(x.Ceil(), y.Ceil());
-    public readonly Vec2i Floor() 
+    public readonly Vec2i Floor()
         => new(x.Floor(), y.Floor());
 
     public void Rotate(float radians)
@@ -70,7 +70,7 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
 
 
     public static Vec2f PlaneFromFov(Vec2f dir, float fov)
-        => new Vec2f(-dir.y, dir.x) * MathF.Tan(fov/2f);    
+        => new Vec2f(-dir.y, dir.x) * MathF.Tan(fov/2f);
     public static Vec2f PlaneFromFov(float angle, float fov)
         => PlaneFromFov(FromAngle(angle), fov);
 
@@ -101,7 +101,10 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     public static float Dot(float angleA, float angleB)
         => MathF.Cos(angleA)*MathF.Cos(angleB) + MathF.Sin(angleA)*MathF.Sin(angleB);
 
-    public static Vec2f Lerp(Vec2f min, Vec2f max, float t) 
+    public static float NormalizedDot(Vec2f a, Vec2f b)
+        => Dot(a.normalized, b.normalized);
+
+    public static Vec2f Lerp(Vec2f min, Vec2f max, float t)
         => new(Utils.Lerp(min.x, max.x, t), Utils.Lerp(min.y, max.y, t));
 
     public static Vec2f Parse(string x, string y)

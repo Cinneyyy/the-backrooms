@@ -258,8 +258,7 @@ public unsafe class Renderer
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();
-        float elevation = spr.elevation / transform.y;
-        int drawCenter = (int)((1f - elevation)/2f * virtRes.y);
+        int drawCenter = (int)((.5f - spr.elevation/transform.y) * virtRes.y);
 
         int x0 = Math.Max(locX - size.x/2, 0),
             x1 = Math.Min(locX + size.x/2, virtRes.x);
@@ -269,6 +268,10 @@ public unsafe class Renderer
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1 - y0) * data.Stride;
+
+        float invTransformY = 1 / transform.y;
+        int floorY = Math.Min((int)(virtCenter.y * (1f - invTransformY)), virtRes.y-1);
+        int ceilY = Math.Max((int)(virtCenter.y * (invTransformY + 1f)), 0);
 
         for(int x = x0; x < x1; x++)
         {
@@ -283,7 +286,7 @@ public unsafe class Renderer
 
             for(int y = y0; y < y1; y++)
             {
-                bool draw = Utils.InBetweenIncl((y - virtCenter.y + size.y/2f) / size.y, 0f, 1f);
+                bool draw = Utils.InBetweenIncl(y, floorY, ceilY);
 
                 if(draw)
                 {

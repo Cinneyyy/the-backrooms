@@ -5,21 +5,33 @@ namespace Backrooms;
 
 public class WorldObject
 {
-    public const float MaxInteractionDist = .75f;
+    public const float MaxInteractionDist = 1.25f;
     public const float SqrMaxInteractionDist = MaxInteractionDist * MaxInteractionDist;
-    public const float MinDotAtMaxDist = .9f;
-    public const float MinDotAtMinDist = .6f;
+    public const float MinDotAtMaxDist = .985f;
+    public const float MinDotAtMinDist = .825f;
 
 
     public readonly SpriteRenderer sprRend;
-    public readonly Camera cam;
+    public readonly CameraController cam;
     public readonly Input input;
     public readonly Window win;
     public readonly Renderer rend;
     public Action onInteract;
 
 
-    public WorldObject(Renderer rend, Window win, Camera cam, Input input, Vec2f pos, Vec2f size, UnsafeGraphic graphic, Action onInteract)
+    public Vec2f pos
+    {
+        get => sprRend.pos;
+        set => sprRend.pos = value;
+    }
+    public Vec2f size
+    {
+        get => sprRend.size;
+        set => sprRend.size = value;
+    }
+
+
+    public WorldObject(Renderer rend, Window win, CameraController cam, Input input, Vec2f pos, Vec2f size, UnsafeGraphic graphic, Action onInteract)
     {
         this.rend = rend;
         this.win = win;
@@ -35,15 +47,17 @@ public class WorldObject
 
     private void Tick(float dt)
     {
-        Vec2f camToObj = sprRend.pos - cam.pos;
+        Vec2f camToObj = pos - cam.pos;
         float sqrDist = camToObj.sqrLength;
         if(sqrDist > SqrMaxInteractionDist)
             return;
 
-        float dot = Vec2f.Dot(camToObj, Vec2f.FromAngle(cam.angle));
-        float minDot = Utils.Map(sqrDist, Utils.Sqr(sprRend.size.x), SqrMaxInteractionDist, MinDotAtMinDist, MinDotAtMaxDist);
+        float dot = Vec2f.Dot(camToObj.normalized, cam.camera.forward);
+        float minDot = Utils.Map(sqrDist, 0f, SqrMaxInteractionDist, MinDotAtMinDist, MinDotAtMaxDist);
 
-        if(dot > minDot)
+        Out(Log.Debug, $"Dot: {dot}, minDot: {minDot}, sqrDist: {sqrDist}, SqrMaxInteractionDist: {SqrMaxInteractionDist}");
+
+        if(dot < minDot)
             return;
 
         if(input.KeyDown(InputAction.Interact))

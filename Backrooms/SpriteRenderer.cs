@@ -8,7 +8,7 @@ public class SpriteRenderer(Vec2f pos, Vec2f size, UnsafeGraphic graphic) : IDis
     public UnsafeGraphic graphic = graphic;
     public Vec2f pos = pos, size = size;
     public bool enabled = true;
-    /// <summary>[-1;1], where 0 is the screen center</summary>
+    /// <summary>[-0.5;0.5], where 0 is the screen center</summary>
     public float elevation = 0f;
 
 

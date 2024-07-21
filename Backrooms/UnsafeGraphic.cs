@@ -10,6 +10,7 @@ public unsafe class UnsafeGraphic : IDisposable
     public readonly bool useAlpha;
     public readonly byte* scan0;
     public readonly int stride, w, h, wb, hb;
+    public readonly float whRatio, hwRatio;
     public readonly Vec2i size, bounds;
 
     private readonly Bitmap bitmap;
@@ -28,6 +29,8 @@ public unsafe class UnsafeGraphic : IDisposable
         hb = h-1;
         size = new(w, h);
         bounds = new(wb, hb);
+        whRatio = (float)w/h;
+        hwRatio = (float)h/w;
     }
 
     public UnsafeGraphic(Image img, bool useAlpha = true) : this(new Bitmap(img), useAlpha) { }
