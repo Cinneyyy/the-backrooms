@@ -24,6 +24,8 @@ public unsafe class Renderer
     public bool useParallelRendering = true;
     public float wallHeight = 1f;
 
+    private readonly Comparison<SpriteRenderer> sprComparison;
+
 
     public Vec2i virtRes { get; private set; }
     public Vec2i physRes { get; private set; }
@@ -43,6 +45,18 @@ public unsafe class Renderer
     {
         this.window = window;
         UpdateResolution(virtRes, physRes);
+
+        sprComparison = (a, b) => {
+            if(a is null || b is null)
+                return 0;
+
+            float aDist = (camera.pos - a.pos).sqrLength, bDist = (camera.pos - b.pos).sqrLength;
+
+            if(Utils.RoughlyEquals(aDist, bDist, 0.01f))
+                return a.importance - b.importance;
+            else
+                return (bDist - aDist).Round();
+        };
     }
 
 
@@ -92,7 +106,7 @@ public unsafe class Renderer
             for(int x = 0; x < virtRes.x; x++)
                 DrawColumn(data, x);
 
-        sprites.Sort((a, b) => ((b.pos - camera.pos).sqrLength - (a.pos - camera.pos).sqrLength).Round());
+        sprites.Sort(sprComparison);
         foreach(SpriteRenderer spr in sprites)
             if(spr.enabled)
                 DrawSprite(data, spr);

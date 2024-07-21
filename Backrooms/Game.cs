@@ -13,6 +13,7 @@ using Backrooms.Entities;
 using Backrooms.Online;
 using Backrooms.Debugging;
 using System.Collections.Generic;
+using Backrooms.PostProcessing;
 
 namespace Backrooms;
 
@@ -91,10 +92,15 @@ public class Game
         renderer.postProcessEffects.Add(atlas);
         renderer.postProcessEffects.Add(zBufDisplay);
 
+        HVDistortion distortion = new(x => {
+            float strength = 1f - playerStats.sanity/100f;
+            float fac = strength < 5f ? Utils.Sqr(strength/5f) : MathF.Cbrt(strength/5f);
+            return Utils.Clamp(MathF.Sin(MathF.Sqrt(MathF.Abs(2f * strength)) * (window.timeElapsed + x)) * fac, -2f, 2f);
+        });
+        renderer.postProcessEffects.Add(distortion);
+
         //entityManager = new(mpManager, window, map, camera, this, renderer);
         //entityManager.LoadEntities("Entities");
-
-        ItemWorldObject itemTest = new(renderer, window, cameraController, input, new(93f, 93f), new("table"), new("vodka"));
     }
 
 
@@ -136,12 +142,11 @@ public class Game
         {
             worldObjects.ForEach(w => w.Dispose());
             worldObjects[0].sprRend.Dispose();
-            worldObjects[0].itemRend.Dispose();
             worldObjects.Clear();
         }
-        UnsafeGraphic table = new("table"), vodka = new("vodka");
+        UnsafeGraphic table = new("table");
         for(int i = 0; i < 1000; i++)
-            worldObjects.Add(new(renderer, window, cameraController, input, new(RNG.Range(map.size.x) + .5f, RNG.Range(map.size.y) + .5f), table, vodka));
+            worldObjects.Add(new(renderer, window, cameraController, input, inventory, new(RNG.Range(map.size.x) + .5f, RNG.Range(map.size.y) + .5f), table, Item.items["vodka"]));
     }
 
 

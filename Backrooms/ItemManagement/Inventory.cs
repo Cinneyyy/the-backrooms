@@ -165,9 +165,9 @@ public class Inventory
             InvSlot slot = slots[selectedSlot.x, selectedSlot.y];
 
             slot.invItemBackground.color = input.KeyHelt(Keys.LButton) ? colors.select : colors.hover;
-            if(input.KeyDown(Keys.Left))
+            if(input.KeyDown(Keys.LButton))
                 ClickSlot(slot);
-            else if(input.KeyDown(Keys.Right))
+            else if(input.KeyDown(Keys.RButton))
                 if(this.selectedSlot is not null)
                     this.selectedSlot = null;
                 else
