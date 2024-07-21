@@ -266,12 +266,12 @@ public unsafe class Renderer
         int y0 = Math.Max(drawCenter - size.y/2, 0),
             y1 = Math.Min(drawCenter + size.y/2, virtRes.y);
 
-        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
-        int backpaddle = (y1 - y0) * data.Stride;
-
         float invTransformY = 1 / transform.y;
         int floorY = Math.Min((int)(virtCenter.y * (1f - invTransformY)), virtRes.y-1);
         int ceilY = Math.Max((int)(virtCenter.y * (invTransformY + 1f)), 0);
+
+        byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
+        int backpaddle = (y1 - y0) * data.Stride;
 
         for(int x = x0; x < x1; x++)
         {

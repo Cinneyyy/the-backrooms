@@ -23,6 +23,7 @@
 ---
 ## Bugfixes
 1. Fix player sprites not showing up via adding logic to the welcome handler
+1. Implement collision for WorldObjects
 1. Multiplayer
     - Client disconnect handling
 1. Ceiling/floor rendering is **extremely** slow

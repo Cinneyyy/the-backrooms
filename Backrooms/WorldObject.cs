@@ -3,7 +3,7 @@ using Backrooms.InputSystem;
 
 namespace Backrooms;
 
-public class WorldObject
+public class WorldObject : IDisposable
 {
     public const float MaxInteractionDist = 1.25f;
     public const float SqrMaxInteractionDist = MaxInteractionDist * MaxInteractionDist;
@@ -45,6 +45,17 @@ public class WorldObject
     }
 
 
+    public void Dispose()
+    {
+        rend.sprites.Remove(sprRend);
+        OnDispose();
+        GC.SuppressFinalize(this);
+    }
+
+
+    protected virtual void OnDispose() { }
+
+
     private void Tick(float dt)
     {
         Vec2f camToObj = pos - cam.pos;
@@ -54,8 +65,6 @@ public class WorldObject
 
         float dot = Vec2f.Dot(camToObj.normalized, cam.camera.forward);
         float minDot = Utils.Map(sqrDist, 0f, SqrMaxInteractionDist, MinDotAtMinDist, MinDotAtMaxDist);
-
-        Out(Log.Debug, $"Dot: {dot}, minDot: {minDot}, sqrDist: {sqrDist}, SqrMaxInteractionDist: {SqrMaxInteractionDist}");
 
         if(dot < minDot)
             return;

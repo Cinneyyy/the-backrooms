@@ -12,6 +12,7 @@ using Backrooms.InputSystem;
 using Backrooms.Entities;
 using Backrooms.Online;
 using Backrooms.Debugging;
+using System.Collections.Generic;
 
 namespace Backrooms;
 
@@ -32,7 +33,7 @@ public class Game
 
     private readonly RoomGenerator generator = new();
     private readonly TextElement debugTextLhs;
-    private readonly Atlas atlas;
+    private readonly List<ItemWorldObject> worldObjects = [];
 
 
     public Game(Window window)
@@ -77,13 +78,18 @@ public class Game
 
         window.tick += Tick;
 
-        atlas = new(map, camera, new(renderer.virtRes.y - 32), new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16));
+        Atlas atlas = new(map, camera, new(renderer.virtRes.y - 32), new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16));
         renderer.dimensionsChanged += () => {
             atlas.size = new(renderer.virtRes.y - 32);
             atlas.loc = new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16);
         };
-        window.tick += dt => atlas.enabled = input.KeyHelt(Keys.Tab);
+        DepthBufDisplay zBufDisplay = new(renderer);
+        window.tick += dt => {
+            atlas.enabled = input.KeyHelt(Keys.Tab);
+            zBufDisplay.enabled = input.KeyHelt(Keys.ControlKey);
+        };
         renderer.postProcessEffects.Add(atlas);
+        renderer.postProcessEffects.Add(zBufDisplay);
 
         //entityManager = new(mpManager, window, map, camera, this, renderer);
         //entityManager.LoadEntities("Entities");
@@ -125,6 +131,17 @@ public class Game
         Vec2f center = camPos + Vec2f.half;
         cameraController.pos = center;
         generateMap?.Invoke(center);
+
+        if(worldObjects is not [])
+        {
+            worldObjects.ForEach(w => w.Dispose());
+            worldObjects[0].sprRend.Dispose();
+            worldObjects[0].itemRend.Dispose();
+            worldObjects.Clear();
+        }
+        UnsafeGraphic table = new("table"), vodka = new("vodka");
+        for(int i = 0; i < 1000; i++)
+            worldObjects.Add(new(renderer, window, cameraController, input, new(RNG.Range(map.size.x) + .5f, RNG.Range(map.size.y) + .5f), table, vodka));
     }
 
 
