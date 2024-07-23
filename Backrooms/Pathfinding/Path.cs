@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Backrooms.Pathfinding;
 
-public struct Path(Vec2f[] points) : IEnumerable<Vec2f>
+public struct Path(Vec2f[] pointArr) : IEnumerable<Vec2f>
 {
-    public readonly Vec2f[] points = points;
+    public readonly Vec2f[] points = pointArr;
     private int _current;
 
 
@@ -19,9 +19,9 @@ public struct Path(Vec2f[] points) : IEnumerable<Vec2f>
 
     public Path(IEnumerable<Vec2f> points) : this([..points]) { }
 
-    public Path(Vec2i[] points) : this(from p in points select p + Vec2f.half) { }
+    public Path(Vec2i[] intPointArr) : this(intPointArr.Select(p => p + Vec2f.half)) { }
 
-    public Path(IEnumerable<Vec2i> points) : this(from p in points select p + Vec2f.half) { }
+    public Path(IEnumerable<Vec2i> intPoints) : this(intPoints.Select(p => p + Vec2f.half)) { }
 
 
     readonly IEnumerator IEnumerable.GetEnumerator()

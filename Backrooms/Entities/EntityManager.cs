@@ -2,52 +2,40 @@
 using System.IO;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace Backrooms.Entities;
 
 public class EntityManager(MpManager mpManager, Window window, Map map, Camera camera, Game game, Renderer rend)
 {
-    public readonly MpManager mpHandler = mpManager;
+    public readonly MpManager mpManager = mpManager;
     public readonly Window window = window;
     public readonly Map map = map;
     public readonly Game game = game;
     public readonly Camera camera = camera;
     public readonly Renderer rend = rend;
-    public event Action entityAwake, entityPulse;
-    public event Action<float> entityTick, entityFixedTick;
-
-
-    public Entity[] entities { get; private set; }
+    public readonly List<EntityType> types = [];
+    public readonly List<EntityInstance> instances = [];
 
 
     public void LoadEntities(string directoryPath)
     {
-        foreach(string zip in Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly))
-            ZipFile.ExtractToDirectory(zip, Path.GetFileNameWithoutExtension(zip));
-
-        entities = Directory.GetDirectories(directoryPath, "*", SearchOption.TopDirectoryOnly)
-                   .Select(d => new Entity(this, d))
-                   .ToArray();
-
-        mpHandler.connectedToServer += entityAwake;
-        window.tick += entityTick;
-        window.fixedTick += entityFixedTick;
-        window.pulse += entityPulse;
+        foreach(string path in
+            Directory.GetDirectories(directoryPath, "", SearchOption.TopDirectoryOnly)
+            .Concat(Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly)))
+            LoadEntity(path);
     }
 
-    public void UnloadEntities()
+    public void LoadEntity(string directoryPath)
     {
-        foreach(Entity e in entities)
+        if(directoryPath.EndsWith("*.zip", StringComparison.OrdinalIgnoreCase))
         {
-            rend.sprites.Remove(e.instance.sprRend);
-            e.instance.sprRend.Dispose();
-            e.instance.audioSrc.Dispose();
-            e.instance.Destroy();
+            string zipPath = directoryPath;
+            directoryPath = Path.GetFileNameWithoutExtension(directoryPath);
+            ZipFile.ExtractToDirectory(zipPath, directoryPath);
         }
 
-        entityAwake = null;
-        entityPulse = null;
-        entityTick = null;
-        entityFixedTick = null;
+        EntityType data = new(this, directoryPath);
+        types.Add(data);
     }
 }

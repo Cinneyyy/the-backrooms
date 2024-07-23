@@ -19,4 +19,5 @@ public readonly record struct EntityTags
     public bool manageSprRendPos { get; init; }
     public bool manageAudioVol { get; init; }
     public bool manageAudioPan { get; init; }
+    public float audioPadding { get; init; }
 }

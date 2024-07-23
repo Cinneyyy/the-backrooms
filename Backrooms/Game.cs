@@ -101,6 +101,7 @@ public class Game
 
         entityManager = new(mpManager, window, map, camera, this, renderer);
         entityManager.LoadEntities("Entities");
+        entityManager.types[0].Instantiate();
     }
 
 
@@ -172,6 +173,7 @@ public class Game
                 Pos: {camera.pos.Floor():$x, $y}
                 Map size: {map.size}
                 Seed: {generator.seed}
+                Entities: {entityManager.instances.Count}
                 """;
 
         if(input.KeyDown(Keys.F1))
@@ -205,6 +207,9 @@ public class Game
             Thread.Sleep(1);
             mpManager.SendClientReq(Request.GenerateMap);
         }
+
+        if(input.KeyDown(Keys.L))
+            map.textures[(int)Tile.Pillar] = map.textures[(int)Tile.Wall] = map.ceilTex = map.floorTex = new("lukas", false);
     }
 
     private void SetUpMpManager()

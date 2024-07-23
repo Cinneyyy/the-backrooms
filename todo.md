@@ -19,7 +19,6 @@
     - Also, there is probably so much possible optimization inside the Renderer
 1. Graffitis
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
-1. Audio Panning
 
 ---
 ## Bugfixes
@@ -27,7 +26,7 @@
 1. Implement collision for WorldObjects
 1. Multiplayer
     - Client disconnect handling
-1. Ceiling/floor rendering is **extremely** slow
+1. Ceiling/floor rendering is <span style="color: red;">**extremely**</span> slow
 1. Fix pathfinding bugs
     - Dijkstra's shortest path
     - Pathfinding shortcuts

@@ -12,6 +12,7 @@ public static class AudioRolloff
     public static float GetVolumeSqr(float dist, float minDist)
         => Utils.Sqr(GetVolume(dist, minDist));
 
+    /// <summary>Applies a linear falloff between <paramref name="begin"/> and <paramref name="end"/>, such that no sound can be heard when <paramref name="dist"/> > <paramref name="end"/></summary>
     public static float ForcedFalloff(float dist, float volume, float begin, float end)
         => volume * Utils.Clamp01((dist - end) / (begin - end));
 }

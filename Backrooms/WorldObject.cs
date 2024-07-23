@@ -37,6 +37,7 @@ public class WorldObject
         this.win = win;
         this.cam = cam;
         this.input = input;
+        this.onInteract = onInteract;
 
         sprRend = new(pos, size, graphic);
         rend.sprites.Add(sprRend);

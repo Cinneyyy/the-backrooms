@@ -3,7 +3,7 @@ using Backrooms;
 using Backrooms.Debugging;
 using Backrooms.Entities;
 
-public class Behaviour(Entity entity, Game game, SpriteRenderer sprRend, AudioSource audioSrc) : EntityBase(entity, game, sprRend, audioSrc)
+public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(manager, type)
 {
     public override void Awake()
     {
@@ -15,8 +15,8 @@ public class Behaviour(Entity entity, Game game, SpriteRenderer sprRend, AudioSo
     public override void GenerateMap(Vec2f center)
         => pos = center;
 
-    public override void Pulse()
-        => entity.managedPathfinding.FindPath(pos, playerPos);
+    public override void Tick(float dt)
+        => Logger.Out(Logger.Log.Entity, pos);
 
     public override void Destroy() { }
 }

@@ -98,13 +98,13 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 if(args.Length == 1)
                 {
                     Cmd cmd = cmds.Where(c => c.identifiers.Contains(args[0].ToLower())).First();
-                    Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                    Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", id => id.ToUpper())}");
                 }
                 else if(args.Length == 0)
                 {
                     Out(Log.DevCmd, "-- List of commands --");
                     foreach(Cmd cmd in cmds)
-                        Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", i => i.ToUpper())}");
+                        Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", id => id.ToUpper())}");
                 }
             },
             "HELP [<command>]", [0, 1]),
@@ -352,9 +352,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
         sb.Append(message.ToString());
         Console.WriteLine(sb.ToString());
-
-        Console.ForegroundColor = ConsoleColor.Gray;
-        Console.BackgroundColor = ConsoleColor.Black;
+        Console.ResetColor();
     }
 
     #region P/Invoke Interfacing

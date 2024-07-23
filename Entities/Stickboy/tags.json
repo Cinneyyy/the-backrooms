@@ -13,5 +13,6 @@
     "audio": "audio.mp3",
     "manageSprRendPos": true,
     "manageAudioVol": true,
-    "manageAudioPan": true
+    "manageAudioPan": true,
+    "audioPadding": 1.0
 }
