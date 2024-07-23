@@ -15,8 +15,5 @@ public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(
     public override void GenerateMap(Vec2f center)
         => pos = center;
 
-    public override void Tick(float dt)
-        => Logger.Out(Logger.Log.Entity, pos);
-
     public override void Destroy() { }
 }
