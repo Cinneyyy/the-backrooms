@@ -1,5 +1,4 @@
-﻿using Backrooms.InputSystem;
-using Backrooms.ItemManagement;
+﻿using Backrooms.ItemManagement;
 
 namespace Backrooms;
 

@@ -47,4 +47,7 @@ public static class RNG
 
     public static T SelectRandom<T>(this IEnumerable<T> collection)
         => collection.ElementAt(Range(collection.Count()));
+
+    public static bool Chance(float chance = .5f)
+        => value <= chance;
 }

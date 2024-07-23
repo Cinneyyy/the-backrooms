@@ -8,7 +8,6 @@ using System.Text;
 using System.Windows.Forms;
 using Backrooms.Coroutines;
 using Backrooms.Gui;
-using Backrooms.InputSystem;
 using NAudio.Wave;
 
 namespace Backrooms;
@@ -285,4 +284,6 @@ public static class Utils
         => negOneCond ? -1 : posOneCond ? 1 : 0;
     public static int ToTernary(Input input, Keys negKey, Keys posKey)
         => ToTernary(input.KeyHelt(negKey), input.KeyHelt(posKey));
+    public static int ToTernary(Input input, InputAction negAction, InputAction posAction)
+        => ToTernary(input.KeyHelt(negAction), input.KeyHelt(posAction));
 }

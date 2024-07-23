@@ -10,8 +10,8 @@ public abstract class Item(string name, string desc, bool consumeOnUse, UnsafeGr
     public UnsafeGraphic graphic = graphic;
 
     public static readonly Dictionary<string, Item> items = new() {
-        ["vodka"] = new Consumable("Vodka", "Makes the time down here bearable", -10f, -10f, -5f, -15f, null),
-        ["oli"] = new Consumable("Oli", "Schläft gleich ein", -10f, -10f, -5f, -15f, null)
+        ["vodka"] = new Consumable("Vodka", "Makes the time down here bearable", -.1f, -.1f, -.05f, -.15f, null),
+        ["oli"] = new Consumable("Oli", "Schläft gleich ein", -.1f, -.1f, -.05f, -.15f, null)
     };
 
 

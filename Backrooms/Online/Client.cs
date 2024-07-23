@@ -8,7 +8,7 @@ namespace Backrooms.Online;
 public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mpManager)
     where TSState : Packet<TSState>, new()
     where TCState : Packet<TCState>, new()
-    where TReq : Enum
+    where TReq : struct, Enum
 {
     public delegate void ReceivePacketHandler(PacketType type, byte[] data);
 

@@ -1,6 +1,4 @@
-﻿using Backrooms.InputSystem;
-
-namespace Backrooms;
+﻿namespace Backrooms;
 
 public class CameraController
 {
@@ -52,8 +50,8 @@ public class CameraController
             return;
 
         Vec2f move =
-            (camera.right * (input.KeyHelt(InputAction.MoveLeft) ? 1f : input.KeyHelt(InputAction.MoveRight) ? -1f : 0f)
-            + camera.forward * (input.KeyHelt(InputAction.MoveBackward) ? -1f : input.KeyHelt(InputAction.MoveForward) ? 1f : 0f))
+            (camera.right * Utils.ToTernary(input, InputAction.MoveRight, InputAction.MoveLeft))
+            + (camera.forward * Utils.ToTernary(input, InputAction.MoveBackward, InputAction.MoveForward))
             .normalized;
 
         float moveSpeed = input.KeyHelt(InputAction.Sprint) ? sprintSpeed : walkSpeed;

@@ -8,7 +8,6 @@ using System.Threading;
 using System.Linq;
 using Backrooms.Gui;
 using Backrooms.ItemManagement;
-using Backrooms.InputSystem;
 using Backrooms.Entities;
 using Backrooms.Online;
 using Backrooms.Debugging;
@@ -101,7 +100,8 @@ public class Game
 
         entityManager = new(mpManager, window, map, camera, this, renderer);
         entityManager.LoadEntities("Entities");
-        entityManager.types[0].Instantiate();
+        foreach(EntityType type in entityManager.types)
+            type.Instantiate();
     }
 
 
@@ -138,28 +138,6 @@ public class Game
         Vec2f center = camPos + Vec2f.half;
         cameraController.pos = center;
         generateMap?.Invoke(center);
-
-        if(worldObjects is not [])
-        {
-            foreach(ItemWorldObject w in worldObjects)
-            {
-                renderer.sprites.Remove(w.sprRend);
-                renderer.sprites.Remove(w.itemRend);
-            }
-
-            worldObjects.Clear();
-        }
-        UnsafeGraphic table = new("table");
-        HashSet<Vec2i> positions = [];
-        for(int i = 0; i < 1000; i++)
-        {
-            Vec2i pos = new(RNG.Range(map.size.x), RNG.Range(map.size.y));
-            if(positions.Contains(pos))
-                continue;
-
-            positions.Add(pos);
-            worldObjects.Add(new(renderer, window, cameraController, input, inventory, pos + Vec2f.half, table, Item.items["vodka"]));
-        }
     }
 
 
@@ -174,6 +152,7 @@ public class Game
                 Map size: {map.size}
                 Seed: {generator.seed}
                 Entities: {entityManager.instances.Count}
+                Sprites: {renderer.sprites.Count}
                 """;
 
         if(input.KeyDown(Keys.F1))
@@ -209,7 +188,22 @@ public class Game
         }
 
         if(input.KeyDown(Keys.L))
+        {
             map.textures[(int)Tile.Pillar] = map.textures[(int)Tile.Wall] = map.ceilTex = map.floorTex = new("lukas", false);
+
+            UnsafeGraphic table = new("table");
+            HashSet<Vec2i> positions = [];
+
+            for(int i = 0; i < 1000; i++)
+            {
+                Vec2i pos = new(RNG.Range(map.size.x), RNG.Range(map.size.y));
+                if(positions.Contains(pos))
+                    continue;
+
+                positions.Add(pos);
+                worldObjects.Add(new(renderer, window, cameraController, input, inventory, pos + Vec2f.half, table, Item.items["vodka"]));
+            }
+        }
     }
 
     private void SetUpMpManager()

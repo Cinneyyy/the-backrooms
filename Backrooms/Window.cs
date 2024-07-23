@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using System.Drawing.Drawing2D;
 using Backrooms.Coroutines;
 using System.Collections;
-using Backrooms.InputSystem;
 using Backrooms.Debugging;
 
 namespace Backrooms;
@@ -184,6 +183,10 @@ public class Window : Form
                 Image lastImg = pictureBox.Image;
                 pictureBox.Image = renderResult;
                 lastImg.Dispose();
+            }
+            catch(InvalidOperationException exc)
+            {
+                Out(Log.Log, $"InvlidOperationException in main UpdateLoop (Window.cs) ;; {exc.Message}");
             }
             catch(Exception exc)
             {

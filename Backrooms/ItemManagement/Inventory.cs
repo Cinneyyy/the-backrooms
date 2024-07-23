@@ -2,7 +2,6 @@
 using System.Drawing;
 using System.Windows.Forms;
 using Backrooms.Gui;
-using Backrooms.InputSystem;
 
 namespace Backrooms.ItemManagement;
 

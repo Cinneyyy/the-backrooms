@@ -11,16 +11,16 @@ namespace Backrooms.Entities;
 
 public static class CsCompiler
 {
+    public static readonly IEnumerable<MetadataReference> referenceAssemblies = AppDomain.CurrentDomain.GetAssemblies().Select(asm => MetadataReference.CreateFromFile(asm.Location));
+
+
     public static Assembly BuildAssembly(string[] sourceFiles, string assemblyName)
     {
         CompilationOptions options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
         Compilation compilation = CSharpCompilation.Create(assemblyName)
             .WithOptions(options)
-            .AddReferences(
-                AppDomain.CurrentDomain.GetAssemblies()
-                .Where(asm => !asm.IsDynamic)
-                .Select(asm => MetadataReference.CreateFromFile(asm.Location)))
+            .AddReferences(referenceAssemblies)
             .AddSyntaxTrees(sourceFiles.Select(f => CSharpSyntaxTree.ParseText(f)));
 
         using MemoryStream stream = new();

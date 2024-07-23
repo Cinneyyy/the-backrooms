@@ -1,15 +1,15 @@
 {
-    "instance": "Stickboy.Behaviour",
+    "instance": "Hannes.Behaviour",
     "size": {
-        "x": 0.5,
-        "y": 0.8
+        "x": 0.71,
+        "y": 0.9
     },
-    "elevation": -0.1,
+    "elevation": -0.05,
     "managedPathfinding": {
         "algorithmName": "Backrooms.Pathfinding.BreadthFirstSearch",
-        "speed": 0.0
+        "speed": 10.0
     },
-    "sprite": "sprite.png",
+    "sprite": "hannes.png",
     "audio": "audio.mp3",
     "manageSprRendPos": true,
     "manageAudioVol": true,

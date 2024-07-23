@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Windows.Forms;
 
-namespace Backrooms.InputSystem;
+namespace Backrooms;
 
 public class KeyMap(Input input) : IEnumerable
 {

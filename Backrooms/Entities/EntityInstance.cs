@@ -12,7 +12,7 @@ public abstract class EntityInstance
     public readonly EntityTags tags;
     public readonly SpriteRenderer sprRend;
     public readonly AudioSource audioSrc;
-    public float audioMinDist = .65f, absFalloffBegin = 7.5f, absFalloffEnd = 10f;
+    public float audioMinDist = .65f, absFalloffBegin = 10f, absFalloffEnd = 15f;
     public Path currPath = new(pointArr: []);
 
 
@@ -47,7 +47,7 @@ public abstract class EntityInstance
 
         if(tags.manageSprRendPos) manager.window.tick += dt => sprRend.pos = pos;
         if(tags.manageAudioVol) manager.window.tick += dt => audioSrc.volume = GetVolume(playerDist);
-        if(tags.manageAudioPan) manager.window.tick += dt => audioSrc.panning = Vec2f.Pan(pos, playerPos, playerAngle);
+        if(tags.manageAudioPan) manager.window.tick += dt => audioSrc.panning = Vec2f.Pan(pos, playerPos, playerAngle) * .875f;
 
         if(type.pathfinding is not null)
         {

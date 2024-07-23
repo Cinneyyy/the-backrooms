@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Backrooms.InputSystem;
+namespace Backrooms;
 
 public partial class Input
 {
@@ -22,6 +22,7 @@ public partial class Input
     public Vec2f normMousePos { get; private set; }
     public Vec2f normMouseDelta { get; private set; }
     public bool cursorOffScreen => mousePos.x < screenLoc.x || mousePos.y < screenLoc.y || mousePos.x >= screenLoc.x + screenRes.x || mousePos.y >= screenLoc.y + screenRes.y;
+    public bool anyKey => keyState.Count > 0;
 
 
     public Input(Renderer rend, Vec2i screenLoc, bool lockCursor)
@@ -39,7 +40,7 @@ public partial class Input
             [InputAction.MoveLeft] = Keys.A,
             [InputAction.MoveRight] = Keys.D,
             [InputAction.Sprint] = Keys.ShiftKey,
-            [InputAction.Interact] = Keys.J
+            [InputAction.Interact] = Keys.E
         };
     }
 

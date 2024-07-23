@@ -1,4 +1,4 @@
-﻿namespace Backrooms.InputSystem;
+﻿namespace Backrooms;
 
 public enum InputAction : byte
 {

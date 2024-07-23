@@ -3,7 +3,7 @@ using Backrooms;
 using Backrooms.Debugging;
 using Backrooms.Entities;
 
-namespace Stickboy;
+namespace Hannes;
 
 public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(manager, type)
 {

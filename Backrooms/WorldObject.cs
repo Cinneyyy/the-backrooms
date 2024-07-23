@@ -1,5 +1,4 @@
 ﻿using System;
-using Backrooms.InputSystem;
 
 namespace Backrooms;
 

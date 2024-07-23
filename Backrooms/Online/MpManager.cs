@@ -7,7 +7,7 @@ namespace Backrooms.Online;
 public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
     where TSState : Packet<TSState>, new()
     where TCState : Packet<TCState>, new()
-    where TReq : Enum
+    where TReq : struct, Enum
 {
     public delegate void RequestHandler(TReq req);
     public delegate void ClientEvent(ushort id);
