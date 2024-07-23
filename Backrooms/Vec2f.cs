@@ -104,6 +104,19 @@ public record struct Vec2f(float x, float y) : IEnumerable<float>, IVector<Vec2f
     public static float NormalizedDot(Vec2f a, Vec2f b)
         => Dot(a.normalized, b.normalized);
 
+    public static float Pan(Vec2f src, Vec2f listener, float listenerAngle)
+    {
+        Vec2f listenerDir = FromAngle(listenerAngle - MathF.PI/2f);
+        Vec2f listenerToSrc = src - listener;
+        float dist = listenerToSrc.length;
+
+        if(dist == 0f)
+            return 0f;
+
+        listenerToSrc /= dist;
+        return MathF.Acos(Utils.Clamp(listenerToSrc.x * listenerDir.x + listenerToSrc.y * listenerDir.y, -1f, 1f)) * 2f / MathF.PI - 1f;
+    }
+
     public static Vec2f Lerp(Vec2f min, Vec2f max, float t)
         => new(Utils.Lerp(min.x, max.x, t), Utils.Lerp(min.y, max.y, t));
 

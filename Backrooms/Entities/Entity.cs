@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Backrooms.Pathfinding;
+using NAudio.Wave.SampleProviders;
 using IO = System.IO;
 
 namespace Backrooms.Entities;
@@ -36,9 +37,11 @@ public class Entity
             manager.rend.sprites.Add(sprRend);
 
             // Audio
-            AudioSource audioSrc = tags.audio is null ? new(Resources.audios["silence"], true) : new($"{dataPath}/{tags.audio}", true);
-            audioSrc.disposeStream = true;
-            audioSrc.volume = 0f;
+            AudioSource audioSrc = tags.audio is null ? new(Resources.audios["silence"], true) : new($"{dataPath}/{tags.audio}", true) {
+                disposeStream = true,
+                volume = 0f,
+                panStrategy = new SinPanStrategy()
+            };
 
             // Find source files
             IEnumerable<string> srcFiles = Directory.GetFiles(dataPath, "*.cs", SearchOption.AllDirectories).Select(File.ReadAllText);
@@ -65,6 +68,7 @@ public class Entity
 
             if(tags.manageSprRendPos) manager.entityTick += _ => sprRend.pos = pos;
             if(tags.manageAudioVol) manager.entityTick += _ => audioSrc.volume = instance.GetVolume(instance.playerDist);
+            if(tags.manageAudioPan) manager.entityTick += _ => audioSrc.panning = Vec2f.Pan(pos, instance.playerPos, instance.playerAngle);
 
             // Initiate pathfinding, if managed
             if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)

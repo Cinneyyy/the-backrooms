@@ -12,5 +12,6 @@
     "sprite": "sprite.png",
     "audio": "audio.mp3",
     "manageSprRendPos": true,
-    "manageAudioVol": true
+    "manageAudioVol": true,
+    "manageAudioPan": true
 }

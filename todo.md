@@ -19,6 +19,7 @@
     - Also, there is probably so much possible optimization inside the Renderer
 1. Graffitis
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
+1. Audio Panning
 
 ---
 ## Bugfixes
