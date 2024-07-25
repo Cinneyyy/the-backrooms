@@ -98,19 +98,19 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        if((drawParams & DrawParams.FloorAndCeil) != 0)
-            if(useParallelRendering)
-                Parallel.For(0, virtCenter.y, y => DrawFloorAndCeil(data, y));
-            else
-                for(int y = 0; y < virtCenter.y; y++)
-                    DrawFloorAndCeil(data, y);
-
         if((drawParams & DrawParams.Columns) != 0)
             if(useParallelRendering)
                 Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
             else
                 for(int x = 0; x < virtRes.x; x++)
                     DrawColumn(data, x);
+
+        if((drawParams & DrawParams.FloorAndCeil) != 0)
+            if(useParallelRendering)
+                Parallel.For(0, virtCenter.y, y => DrawFloorAndCeil(data, y));
+            else
+                for(int y = 0; y < virtCenter.y; y++)
+                    DrawFloorAndCeil(data, y);
 
         if((drawParams & DrawParams.Sprites) != 0)
             foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
@@ -137,27 +137,29 @@ public unsafe class Renderer
 
     private unsafe void DrawFloorAndCeil(BitmapData data, int y)
     {
-        Vec2f plane = camera.plane;
-        Vec2f dir = camera.forward;
-        Vec2f lDir = dir - plane;
-        Vec2f rDir = dir + plane;
-
         float rowDist = wallHeight * virtCenter.y / y;
 
-        Vec2f step = rowDist * (rDir - lDir) / virtRes.x;
-        Vec2f floor = camera.pos + rowDist * lDir;
+        Vec2f step = rowDist * 2 * camera.plane / virtRes.x;
+        Vec2f floor = camera.pos + rowDist * (camera.forward - camera.plane);
 
         byte* floorScan = (byte*)data.Scan0 + data.Stride*(y + virtCenter.y);
         byte* ceilScan = (byte*)data.Scan0 + data.Stride*(virtCenter.y - y - 1);
         for(int x = 0; x < virtRes.x; x++)
         {
+            float dist = Utils.Clamp01((camera.pos - floor).length / camera.maxRenderDist);
+
+            if(dist > depthBuf[x])
+                continue;
+
             Vec2f texFrac = floor - floor.Floor();
             Vec2i floorTex = (map.floorTex.size * texFrac * map.floorTexScale).Floor() & map.floorTex.bounds;
-            Vec2i ceilTex = (map.ceilTex.size * texFrac * map.ceilTexScale).Floor() & map.ceilTex.bounds;
+            Vec2i ceilTex = new(
+                Utils.Clamp((map.ceilTex.size.x * texFrac.x * map.ceilTexScale).Floor(), 0, map.ceilTex.wb),
+                Utils.Clamp((map.ceilTex.size.y * texFrac.y * map.ceilTexScale).Floor(), 0, map.ceilTex.hb));
 
             floor += step;
 
-            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - floor).length / camera.maxRenderDist));
+            float fog = GetDistanceFog(dist);
 
             float floorBrightness = map.floorLuminance * fog;
             byte* floorCol = map.floorTex.scan0 + map.floorTex.stride*floorTex.y + 3*floorTex.x;
@@ -165,7 +167,7 @@ public unsafe class Renderer
             *floorScan++ = (byte)(*floorCol++ * floorBrightness);
             *floorScan++ = (byte)(*floorCol * floorBrightness);
 
-            float ceilBrightness = map.floorLuminance * fog;
+            float ceilBrightness = map.ceilLuminance * fog;
             byte* ceilCol = map.ceilTex.scan0 + map.ceilTex.stride*ceilTex.y + 3*ceilTex.x;
             *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
             *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);

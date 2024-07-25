@@ -57,7 +57,7 @@ public class Game
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
             floorTexScale = .1f,
-            ceilTexScale = 3f,
+            ceilTexScale = 1f,
             floorLuminance = .5f,
             ceilLuminance = .5f
         };
@@ -111,6 +111,8 @@ public class Game
         entityManager.LoadEntities("Entities");
         //foreach(EntityType type in entityManager.types)
         //    type.Instantiate();
+
+        win.tick += dt => map.ceilTexScale += dt * Utils.ToTernary(input, Keys.Down, Keys.Up);
     }
 
 
