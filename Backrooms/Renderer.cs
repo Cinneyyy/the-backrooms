@@ -21,6 +21,7 @@ public unsafe class Renderer
     public readonly List<GuiGroup> guiGroups = [];
     public bool drawIfCursorOffscreen = true;
     public float[] depthBuf;
+    public int[] heightBuf;
     public event Action dimensionsChanged;
     public bool useParallelRendering = true;
     public float wallHeight = 1f;
@@ -85,6 +86,7 @@ public unsafe class Renderer
 
         outputLocation = (physRes - outputRes) / 2;
         depthBuf = new float[virtRes.x];
+        heightBuf = new int[virtRes.x];
 
         dimensionsChanged?.Invoke();
     }
@@ -146,9 +148,7 @@ public unsafe class Renderer
         byte* ceilScan = (byte*)data.Scan0 + data.Stride*(virtCenter.y - y - 1);
         for(int x = 0; x < virtRes.x; x++)
         {
-            float dist = Utils.Clamp01((camera.pos - floor).length / camera.maxRenderDist);
-
-            if(dist > depthBuf[x])
+            if(heightBuf[virtRes.x - x - 1] > y)
                 continue;
 
             Vec2f texFrac = floor - floor.Floor();
@@ -159,7 +159,7 @@ public unsafe class Renderer
 
             floor += step;
 
-            float fog = GetDistanceFog(dist);
+            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - floor).length / camera.maxRenderDist));
 
             float floorBrightness = map.floorLuminance * fog;
             byte* floorCol = map.floorTex.scan0 + map.floorTex.stride*floorTex.y + 3*floorTex.x;
@@ -209,7 +209,7 @@ public unsafe class Renderer
                 vert = false;
             }
 
-            if(steps++ >= max_steps) // this instead of map.IsOutOfBounds(...), because I want rendering outside of map to be cool
+            if(steps++ >= max_steps) // this instead of !map.InBounds(...), because I want rendering outside of map to be cool
                 return;
 
             else if(Map.IsCollidingTile(map[mPos]))
@@ -220,13 +220,17 @@ public unsafe class Renderer
         float normDist = Utils.Clamp01(dist / camera.maxRenderDist);
         Vec2f hitPos = camera.pos + dir * dist;
 
-        bool drawWall = depthBuf[x] > normDist && dist < camera.maxRenderDist && dist > 0f;
+        if(depthBuf[x] < normDist || dist > camera.maxRenderDist || dist < 0f)
+            return;
+
         depthBuf[x] = normDist;
 
         float height = wallHeight * virtRes.y / dist;
         int halfHeight = (height / 2f).Floor();
         int y0 = Utils.Clamp(virtCenter.y - halfHeight, 0, virtRes.y-1),
             y1 = Utils.Clamp(virtCenter.y + halfHeight, 0, virtRes.y-1);
+
+        heightBuf[x] = halfHeight;
 
         float brightness = (vert ? .75f : .5f) * GetDistanceFog(normDist);
         //const float light_spacing = 20f, light_strength = 2f;
@@ -245,65 +249,18 @@ public unsafe class Renderer
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
 
-        if(drawWall)
-            for(int y = y0; y <= y1; y++)
-            {
-                int texY = (int)texPos & texMask;
-                texPos += texStep;
-                byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
+        for(int y = y0; y <= y1; y++)
+        {
+            int texY = (int)texPos & texMask;
+            texPos += texStep;
+            byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
 
-                *scan = (byte)(*texScan * brightness);
-                *(scan+1) = (byte)(*(texScan+1) * brightness);
-                *(scan+2) = (byte)(*(texScan+2) * brightness);
+            *scan = (byte)(*texScan * brightness);
+            *(scan+1) = (byte)(*(texScan+1) * brightness);
+            *(scan+2) = (byte)(*(texScan+2) * brightness);
 
-                scan += data.Stride;
-            }
-        //else
-        //    scan += (y1-y0+1)*data.Stride;
-
-        //Vec2f floorWall;
-        //if(vert)
-        //    floorWall = new(dir.x > 0 ? mPos.x : mPos.x + 1, mPos.y + wallX);
-        //else
-        //    floorWall = new(mPos.x + wallX, dir.y > 0 ? mPos.y : mPos.y + 1f);
-
-        //float distWall = dist / wallHeight, distPlayer = 0f, currDist;
-        //byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1-1)*data.Stride + x*3;
-
-        //for(int y = y1+1; y <= virtRes.y; y++)
-        //{
-        //    currDist = virtRes.y / (2f * y - virtRes.y);
-        //    float weight = (currDist - distPlayer) / (distWall - distPlayer);
-
-        //    Vec2f currFloor = weight * floorWall + (Vec2f.one - new Vec2f(weight)) * camera.pos;
-
-        //    Vec2i floorTex = (currFloor * map.floorTex.size * map.floorTexScale).Round() % map.floorTex.size;
-        //    Vec2i ceilTex = (currFloor * map.ceilTex.size * map.ceilTexScale).Round() % map.ceilTex.size;
-
-        //    (byte r, byte g, byte b) floorCol = map.floorTex.GetPixelRgb(floorTex.x, floorTex.y);
-        //    (byte r, byte g, byte b) ceilCol = map.ceilTex.GetPixelRgb(ceilTex.x, ceilTex.y);
-
-        //    float fog = GetDistanceFog(Utils.Clamp01((camera.pos - currFloor).length / camera.maxRenderDist));
-        //    float floorBrightness = map.floorLuminance * fog;
-        //    float ceilBrightness = map.ceilLuminance * fog;
-
-        //    if(y != virtRes.y)
-        //    {
-        //        *scan = (byte)(floorCol.b * floorBrightness);
-        //        *(scan+1) = (byte)(floorCol.g * floorBrightness);
-        //        *(scan+2) = (byte)(floorCol.r * floorBrightness);
-        //    }
-
-        //    if(*ceilScan == 0)
-        //    {
-        //        *ceilScan = (byte)(ceilCol.b * ceilBrightness);
-        //        *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
-        //        *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
-        //    }
-
-        //    scan += data.Stride;
-        //    ceilScan -= data.Stride;
-        //}
+            scan += data.Stride;
+        }
     }
 
     private void DrawSprite(BitmapData data, SpriteRenderer spr)
