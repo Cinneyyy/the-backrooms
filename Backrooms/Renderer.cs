@@ -153,6 +153,7 @@ public unsafe class Renderer
                 floor += step;
                 floorScan += 3;
                 ceilScan += 3;
+                continue;
             }
 
             Vec2f texFrac = floor - floor.Floor();
