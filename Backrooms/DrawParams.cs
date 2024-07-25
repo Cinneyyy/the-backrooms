@@ -9,5 +9,6 @@ public enum DrawParams : byte
     Sprites = 2,
     Gui = 4,
     PostEffects = 8,
+    FloorAndCeil = 16,
     All = 255
 }

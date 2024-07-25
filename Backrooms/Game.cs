@@ -109,8 +109,8 @@ public class Game
 
         entityManager = new(mpManager, window, map, camera, this, rend);
         entityManager.LoadEntities("Entities");
-        foreach(EntityType type in entityManager.types)
-            type.Instantiate();
+        //foreach(EntityType type in entityManager.types)
+        //    type.Instantiate();
     }
 
 

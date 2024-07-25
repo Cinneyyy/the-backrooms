@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.PostProcessing;
+using Microsoft.VisualBasic.Logging;
 
 namespace Backrooms;
 
@@ -87,7 +88,7 @@ public unsafe class Renderer
 
         dimensionsChanged?.Invoke();
     }
-    static readonly object syncLock = new();
+
     public unsafe Bitmap Draw(DrawParams drawParams = DrawParams.All)
     {
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
@@ -97,12 +98,19 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
+        if((drawParams & DrawParams.FloorAndCeil) != 0)
+            if(useParallelRendering)
+                Parallel.For(0, virtCenter.y, y => DrawFloorAndCeil(data, y));
+            else
+                for(int y = 0; y < virtCenter.y; y++)
+                    DrawFloorAndCeil(data, y);
+
         if((drawParams & DrawParams.Columns) != 0)
             if(useParallelRendering)
                 Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
             else
                 for(int x = 0; x < virtRes.x; x++)
-                DrawColumn(data, x);
+                    DrawColumn(data, x);
 
         if((drawParams & DrawParams.Sprites) != 0)
             foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
@@ -125,6 +133,44 @@ public unsafe class Renderer
                     group.DrawSafeElements(g);
 
         return bitmap;
+    }
+
+    private unsafe void DrawFloorAndCeil(BitmapData data, int y)
+    {
+        Vec2f plane = camera.plane;
+        Vec2f dir = camera.forward;
+        Vec2f lDir = dir - plane;
+        Vec2f rDir = dir + plane;
+
+        float rowDist = wallHeight * virtCenter.y / y;
+
+        Vec2f step = rowDist * (rDir - lDir) / virtRes.x;
+        Vec2f floor = camera.pos + rowDist * lDir;
+
+        byte* floorScan = (byte*)data.Scan0 + data.Stride*(y + virtCenter.y);
+        byte* ceilScan = (byte*)data.Scan0 + data.Stride*(virtCenter.y - y - 1);
+        for(int x = 0; x < virtRes.x; x++)
+        {
+            Vec2f texFrac = floor - floor.Floor();
+            Vec2i floorTex = (map.floorTex.size * texFrac * map.floorTexScale).Floor() & map.floorTex.bounds;
+            Vec2i ceilTex = (map.ceilTex.size * texFrac * map.ceilTexScale).Floor() & map.ceilTex.bounds;
+
+            floor += step;
+
+            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - floor).length / camera.maxRenderDist));
+
+            float floorBrightness = map.floorLuminance * fog;
+            byte* floorCol = map.floorTex.scan0 + map.floorTex.stride*floorTex.y + 3*floorTex.x;
+            *floorScan++ = (byte)(*floorCol++ * floorBrightness);
+            *floorScan++ = (byte)(*floorCol++ * floorBrightness);
+            *floorScan++ = (byte)(*floorCol * floorBrightness);
+
+            float ceilBrightness = map.floorLuminance * fog;
+            byte* ceilCol = map.ceilTex.scan0 + map.ceilTex.stride*ceilTex.y + 3*ceilTex.x;
+            *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
+            *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
+            *ceilScan++ = (byte)(*ceilCol * ceilBrightness);
+        }
     }
 
     private void DrawColumn(BitmapData data, int x)
@@ -210,52 +256,52 @@ public unsafe class Renderer
 
                 scan += data.Stride;
             }
-        else
-            scan += (y1-y0+1)*data.Stride;
+        //else
+        //    scan += (y1-y0+1)*data.Stride;
 
-        Vec2f floorWall;
-        if(vert)
-            floorWall = new(dir.x > 0 ? mPos.x : mPos.x + 1, mPos.y + wallX);
-        else
-            floorWall = new(mPos.x + wallX, dir.y > 0 ? mPos.y : mPos.y + 1f);
+        //Vec2f floorWall;
+        //if(vert)
+        //    floorWall = new(dir.x > 0 ? mPos.x : mPos.x + 1, mPos.y + wallX);
+        //else
+        //    floorWall = new(mPos.x + wallX, dir.y > 0 ? mPos.y : mPos.y + 1f);
 
-        float distWall = dist / wallHeight, distPlayer = 0f, currDist;
-        byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1-1)*data.Stride + x*3;
+        //float distWall = dist / wallHeight, distPlayer = 0f, currDist;
+        //byte* ceilScan = (byte*)data.Scan0 + (virtRes.y-y1-1)*data.Stride + x*3;
 
-        for(int y = y1+1; y <= virtRes.y; y++)
-        {
-            currDist = virtRes.y / (2f * y - virtRes.y);
-            float weight = (currDist - distPlayer) / (distWall - distPlayer);
+        //for(int y = y1+1; y <= virtRes.y; y++)
+        //{
+        //    currDist = virtRes.y / (2f * y - virtRes.y);
+        //    float weight = (currDist - distPlayer) / (distWall - distPlayer);
 
-            Vec2f currFloor = weight * floorWall + (Vec2f.one - new Vec2f(weight)) * camera.pos;
+        //    Vec2f currFloor = weight * floorWall + (Vec2f.one - new Vec2f(weight)) * camera.pos;
 
-            Vec2i floorTex = (currFloor * map.floorTex.size * map.floorTexScale).Round() % map.floorTex.size;
-            Vec2i ceilTex = (currFloor * map.ceilTex.size * map.ceilTexScale).Round() % map.ceilTex.size;
+        //    Vec2i floorTex = (currFloor * map.floorTex.size * map.floorTexScale).Round() % map.floorTex.size;
+        //    Vec2i ceilTex = (currFloor * map.ceilTex.size * map.ceilTexScale).Round() % map.ceilTex.size;
 
-            (byte r, byte g, byte b) floorCol = map.floorTex.GetPixelRgb(floorTex.x, floorTex.y);
-            (byte r, byte g, byte b) ceilCol = map.ceilTex.GetPixelRgb(ceilTex.x, ceilTex.y);
+        //    (byte r, byte g, byte b) floorCol = map.floorTex.GetPixelRgb(floorTex.x, floorTex.y);
+        //    (byte r, byte g, byte b) ceilCol = map.ceilTex.GetPixelRgb(ceilTex.x, ceilTex.y);
 
-            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - currFloor).length / camera.maxRenderDist));
-            float floorBrightness = map.floorLuminance * fog;
-            float ceilBrightness = map.ceilLuminance * fog;
+        //    float fog = GetDistanceFog(Utils.Clamp01((camera.pos - currFloor).length / camera.maxRenderDist));
+        //    float floorBrightness = map.floorLuminance * fog;
+        //    float ceilBrightness = map.ceilLuminance * fog;
 
-            if(y != virtRes.y)
-            {
-                *scan = (byte)(floorCol.b * floorBrightness);
-                *(scan+1) = (byte)(floorCol.g * floorBrightness);
-                *(scan+2) = (byte)(floorCol.r * floorBrightness);
-            }
+        //    if(y != virtRes.y)
+        //    {
+        //        *scan = (byte)(floorCol.b * floorBrightness);
+        //        *(scan+1) = (byte)(floorCol.g * floorBrightness);
+        //        *(scan+2) = (byte)(floorCol.r * floorBrightness);
+        //    }
 
-            if(*ceilScan == 0)
-            {
-                *ceilScan = (byte)(ceilCol.b * ceilBrightness);
-                *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
-                *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
-            }
+        //    if(*ceilScan == 0)
+        //    {
+        //        *ceilScan = (byte)(ceilCol.b * ceilBrightness);
+        //        *(ceilScan+1) = (byte)(ceilCol.g * ceilBrightness);
+        //        *(ceilScan+2) = (byte)(ceilCol.r * ceilBrightness);
+        //    }
 
-            scan += data.Stride;
-            ceilScan -= data.Stride;
-        }
+        //    scan += data.Stride;
+        //    ceilScan -= data.Stride;
+        //}
     }
 
     private void DrawSprite(BitmapData data, SpriteRenderer spr)
