@@ -8,5 +8,8 @@ public class Ref<T>(T value) where T : struct
     public Ref() : this(default(T)) { }
 
 
+    public override string ToString() => $"(Reference to:) {value}";
+
+
     public static implicit operator T(Ref<T> reference) => reference.value;
 }
