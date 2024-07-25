@@ -148,8 +148,12 @@ public unsafe class Renderer
         byte* ceilScan = (byte*)data.Scan0 + data.Stride*(virtCenter.y - y - 1);
         for(int x = 0; x < virtRes.x; x++)
         {
-            if(heightBuf[virtRes.x - x - 1] > y)
-                continue;
+            if(heightBuf[x] < y)
+            {
+                floor += step;
+                floorScan += 3;
+                ceilScan += 3;
+            }
 
             Vec2f texFrac = floor - floor.Floor();
             Vec2i floorTex = (map.floorTex.size * texFrac * map.floorTexScale).Floor() & map.floorTex.bounds;
