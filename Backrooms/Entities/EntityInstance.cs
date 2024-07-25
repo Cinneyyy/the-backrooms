@@ -15,10 +15,13 @@ public abstract class EntityInstance
     public float audioMinDist = .65f, absFalloffBegin = 10f, absFalloffEnd = 15f;
     public Path currPath = new(pointArr: []);
 
+    private float damageCooldown;
+
 
     public Vec2f playerPos => manager.camera.pos;
     public float playerAngle => manager.camera.angle;
     public float playerDist => (playerPos - pos).length;
+    public PlayerStats playerStats => manager.game.playerStats;
     public bool linOfSightToPlayer => manager.map.LineOfSight(pos, playerPos);
 
 
@@ -57,6 +60,17 @@ public abstract class EntityInstance
                     pos += (currPath.GetNextPoint(pos, .5f - tags.size.x/2f) - pos).normalized * tags.managedPathfinding.Value.speed * dt;
             };
         }
+
+        if(type.tags.managedContactDamage is EntityTags.ManagedContactDamage mcd)
+            manager.window.tick += dt => {
+                damageCooldown -= dt;
+
+                if(playerDist < mcd.maxDist && damageCooldown < 0f)
+                {
+                    damageCooldown = mcd.cooldown;
+                    playerStats.health -= mcd.damage;
+                }
+            };
 
         if(manager.mpManager.isConnected)
             Awake();

@@ -7,9 +7,9 @@ namespace Backrooms.ItemManagement;
 
 public class Inventory
 {
+    public readonly CameraController camController;
     public readonly Vec2i size;
     public readonly InvSlot[,] slots;
-    public readonly GuiGroup gui;
     public readonly Vec2f guiBounds, guiTL, guiBR;
     public readonly float slotSize;
     public readonly Input input;
@@ -18,6 +18,7 @@ public class Inventory
     public readonly Game game;
     public ColorBlock colors;
 
+    private readonly GuiGroup gui;
     private bool _enabled;
     private InvSlot hoveredSlot;
     private readonly Vec2f invOffset = new(0f, .1f);
@@ -31,15 +32,17 @@ public class Inventory
             _enabled = value;
             gui.enabled = value;
             win.SetCursor(value);
+            camController.canMove = !value;
         }
     }
 
 
-    public Inventory(Window win, Renderer rend, Game game, Input input, Vec2i size, ColorBlock slotColors, float guiScale = .75f)
+    public Inventory(Window win, Renderer rend, Game game, Input input, CameraController camController, Vec2i size, ColorBlock slotColors, float guiScale = .75f)
     {
         this.input = input;
         this.game = game;
         this.win = win;
+        this.camController = camController;
         win.tick += Tick;
 
         this.size = size;

@@ -29,7 +29,7 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
 
     public void LoadEntity(string directoryPath)
     {
-        if(directoryPath.EndsWith("*.zip", StringComparison.OrdinalIgnoreCase))
+        if(Path.GetExtension(directoryPath).Equals(".zip", StringComparison.OrdinalIgnoreCase))
         {
             string zipPath = directoryPath;
             directoryPath = Path.GetFileNameWithoutExtension(directoryPath);

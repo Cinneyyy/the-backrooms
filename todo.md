@@ -20,9 +20,13 @@
 1. Graffitis
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
 1. Make post process effect type attribute based
+1. Lighting
+1. Redo GUI safe/unsafe system to allow ElementSafety.Neither to be enabled/disabled
 
 ---
 ## Bugfixes
+1. Audio is choppy when mutliple sounds are playing at once
+    - Probably has _nothing_ to do with the fact that I create a new Device for every AudioSource
 1. Fix player sprites not showing up via adding logic to the welcome handler
 1. Implement collision for WorldObjects
 1. Multiplayer
@@ -33,3 +37,4 @@
     - Pathfinding shortcuts
 1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio
     - May have something to do with screenOffset
+1. Audio muffled on 2nd entity instance

@@ -7,7 +7,7 @@ public class Logger(Log log, Color32 color, bool enabled = true)
 {
     public enum Log
     {
-        Log = 0,
+        Info = 0,
         DevCmd = 1,
         GameEvent = 2,
         Client = 3,
@@ -27,7 +27,7 @@ public class Logger(Log log, Color32 color, bool enabled = true)
 
     /// <summary>Indices are values of the <see cref="Log"/> enum</summary>
     public static readonly Logger[] loggers = [
-        new(Log.Log, new(0xbfbfbf)),
+        new(Log.Info, new(0xbfbfbf)),
         new(Log.DevCmd, new(0x5465ff)),
         new(Log.GameEvent, new(0xd84dff)),
         new(Log.Client, new(0xf8ff3b)),

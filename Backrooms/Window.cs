@@ -186,11 +186,11 @@ public class Window : Form
             }
             catch(InvalidOperationException exc)
             {
-                Out(Log.Log, $"InvlidOperationException in main UpdateLoop (Window.cs) ;; {exc.Message}");
+                Out(Log.Info, $"InvlidOperationException in main UpdateLoop (Window.cs) ;; {exc.Message}");
             }
             catch(Exception exc)
             {
-                OutErr(Log.Log, exc, $"{exc.GetType()} in main UpdateLoop (Window.cs) ;; $e");
+                OutErr(Log.Info, exc, $"{exc.GetType()} in main UpdateLoop (Window.cs) ;; $e");
             }
     }
 

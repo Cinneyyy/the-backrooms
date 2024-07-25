@@ -1,14 +1,27 @@
-﻿namespace Backrooms;
+﻿using System;
 
-public class PlayerStats
+namespace Backrooms;
+
+public class PlayerStats(Game game)
 {
+    public readonly Game game = game;
+    public event Action takeDamage;
+
     private float _health = 1f, _saturation = 1f, _hydration = 1f, _sanity = 1f;
 
 
     public float health
     {
         get => _health;
-        set => _health = Utils.Clamp01(value);
+        set {
+            if(_health > value)
+                takeDamage?.Invoke();
+
+            _health = Utils.Clamp01(value);
+
+            if(_health.RoughlyZero(1e-4f))
+                game.KillPlayer();
+        }
     }
     public float saturation
     {

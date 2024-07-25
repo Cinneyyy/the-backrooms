@@ -88,7 +88,7 @@ public unsafe class Renderer
         dimensionsChanged?.Invoke();
     }
     static readonly object syncLock = new();
-    public unsafe Bitmap Draw()
+    public unsafe Bitmap Draw(DrawParams drawParams = DrawParams.All)
     {
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
             return new(1, 1);
@@ -97,27 +97,32 @@ public unsafe class Renderer
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        if(useParallelRendering)
-            Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
-        else
-            for(int x = 0; x < virtRes.x; x++)
+        if((drawParams & DrawParams.Columns) != 0)
+            if(useParallelRendering)
+                Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
+            else
+                for(int x = 0; x < virtRes.x; x++)
                 DrawColumn(data, x);
 
-        foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
-            if(spr.enabled)
-                DrawSprite(data, spr);
+        if((drawParams & DrawParams.Sprites) != 0)
+            foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
+                if(spr.enabled)
+                    DrawSprite(data, spr);
 
-        foreach(PostProcessEffect effect in postProcessEffects)
-            effect.Apply(data);
+        if((drawParams & DrawParams.PostEffects) != 0)
+            foreach(PostProcessEffect effect in postProcessEffects)
+                effect.Apply(data);
 
-        foreach(GuiGroup group in guiGroups)
-            group.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
+        if((drawParams & DrawParams.Gui) != 0)
+            foreach(GuiGroup group in guiGroups)
+                group.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
 
         bitmap.UnlockBits(data);
 
-        using(Graphics g = Graphics.FromImage(bitmap))
-            foreach(GuiGroup group in guiGroups)
-                group.DrawSafeElements(g);
+        if((drawParams & DrawParams.Gui) != 0)
+            using(Graphics g = Graphics.FromImage(bitmap))
+                foreach(GuiGroup group in guiGroups)
+                    group.DrawSafeElements(g);
 
         return bitmap;
     }

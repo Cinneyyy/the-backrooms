@@ -4,7 +4,8 @@ using System.Drawing;
 namespace Backrooms.Gui;
 
 [GuiElement(safety = ElementSafety.Neither)]
-public class ButtonElement(string name, string text, FontFamily font, float fontSize, Color textColor, ColorBlock colors, bool fastBlend, Action onClick, Vec2f location, Vec2f size, Vec2f? anchor = null, bool hasText = true) : GuiElement(name, location, size, anchor)
+public class ButtonElement(string name, string text, FontFamily font, float fontSize, Color textColor, ColorBlock colors, bool fastBlend, Action onClick, Vec2f location, Vec2f size, Vec2f? anchor = null, bool hasText = true)
+    : GuiElement(name, location, size, anchor)
 {
     public readonly TextElement textElem = !hasText ? null : new($"{name}_text", text, font, fontSize, textColor, null, Vec2f.half, location, size, anchor ?? Vec2f.half);
     public readonly RectSolidColorElement backgroundElem = new($"{name}_background", colors.normal, fastBlend, location, size, anchor);
@@ -20,9 +21,6 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     private void Tick(float dt)
     {
-        if(!enabled)
-            return;
-
         bool isHovering = input.ContainsNormCursorCentered(location, size * group.guiToVirtRatio);
 
         if(isHovering)

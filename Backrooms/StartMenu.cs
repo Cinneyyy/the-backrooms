@@ -36,7 +36,7 @@ public class StartMenu
 
         startGui = new(rend, "sm_start", false, true) {
             new TextElement("title", "The Backrooms", font, 30f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
-            
+
             new ButtonElement("start_sp", "Singleplayer", font, 15f, Color.Yellow, colors, true, () => ClickStart(false), new(.5f, .4f), new(.4f, .1f)),
             new ButtonElement("start_mp", "Multiplayer", font, 15f, Color.Yellow, colors, true, () => ClickStart(true), new(.5f, .525f), new(.4f, .1f)),
             new ButtonElement("settings", "Settings", font, 15f, Color.Yellow, colors, true, OpenSettings, new(.5f, .65f), new(.4f, .1f)),
@@ -51,13 +51,13 @@ public class StartMenu
             new CheckboxElement("show_debug", "Show Debug Info", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, true, b => rend.FindGuiGroup("debug").enabled = b, new(.5f, .4f), new(.65f, .065f)),
             new CheckboxElement("dev_console", "Dev Console", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, false, b => DevConsole.ShowWindow(b ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide), new(.5f, .5f), new(.65f, .065f)),
             new ValueSelectorElement("resolution", (from r in resolutions select $"{r.x}x{r.y}").ToArray(), 2, Color.Yellow, font, 15f, colors, true, "up_arrow", .8f, i => rend.UpdateResolution(resolutions[i], rend.physRes), new(.5f, .6f), new(.65f, .065f), Vec2f.half),
-            
+
             new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, CloseSettings, new(.5f, .85f), new(.2f, .1f)),
         };
 
         rend.guiGroups.Add(startGui);
         rend.guiGroups.Add(settingsGui);
-        
+
         backgroundSequenceCoroutine = BackgroundSequence(.75f, .5f, 7).StartCoroutine(win);
     }
 

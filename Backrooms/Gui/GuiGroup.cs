@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Backrooms.Gui;
@@ -52,6 +53,9 @@ public class GuiGroup : IEnumerable<GuiElement>
         this.rend = rend;
         input = rend.input;
         this.name = name;
+        foreach(char c in name)
+            if(char.IsUpper(c) || !(char.IsLetter(c) || c == '_'))
+                Out(Log.Info, $"The GuiGroup name {name} should be changed to snake_case, for consistency");
         this.enabled = enabled;
         this.fullScreenLocation = fullScreenLocation;
         rend.window.tick += Tick;
@@ -101,6 +105,12 @@ public class GuiGroup : IEnumerable<GuiElement>
         }
     }
 
+    public void AddMany(IEnumerable<GuiElement> elems)
+    {
+        foreach(GuiElement elem in elems)
+            Add(elem);
+    }
+
     public void Remove(GuiElement elem)
     {
         elem.group = null;
@@ -134,15 +144,24 @@ public class GuiGroup : IEnumerable<GuiElement>
     public GuiElement GetUnsafeElement(Index idx) => unsafeElements[idx];
     public T GetUnsafeElement<T>(Index idx) where T : GuiElement => GetUnsafeElement(idx) as T;
     public GuiElement GetUnsafeElement(string name) => unsafeElements.Find(e => e.name == name);
-    public T GetUnsafeElement<T>(string name) where T : GuiElement => unsafeElements.Find(e => e.name == name) as T;
+    public T GetUnsafeElement<T>(string name) where T : GuiElement => GetUnsafeElement(name) as T;
+    public GuiElement GetUnsafeElement(Regex pattern) => unsafeElements.Find(e => pattern.IsMatch(e.name));
+    public T GetUnsafeElement<T>(Regex pattern) where T : GuiElement => GetUnsafeElement(pattern) as T;
 
     public GuiElement GetSafeElement(Index idx) => safeElements[idx];
     public T GetSafeElement<T>(Index idx) where T : GuiElement => GetSafeElement(idx) as T;
     public GuiElement GetSafeElement(string name) => safeElements.Find(e => e.name == name);
-    public T GetSafeElement<T>(string name) where T : GuiElement => safeElements.Find(e => e.name == name) as T;
+    public T GetSafeElement<T>(string name) where T : GuiElement => GetSafeElement(name) as T;
+    public GuiElement GetSafeElement(Regex pattern) => safeElements.Find(e => pattern.IsMatch(e.name));
+    public T GetSafeElement<T>(Regex pattern) where T : GuiElement => GetSafeElement(pattern) as T;
 
     public GuiElement GetElement(string name) => allElements.Where(e => e.name == name).FirstOrDefault();
     public T GetElement<T>(string name) where T : GuiElement => GetElement(name) as T;
+    public GuiElement GetElement(Regex pattern) => allElements.Where(e => pattern.IsMatch(e.name)).FirstOrDefault();
+    public T GetElement<T>(Regex pattern) where T : GuiElement => GetElement(pattern) as T;
+
+    public IEnumerable<GuiElement> GetElements(Regex pattern) => allElements.Where(e => pattern.IsMatch(e.name));
+    public IEnumerable<T> GetElements<T>(Regex pattern) where T : GuiElement => allElements.Where(e => pattern.IsMatch(e.name)).Select(e => e as T);
 
     public IEnumerator<GuiElement> GetEnumerator() => allElements.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

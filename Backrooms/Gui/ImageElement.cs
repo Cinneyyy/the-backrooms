@@ -10,6 +10,12 @@ public class ImageElement(string name, UnsafeGraphic graphic, Color color, Vec2f
     public float rMul = color.R/255f, gMul = color.G/255f, bMul = color.B/255f;
 
 
+    public float mul
+    {
+        set => rMul = gMul = bMul = value;
+    }
+
+
     public ImageElement(string name, string spriteId, Color color, Vec2f location, Vec2f size, Vec2f? anchor = null) : this(name, new UnsafeGraphic(Resources.sprites[spriteId], true), color, location, size, anchor) { }
 
 
@@ -18,7 +24,7 @@ public class ImageElement(string name, UnsafeGraphic graphic, Color color, Vec2f
         if(graphic is null)
             return;
 
-        Assert(Log.Log, graphic.useAlpha, "ImageElement.image has to use 32-bit format!");
+        Assert(Log.Info, graphic.useAlpha, "ImageElement.image has to use 32-bit format!");
 
         scan += Math.Max(screenLocation.y, 0) * stride + Math.Max(screenLocation.x, 0) * 3;
 

@@ -30,18 +30,18 @@ public class Consumable(string name, string itemDesc, float healthVal, float sat
         if(healthVal > 0f || hungerVal > 0f || thirstVal > 0f || sanityVal > 0f)
             sb.Append('\n');
 
-        if(healthVal > 0f) sb.Append($"\n- Restores {healthVal*100f:0%} health");
-        if(hungerVal > 0f) sb.Append($"\n- Satisfies {hungerVal*100f:0%} hunger");
-        if(thirstVal > 0f) sb.Append($"\n- Quenches {thirstVal*100f:0%} thirst");
-        if(sanityVal > 0f) sb.Append($"\n- Stabilises {sanityVal*100f:0%} sanity");
+        if(healthVal > 0f) sb.Append($"\n- Restores {healthVal:0%} health");
+        if(hungerVal > 0f) sb.Append($"\n- Satisfies {hungerVal:0%} hunger");
+        if(thirstVal > 0f) sb.Append($"\n- Quenches {thirstVal:0%} thirst");
+        if(sanityVal > 0f) sb.Append($"\n- Stabilises {sanityVal:0%} sanity");
 
         if(healthVal < 0f || hungerVal < 0f || thirstVal < 0f || sanityVal < 0f)
             sb.Append('\n');
 
-        if(healthVal < 0f) sb.Append($"\n- Reduces {healthVal*100f:0%} health");
-        if(hungerVal < 0f) sb.Append($"\n- Increases {hungerVal*100f:0%} hunger");
-        if(thirstVal < 0f) sb.Append($"\n- Parches {thirstVal*100f:0%} thirst");
-        if(sanityVal < 0f) sb.Append($"\n- Deteriorates {sanityVal*100f:0%} sanity");
+        if(healthVal < 0f) sb.Append($"\n- Reduces {healthVal:0%} health");
+        if(hungerVal < 0f) sb.Append($"\n- Increases {hungerVal:0%} hunger");
+        if(thirstVal < 0f) sb.Append($"\n- Parches {thirstVal:0%} thirst");
+        if(sanityVal < 0f) sb.Append($"\n- Deteriorates {sanityVal:0%} sanity");
 
         return sb.ToString();
     }

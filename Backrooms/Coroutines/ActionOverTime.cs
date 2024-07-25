@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Backrooms.Coroutines;
+﻿namespace Backrooms.Coroutines;
 
 public class ActionOverTime(float seconds, ActionOverTime.InterpolatedCallback interpolatedAction = null, ActionOverTime.DeltaTimeCallback deltaAction = null) : ICoroutineInstruction
 {

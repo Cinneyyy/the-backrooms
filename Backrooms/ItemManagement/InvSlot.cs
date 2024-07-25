@@ -24,7 +24,7 @@ public class InvSlot(Vec2i index)
 
     public void SetGuiElements(ImageElement display, RectSolidColorElement background)
     {
-        Assert(Log.Log, invItemDisplay is null && invItemBackground is null, "invItemDisplay & -Background are already defined");
+        Assert(Log.Info, invItemDisplay is null && invItemBackground is null, "invItemDisplay & -Background are already defined");
 
         invItemDisplay = display;
         invItemBackground = background;

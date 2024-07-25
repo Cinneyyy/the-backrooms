@@ -8,8 +8,9 @@ public class Coroutine
     public readonly IEnumerator iterator;
     public bool cancelled;
 
-    private ICoroutineInstruction instruction;
     private readonly Window win;
+    private ICoroutineInstruction currInstruction;
+    private Coroutine currSubRoutine;
 
 
     public bool isFinished { get; private set; }
@@ -25,11 +26,20 @@ public class Coroutine
 
     public void Tick(float dt)
     {
-        if(this.instruction is not null)
-            if(!this.instruction.KeepWaiting(dt))
-                this.instruction = null;
+        if(currInstruction is not null)
+        {
+            if(!currInstruction.KeepWaiting(dt))
+                currInstruction = null;
             else
                 return;
+        }
+        else if(currSubRoutine is not null)
+        {
+            if(currSubRoutine.isFinished)
+                currSubRoutine = null;
+            else
+                return;
+        }
 
         if(cancelled || !iterator.MoveNext())
         {
@@ -38,8 +48,10 @@ public class Coroutine
             return;
         }
 
-        if(iterator.Current is not null and ICoroutineInstruction instruction)
-            this.instruction = instruction;
+        if(iterator.Current is ICoroutineInstruction instruction && instruction is not null)
+            currInstruction = instruction;
+        else if(iterator.Current is IEnumerator subRoutine && subRoutine is not null)
+            currSubRoutine = subRoutine.StartCoroutine(win);
     }
 
     public void Cancel()
@@ -47,5 +59,17 @@ public class Coroutine
         cancelled = true;
         isFinished = true;
         win.tick -= Tick;
+    }
+
+
+    public static IEnumerator ActionOverTime(float seconds, ActionOverTime.InterpolatedCallback interpolatedAction = null, ActionOverTime.DeltaTimeCallback deltaAction = null)
+    {
+        yield return new ActionOverTime(seconds, interpolatedAction, deltaAction);
+    }
+
+    public static IEnumerator DelayedAction(float seconds, Action action)
+    {
+        yield return new WaitSeconds(seconds);
+        action();
     }
 }

@@ -9,9 +9,12 @@ public readonly record struct EntityTags
 
     public readonly record struct ManagedPathfinding(string algorithmName, float speed);
 
+    public readonly record struct ManagedContactDamage(float damage, float cooldown, float maxDist);
+
 
     public string instance { get; init; }
     public ManagedPathfinding? managedPathfinding { get; init; }
+    public ManagedContactDamage? managedContactDamage { get; init; }
     public Vector2 size { get; init; }
     public float elevation { get; init; }
     public string sprite { get; init; }

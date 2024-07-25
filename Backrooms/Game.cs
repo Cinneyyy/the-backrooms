@@ -12,47 +12,47 @@ using Backrooms.Entities;
 using Backrooms.Online;
 using Backrooms.Debugging;
 using System.Collections.Generic;
-using Backrooms.PostProcessing;
 
 namespace Backrooms;
 
 public class Game
 {
-    public Window window;
-    public Renderer renderer;
-    public Camera camera;
-    public Input input;
-    public EntityManager entityManager;
-    public MpManager mpManager;
-    public Map map;
-    public StartMenu startMenu;
-    public CameraController cameraController;
-    public Inventory inventory;
-    public PlayerStats playerStats;
+    public readonly Window win;
+    public readonly Renderer rend;
+    public readonly Camera camera;
+    public readonly Input input;
+    public readonly AudioManager audioManager;
+    public readonly EntityManager entityManager;
+    public readonly MpManager mpManager;
+    public readonly Map map;
+    public readonly StartMenu startMenu;
+    public readonly CameraController cameraController;
+    public readonly Inventory inventory;
+    public readonly PlayerStats playerStats;
+    public readonly DeathScreen deathScreen;
     public event Action<Vec2f> generateMap;
+    public bool playerDead;
 
     private readonly RoomGenerator generator = new();
-    private readonly TextElement debugTextLhs;
+    private readonly TextElement debugTextLhs, debugTextRhs;
     private readonly List<ItemWorldObject> worldObjects = [];
 
 
     public Game(Window window)
     {
-        this.window = window;
-        renderer = window.renderer;
+        win = window;
+        rend = window.renderer;
         input = window.input;
+
+        audioManager = new(win);
 
         mpManager = new();
         SetUpMpManager();
 
-        playerStats = new();
+        playerStats = new(this);
+        playerStats.takeDamage += () => audioManager.PlayOneShot("oof");
 
-        ColorBlock invColors = new(Color.Black, 125, 185, 225);
-        inventory = new(window, renderer, this, input, new(5, 2), invColors);
-        inventory.AddItem("vodka");
-        inventory.AddItem("oli");
-
-        renderer.map = map = new(new Tile[0, 0]) {
+        rend.map = map = new(new Tile[0, 0]) {
             texturesStr = [null, null, null, "wall", "pillar"],
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
@@ -62,34 +62,43 @@ public class Game
             ceilLuminance = .5f
         };
 
-        renderer.camera = camera = new(90f, 20f, 0f);
-        cameraController = new(camera, mpManager, window, input, map, renderer);
+        rend.camera = camera = new(90f, 20f, 0f);
+        cameraController = new(camera, mpManager, window, input, map, rend);
+
+        ColorBlock invColors = new(Color.Black, 125, 185, 225);
+        inventory = new(window, rend, this, input, cameraController, new(5, 2), invColors);
+        inventory.AddItem("vodka");
+        inventory.AddItem("oli");
 
         GenerateMap(RNG.signedInt);
 
-        startMenu = new(window, renderer, camera, cameraController, map, mpManager);
+        startMenu = new(window, rend, camera, cameraController, map, mpManager);
 
         window.console.Add(new(["noclip", "no_clip"], args => window.console.ParseBool(args.FirstOrDefault(), ref cameraController.noClip), "NO_CLIP <enabled>", [0, 1]));
 
         debugTextLhs = new("lhs", "0 fps", FontFamily.GenericMonospace, 15f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
-        renderer.guiGroups.Add(new(renderer, "debug", true) {
-            debugTextLhs
+        debugTextRhs = new("rhs", "0 fps", FontFamily.GenericMonospace, 15f, Color.White, Vec2f.right, Vec2f.right, Vec2f.zero);
+        rend.guiGroups.Add(new(rend, "debug", true) {
+            debugTextLhs,
+            debugTextRhs
         });
 
         window.tick += Tick;
 
-        Atlas atlas = new(map, camera, new(renderer.virtRes.y - 32), new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16));
-        renderer.dimensionsChanged += () => {
-            atlas.size = new(renderer.virtRes.y - 32);
-            atlas.loc = new(16 + (renderer.virtRes.x - renderer.virtRes.y) / 2, 16);
+        Atlas atlas = new(map, camera, new(rend.virtRes.y - 32), new(16 + (rend.virtRes.x - rend.virtRes.y) / 2, 16));
+        rend.dimensionsChanged += () => {
+            atlas.size = new(rend.virtRes.y - 32);
+            atlas.loc = new(16 + (rend.virtRes.x - rend.virtRes.y) / 2, 16);
         };
-        DepthBufDisplay zBufDisplay = new(renderer);
+        DepthBufDisplay zBufDisplay = new(rend);
         window.tick += dt => {
             atlas.enabled = input.KeyHelt(Keys.Tab);
             zBufDisplay.enabled = input.KeyHelt(Keys.ControlKey);
         };
-        renderer.postProcessEffects.Add(atlas);
-        renderer.postProcessEffects.Add(zBufDisplay);
+        rend.postProcessEffects.Add(atlas);
+        rend.postProcessEffects.Add(zBufDisplay);
+
+        deathScreen = new(cameraController, playerStats, this, rend, win, startMenu);
 
         //HVDistortion distortion = new(x => {
         //    float strength = 1f - playerStats.sanity;
@@ -98,12 +107,24 @@ public class Game
         //});
         //renderer.postProcessEffects.Add(distortion);
 
-        entityManager = new(mpManager, window, map, camera, this, renderer);
+        entityManager = new(mpManager, window, map, camera, this, rend);
         entityManager.LoadEntities("Entities");
         foreach(EntityType type in entityManager.types)
             type.Instantiate();
     }
 
+
+    public void KillPlayer()
+    {
+        if(playerDead)
+            return;
+
+        playerDead = true;
+        inventory.enabled = false;
+        win.SetCursor(true);
+        deathScreen.Enable();
+        cameraController.canMove = false;
+    }
 
     public void GenerateMap(int seed)
     {
@@ -144,19 +165,29 @@ public class Game
     private void Tick(float dt)
     {
         if(debugTextLhs.enabled)
+        {
             debugTextLhs.text =
                 $"""
-                {window.currFps} fps
+                {win.currFps} fps
                 {(mpManager.isConnected ? $"Client #{mpManager.clientId}" : "Not connected")}
                 Pos: {camera.pos.Floor():$x, $y}
                 Map size: {map.size}
                 Seed: {generator.seed}
                 Entities: {entityManager.instances.Count}
-                Sprites: {renderer.sprites.Count}
+                Sprites: {rend.sprites.Count}
                 """;
 
+            debugTextRhs.text =
+                $"""
+                Health: {playerStats.health:0%}
+                Saturation: {playerStats.saturation:0%}
+                Hydration: {playerStats.hydration:0%}
+                Sanity: {playerStats.sanity:0%}
+                """;
+        }
+
         if(input.KeyDown(Keys.F1))
-            window.ToggleCursor();
+            win.ToggleCursor();
 
         if(input.KeyDown(Keys.Escape))
         {
@@ -167,7 +198,7 @@ public class Game
             else
             {
                 startMenu.startGui.enabled = true;
-                window.SetCursor(true);
+                win.SetCursor(true);
             }
         }
 
@@ -194,14 +225,14 @@ public class Game
             UnsafeGraphic table = new("table");
             HashSet<Vec2i> positions = [];
 
-            for(int i = 0; i < 1000; i++)
+            for(int i = 0; i < 500; i++)
             {
                 Vec2i pos = new(RNG.Range(map.size.x), RNG.Range(map.size.y));
                 if(positions.Contains(pos))
                     continue;
 
                 positions.Add(pos);
-                worldObjects.Add(new(renderer, window, cameraController, input, inventory, pos + Vec2f.half, table, Item.items["vodka"]));
+                worldObjects.Add(new(rend, win, cameraController, input, inventory, pos + Vec2f.half, table, Item.items["vodka"]));
             }
         }
     }
@@ -231,10 +262,10 @@ public class Game
             ClientState state = mpManager.clientStates[id];
 
             state.renderer = new(state.pos, new Vec2f(.4f, .9f), new UnsafeGraphic("hazmat_suit"));
-            renderer.sprites.Add(state.renderer);
+            rend.sprites.Add(state.renderer);
 
             state.updaterDelegate = _ => state.renderer.pos = state.pos;
-            window.tick += state.updaterDelegate;
+            win.tick += state.updaterDelegate;
         };
 
         mpManager.clientDisconnected += id => {
@@ -243,10 +274,10 @@ public class Game
 
             ClientState state = mpManager.clientStates[id];
 
-            renderer.sprites.Remove(state.renderer);
+            rend.sprites.Remove(state.renderer);
             state.renderer = null;
 
-            window.tick -= state.updaterDelegate;
+            win.tick -= state.updaterDelegate;
         };
     }
 }

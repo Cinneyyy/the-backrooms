@@ -4,6 +4,11 @@
         "x": 0.5,
         "y": 0.8
     },
+    "managedContactDamage": {
+        "damage": 0.2,
+        "cooldown": 1.0,
+        "maxDist": 0.5
+    },
     "elevation": -0.1,
     "managedPathfinding": {
         "algorithmName": "Backrooms.Pathfinding.BreadthFirstSearch",
