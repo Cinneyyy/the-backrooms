@@ -102,9 +102,12 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 }
                 else if(args.Length == 0)
                 {
-                    Out(Log.DevCmd, "-- List of commands --");
+                    StringBuilder sb = new("-- List of commands --");
+
                     foreach(Cmd cmd in cmds)
-                        Out(Log.DevCmd, $"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", id => id.ToUpper())}");
+                        sb.Append($"{cmd.syntax}\n    => Aliases: {cmd.identifiers.FormatStr(", ", id => id.ToUpper())}");
+
+                    Out(Log.DevCmd, sb.ToString());
                 }
             },
             "HELP [<command>]", [0, 1]),
@@ -208,10 +211,6 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             args => ParseBool(args.FirstOrDefault(), win.renderer.FindGuiGroup("hud").GetElement("fps"), e => e.enabled),
             "SHOW_FPS <enabled>", [0, 1]),
 
-            new(["parallel_render", "para_render", "use_parallel_render", "use_para_render"],
-            args => ParseBool(args.FirstOrDefault(), ref win.renderer.useParallelRendering),
-            "PARALLEL_RENDER <enabled>", [0, 1]),
-
             new(["cursor", "cursor_visible", "show_cursor"],
             args => ParseBool(args.FirstOrDefault(), () => win.cursorVisible, b => win.SetCursor(b)),
             "CURSOR_VISIBLE <enabled>", [0, 1]),
@@ -248,7 +247,23 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
             new(["count_tick_listeners", "tick_listeners", "tick_lists"],
             args => Out(Log.DevCmd, $"{win.GetTickInvocationList().Length} listeners are subscribed to win.tick"),
-            "COUNT_TICK_LISTENERS", [0])
+            "COUNT_TICK_LISTENERS", [0]),
+
+            new(["draw_params"],
+            args => {
+                string numStr = args[0];
+                byte val;
+
+                if(numStr.StartsWith("0b")) val = Convert.ToByte(numStr[2..], 2);
+                else if(numStr.StartsWith("0x")) val = Convert.ToByte(numStr[2..], 16);
+                else if(numStr.StartsWith("0o")) val = Convert.ToByte(numStr[2..], 8);
+                else val = Convert.ToByte(numStr);
+
+                DrawParams drawParams = (DrawParams)val;
+                win.drawParams = drawParams;
+                Out(Log.DevCmd, $"Set draw params to {val} ({drawParams})");
+            },
+            "DRAW_PARAMS <byte>", [1])
         ];
     }
 

@@ -10,5 +10,7 @@ public enum DrawParams : byte
     Gui = 4,
     PostEffects = 8,
     FloorAndCeil = 16,
-    All = 255
+    ColumnsNonParallel = 32,
+    FloorAndCeilNonParallel = 64,
+    All = 255 ^ ColumnsNonParallel ^ FloorAndCeilNonParallel
 }

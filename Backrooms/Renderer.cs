@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Backrooms.Gui;
 using Backrooms.PostProcessing;
-using Microsoft.VisualBasic.Logging;
 
 namespace Backrooms;
 
@@ -21,9 +20,8 @@ public unsafe class Renderer
     public readonly List<GuiGroup> guiGroups = [];
     public bool drawIfCursorOffscreen = true;
     public float[] depthBuf;
-    public int[] heightBuf;
+    public ushort[] heightBuf;
     public event Action dimensionsChanged;
-    public bool useParallelRendering = true;
     public float wallHeight = 1f;
 
     private readonly Comparison<SpriteRenderer> sprComparison;
@@ -86,7 +84,7 @@ public unsafe class Renderer
 
         outputLocation = (physRes - outputRes) / 2;
         depthBuf = new float[virtRes.x];
-        heightBuf = new int[virtRes.x];
+        heightBuf = new ushort[virtRes.x];
 
         dimensionsChanged?.Invoke();
     }
@@ -97,22 +95,21 @@ public unsafe class Renderer
             return new(1, 1);
 
         Array.Fill(depthBuf, 1f);
+        Array.Fill(heightBuf, (ushort)0u);
         Bitmap bitmap = new(virtRes.x, virtRes.y);
         BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
         if((drawParams & DrawParams.Columns) != 0)
-            if(useParallelRendering)
-                Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
-            else
-                for(int x = 0; x < virtRes.x; x++)
-                    DrawColumn(data, x);
+            Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
+        else if((drawParams & DrawParams.ColumnsNonParallel) != 0)
+            for(int x = 0; x < virtRes.x; x++)
+                DrawColumn(data, x);
 
         if((drawParams & DrawParams.FloorAndCeil) != 0)
-            if(useParallelRendering)
-                Parallel.For(0, virtCenter.y, y => DrawFloorAndCeil(data, y));
-            else
-                for(int y = 0; y < virtCenter.y; y++)
-                    DrawFloorAndCeil(data, y);
+            Parallel.For(0, virtCenter.y, y => DrawFloorAndCeil(data, y));
+        else if((drawParams & DrawParams.FloorAndCeilNonParallel) != 0)
+            for(int y = 0; y < virtCenter.y; y++)
+                DrawFloorAndCeil(data, y);
 
         if((drawParams & DrawParams.Sprites) != 0)
             foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
@@ -148,7 +145,7 @@ public unsafe class Renderer
         byte* ceilScan = (byte*)data.Scan0 + data.Stride*(virtCenter.y - y - 1);
         for(int x = 0; x < virtRes.x; x++)
         {
-            if(heightBuf[x] < y)
+            if(heightBuf[x] > y)
             {
                 floor += step;
                 floorScan += 3;
@@ -235,7 +232,7 @@ public unsafe class Renderer
         int y0 = Utils.Clamp(virtCenter.y - halfHeight, 0, virtRes.y-1),
             y1 = Utils.Clamp(virtCenter.y + halfHeight, 0, virtRes.y-1);
 
-        heightBuf[x] = halfHeight;
+        heightBuf[x] = (ushort)halfHeight;
 
         float brightness = (vert ? .75f : .5f) * GetDistanceFog(normDist);
         //const float light_spacing = 20f, light_strength = 2f;
