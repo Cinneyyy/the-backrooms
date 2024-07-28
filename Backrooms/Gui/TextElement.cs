@@ -2,7 +2,7 @@
 
 namespace Backrooms.Gui;
 
-[GuiElement(safety = ElementSafety.Safe)]
+[GuiElement(isSafe = true)]
 public class TextElement(string name, string text, FontFamily fontFamily, float emSize, Color color, StringFormat format, Vec2f textAnchor, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
     private const GraphicsUnit GRAPHICS_UNIT = GraphicsUnit.Millimeter;
@@ -64,9 +64,9 @@ public class TextElement(string name, string text, FontFamily fontFamily, float 
 
         g.DrawString(text, font, brush, new RectangleF(loc, screenSize), format);
     }
-    
 
-    protected override void ScreenDimensionsChanged() 
+
+    protected override void ScreenDimensionsChanged()
     {
         font.Dispose();
         font = new(fontFamily, emSize * rend.singleDownscaleFactor, GRAPHICS_UNIT);

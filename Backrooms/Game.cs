@@ -12,6 +12,7 @@ using Backrooms.Entities;
 using Backrooms.Online;
 using Backrooms.Debugging;
 using System.Collections.Generic;
+using Backrooms.SaveSystem;
 
 namespace Backrooms;
 
@@ -115,7 +116,10 @@ public class Game
         //foreach(EntityType type in entityManager.types)
         //    type.Instantiate();
 
-        win.tick += dt => map.ceilTexScale += dt * Utils.ToTernary(input, Keys.Down, Keys.Up);
+        SaveManager.Load(SaveFile.Settings);
+        DevConsole.windowMode = SaveManager.settings.devConsole ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide;
+        startMenu.settingsGui.GetElement<ValueSelectorElement>("resolution").value = SaveManager.settings.resolutionIndex;
+        rend.FindGuiGroup("debug").enabled = SaveManager.settings.showDebugInfo;
     }
 
 

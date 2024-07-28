@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Drawing;
-using System.Windows.Forms;
 
 namespace Backrooms.Gui;
 
-[GuiElement(safety = ElementSafety.Neither)]
+[GuiElement]
 public class ValueSelectorElement : GuiElement
 {
     public readonly ImageElement leftArrowElem, rightArrowElem;
@@ -64,7 +63,7 @@ public class ValueSelectorElement : GuiElement
         this.colors = colors;
         this.valueChanged = valueChanged;
 
-        textElem = new($"{name}_text", values.Length == 0 ? string.Empty : values[startValue], font, textSize, textColor, Vec2f.half, location, size);   
+        textElem = new($"{name}_text", values.Length == 0 ? string.Empty : values[startValue], font, textSize, textColor, Vec2f.half, location, size);
         leftArrowElem = new($"{name}_leftarrow", graphic: null, textColor, new(), new(size.y * arrowSize));
         rightArrowElem = new($"{name}_rightarrow", graphic: null, textColor, new(), new(size.y * arrowSize));
         leftBackgroundElem = new($"{name}_leftbg", colors.normal, fastBlend, new(), new(size.y));
@@ -81,11 +80,7 @@ public class ValueSelectorElement : GuiElement
         input = group.rend.input;
         group.groupEnabledTick += Tick;
 
-        group.Add(textElem);
-        group.Add(leftBackgroundElem);
-        group.Add(rightBackgroundElem);
-        group.Add(leftArrowElem);
-        group.Add(rightArrowElem);
+        group.AddMany([leftBackgroundElem, rightBackgroundElem, leftArrowElem, rightArrowElem, textElem]);
 
         rightArrowElem.location = rightBackgroundElem.location = location + new Vec2f((size.x - size.y) / 2f, 0f);
         leftArrowElem.location = leftBackgroundElem.location = new(1f - rightArrowElem.location.x, rightArrowElem.location.y);
@@ -94,12 +89,7 @@ public class ValueSelectorElement : GuiElement
     public override void OnRemovedFromGroup()
     {
         group.groupEnabledTick -= Tick;
-
-        group.Remove(textElem);
-        group.Remove(leftArrowElem);
-        group.Remove(rightArrowElem);
-        group.Remove(leftBackgroundElem);
-        group.Remove(rightBackgroundElem);
+        group.RemoveMany([leftBackgroundElem, rightBackgroundElem, leftArrowElem, rightArrowElem, textElem]);
     }
 
 

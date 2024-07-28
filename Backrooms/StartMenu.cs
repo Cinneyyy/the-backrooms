@@ -5,6 +5,7 @@ using Backrooms.Gui;
 using System.Collections;
 using Backrooms.Debugging;
 using Backrooms.Coroutines;
+using Backrooms.SaveSystem;
 
 namespace Backrooms;
 
@@ -48,9 +49,21 @@ public class StartMenu
         settingsGui = new(rend, "sm_settings", false, false) {
             new TextElement("title", "Settings", font, 25f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
 
-            new CheckboxElement("show_debug", "Show Debug Info", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, true, b => rend.FindGuiGroup("debug").enabled = b, new(.5f, .4f), new(.65f, .065f)),
-            new CheckboxElement("dev_console", "Dev Console", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, false, b => DevConsole.ShowWindow(b ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide), new(.5f, .5f), new(.65f, .065f)),
-            new ValueSelectorElement("resolution", (from r in resolutions select $"{r.x}x{r.y}").ToArray(), 2, Color.Yellow, font, 15f, colors, true, "up_arrow", .8f, i => rend.UpdateResolution(resolutions[i], rend.physRes), new(.5f, .6f), new(.65f, .065f), Vec2f.half),
+            new CheckboxElement("show_debug", "Show Debug Info", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, true,
+                b => {
+                    rend.FindGuiGroup("debug").enabled = b;
+                    SaveManager.settings.showDebugInfo = b;
+                }, new(.5f, .4f), new(.65f, .065f)),
+            new CheckboxElement("dev_console", "Dev Console", font, 15f, Color.Yellow, colors, true, "checkmark", .8f, false,
+                b => {
+                    DevConsole.ShowWindow(b ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide);
+                    SaveManager.settings.devConsole = b;
+                }, new(.5f, .5f), new(.65f, .065f)),
+            new ValueSelectorElement("resolution", resolutions.Select(r => $"{r.x}x{r.y}").ToArray(), 2, Color.Yellow, font, 15f, colors, true, "up_arrow", .8f,
+                i => {
+                    rend.UpdateResolution(resolutions[i], rend.physRes);
+                    SaveManager.settings.resolutionIndex = i;
+                }, new(.5f, .6f), new(.65f, .065f), Vec2f.half),
 
             new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, CloseSettings, new(.5f, .85f), new(.2f, .1f)),
         };
@@ -92,12 +105,20 @@ public class StartMenu
 
     private void OpenSettings()
     {
+        SaveManager.Load(SaveFile.Settings);
+
+        settingsGui.GetElement<CheckboxElement>("show_debug").isOn = SaveManager.settings.showDebugInfo;
+        settingsGui.GetElement<CheckboxElement>("dev_console").isOn = SaveManager.settings.devConsole;
+        settingsGui.GetElement<ValueSelectorElement>("resolution").value = SaveManager.settings.resolutionIndex;
+
         startGui.enabled = false;
         settingsGui.enabled = true;
     }
 
     private void CloseSettings()
     {
+        SaveManager.Save(SaveFile.Settings);
+
         startGui.enabled = true;
         settingsGui.enabled = false;
     }

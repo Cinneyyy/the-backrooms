@@ -3,11 +3,12 @@ using System.Drawing;
 
 namespace Backrooms.Gui;
 
-[GuiElement(safety = ElementSafety.Unsafe)]
+[GuiElement(isUnsafe = true)]
 public class ImageElement(string name, UnsafeGraphic graphic, Color color, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
     public UnsafeGraphic graphic = graphic;
     public float rMul = color.R/255f, gMul = color.G/255f, bMul = color.B/255f;
+    public bool fastColorBlend = true;
 
 
     public float mul
@@ -37,12 +38,27 @@ public class ImageElement(string name, UnsafeGraphic graphic, Color color, Vec2f
             {
                 (byte r, byte g, byte b, byte a) color = graphic.GetUvRgba(j / (screenSizeF.x-1f), i / (screenSizeF.y-1f));
 
-                if(color.a > 0x80)
+                byte* lscan = scan + 3*j;
+                if(color.a == 0xff)
                 {
-                    int o = 3*j;
-                    *(scan + o) = (byte)(color.b * bMul);
-                    *(scan+1 + o) = (byte)(color.g * gMul);
-                    *(scan+2 + o) = (byte)(color.r * rMul);
+                    *(lscan) = (byte)(color.b * bMul);
+                    *(lscan+1) = (byte)(color.g * gMul);
+                    *(lscan+2) = (byte)(color.r * rMul);
+                }
+                else if(color.a != 0)
+                {
+                    if(fastColorBlend)
+                        (*(lscan+2), *(lscan+1), *lscan) =
+                            Utils.BlendColorsCrude(
+                                *(lscan+2), *(lscan+1), *lscan,
+                                (byte)(color.r * rMul), (byte)(color.g * gMul), (byte)(color.b * bMul),
+                                color.a/255f);
+                    else
+                        (*(lscan+2), *(lscan+1), *lscan) =
+                            Utils.BlendColors(
+                                *(lscan+2), *(lscan+1), *lscan,
+                                (byte)(color.r * rMul), (byte)(color.g * gMul), (byte)(color.b * bMul),
+                                color.a/255f);
                 }
             }
 

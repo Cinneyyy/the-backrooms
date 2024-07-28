@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace Backrooms.Gui;
 
-[GuiElement(safety = ElementSafety.Neither)]
+[GuiElement]
 public class ButtonElement(string name, string text, FontFamily font, float fontSize, Color textColor, ColorBlock colors, bool fastBlend, Action onClick, Vec2f location, Vec2f size, Vec2f? anchor = null, bool hasText = true)
     : GuiElement(name, location, size, anchor)
 {
@@ -19,6 +19,34 @@ public class ButtonElement(string name, string text, FontFamily font, float font
     public ButtonElement(string name, ColorBlock colors, bool fastBlend, Action onClick, Vec2f location, Vec2f size, Vec2f? anchor = null) : this(name, null, null, 0f, default, colors, fastBlend, onClick, location, size, anchor, false) { }
 
 
+    public override void OnAddedToGroup()
+    {
+        input = rend.input;
+        group.groupEnabledTick += Tick;
+
+        group.Add(backgroundElem);
+        if(hasText)
+            group.Add(textElem);
+    }
+
+    public override void OnRemovedFromGroup()
+    {
+        group.groupEnabledTick -= Tick;
+
+        group.Remove(backgroundElem);
+        if(hasText)
+            group.Remove(textElem);
+    }
+
+
+    protected override void OnToggle()
+    {
+        if(hasText)
+            textElem.enabled = enabled;
+        backgroundElem.enabled = enabled;
+    }
+
+
     private void Tick(float dt)
     {
         bool isHovering = input.ContainsNormCursorCentered(location, size * group.guiToVirtRatio);
@@ -32,33 +60,5 @@ public class ButtonElement(string name, string text, FontFamily font, float font
         }
         else
             backgroundElem.color = colors.normal;
-    }
-
-
-    public override void OnAddedToGroup()
-    {
-        input = rend.input;
-        group.groupEnabledTick += Tick;
-
-        if(hasText)
-            group.Add(textElem);
-        group.Add(backgroundElem);
-    }
-
-    public override void OnRemovedFromGroup()
-    {
-        group.groupEnabledTick -= Tick;
-
-        if(hasText)
-            group.Remove(textElem);
-        group.Remove(backgroundElem);
-    }
-
-
-    protected override void OnToggle()
-    {
-        if(hasText)
-            textElem.enabled = enabled;
-        backgroundElem.enabled = enabled;
     }
 }

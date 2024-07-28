@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace Backrooms.Gui;
 
-[GuiElement(safety = ElementSafety.Neither)]
+[GuiElement]
 public class CheckboxElement(string name, string text, FontFamily font, float textSize, Color color, ColorBlock colors, bool fastBlend, UnsafeGraphic checkmark, float checkmarkSize, bool isOn, Action<bool> valueChanged, Vec2f location, Vec2f size, Vec2f? anchor = null) : GuiElement(name, location, size, anchor)
 {
     public readonly TextElement textElem = new($"{name}_text", text, font, textSize, color, new(0f, .5f), location, size, anchor);
@@ -38,9 +38,7 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
         input = rend.input;
         group.groupEnabledTick += Tick;
 
-        group.Add(textElem);
-        group.Add(backgroundElem);
-        group.Add(checkmarkElem);
+        group.AddMany([backgroundElem, checkmarkElem, textElem]);
 
         backgroundElem.location = checkmarkElem.location = location + new Vec2f((size.x - size.y) / 2f, 0f);
     }
@@ -48,10 +46,7 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     public override void OnRemovedFromGroup()
     {
         group.groupEnabledTick -= Tick;
-
-        group.Remove(textElem);
-        group.Remove(backgroundElem);
-        group.Remove(checkmarkElem);
+        group.RemoveMany([backgroundElem, checkmarkElem, textElem]);
     }
 
 

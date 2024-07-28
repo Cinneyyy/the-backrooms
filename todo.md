@@ -12,10 +12,8 @@
 1. More level variation
     - Not too much, it is the backrooms
 1. More varied enemies & enemy AI
-1. Save files
 1. Controller input
 1. Rewrite audio system as to not create a new device instance for every sound played
-1. Redo GUI safe/unsafe system to allow ElementSafety.Neither elements to be enabled/disabled
 1. Lighting
 1. Post processing effects
     - Maybe more efficient ones also

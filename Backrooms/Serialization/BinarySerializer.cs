@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
@@ -8,11 +7,11 @@ namespace Backrooms.Serialization;
 
 /// <summary>
 /// Format:
-/// [length]
+/// [length] :: 4 bytes
 /// {
-///     [property index]
-///     [length, if data is custom type]
-///     { property data }
+///     [property index] :: 4 bytes
+///     [length, if data is custom type] :: 4 bytes
+///     { property data } :: ? bytes
 /// } (n times, properties before fields)
 /// </summary>
 public static class BinarySerializer<T> where T : Serializable<T>, new()
@@ -152,7 +151,7 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
 
         if(type.IsSubclassOfGeneric(typeof(Serializable<>)))
         {
-            byte[] data = 
+            byte[] data =
                 typeof(BinarySerializer<>)
                 .MakeGenericType(type)
                 .GetMethod(nameof(Serialize))
@@ -168,7 +167,7 @@ public static class BinarySerializer<T> where T : Serializable<T>, new()
             if(!baseType.IsSubclassOfGeneric(typeof(Serializable<>)))
                 throw new($"Cannot deserialize array elments, of which the element type does not derive from Serializable<TSelf>");
 
-            MethodInfo serialize = 
+            MethodInfo serialize =
                 typeof(BinarySerializer<>)
                 .MakeGenericType(baseType)
                 .GetMethod(nameof(Serialize));

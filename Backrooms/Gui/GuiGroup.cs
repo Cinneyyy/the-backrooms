@@ -18,7 +18,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     public bool enabled;
     public event Action<float> persistentTick, groupEnabledTick;
 
-    private readonly List<GuiElement> unsafeElements = [], safeElements = [];
+    private readonly List<GuiElement> unsafeElements = [], safeElements = [], neutralElements = [];
     private Vec2f _screenAnchor;
     private bool _fullScreenLocation;
 
@@ -45,7 +45,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     public Vec2f guiToVirtRatio { get; private set; }
     public bool mbHelt => input.KeyHelt(InteractionButton);
     public bool mbDown => input.KeyDown(Keys.LButton);
-    public IEnumerable<GuiElement> allElements => unsafeElements.Concat(safeElements);
+    public IEnumerable<GuiElement> allElements => unsafeElements.Union(safeElements).Union(neutralElements);
 
 
     public GuiGroup(Renderer rend, string name, bool fullScreenLocation, bool enabled = true)
@@ -69,6 +69,7 @@ public class GuiGroup : IEnumerable<GuiElement>
     {
         if(elem.isUnsafe) unsafeElements.Add(elem);
         if(elem.isSafe) safeElements.Add(elem);
+        if(!elem.isSafe && !elem.isSafe) neutralElements.Add(elem);
 
         elem.group = this;
         elem.OnAddedToGroup();
@@ -117,8 +118,15 @@ public class GuiGroup : IEnumerable<GuiElement>
 
         if(elem.isUnsafe) unsafeElements.Remove(elem);
         if(elem.isSafe) safeElements.Remove(elem);
+        if(!elem.isSafe && !elem.isUnsafe) neutralElements.Remove(elem);
 
         elem.OnRemovedFromGroup();
+    }
+
+    public void RemoveMany(IEnumerable<GuiElement> elems)
+    {
+        foreach(GuiElement elem in elems)
+            Remove(elem);
     }
 
     public unsafe void DrawUnsafeElements(byte* scan, int stride, int w, int h)
