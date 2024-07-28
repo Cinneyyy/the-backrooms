@@ -285,4 +285,20 @@ public static class Utils
         => ToTernary(input.KeyHelt(negKey), input.KeyHelt(posKey));
     public static int ToTernary(Input input, InputAction negAction, InputAction posAction)
         => ToTernary(input.KeyHelt(negAction), input.KeyHelt(posAction));
+
+    public static (byte r, byte g, byte b) BlendColors(byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, float alpha = .5f)
+    {
+        byte r = (byte)MathF.Sqrt(Lerp(Sqr(r1), Sqr(r2), alpha));
+        byte g = (byte)MathF.Sqrt(Lerp(Sqr(g1), Sqr(g2), alpha));
+        byte b = (byte)MathF.Sqrt(Lerp(Sqr(b1), Sqr(b2), alpha));
+        return (r, g, b);
+    }
+
+    public static (byte r, byte g, byte b) BlendColorsCrude(byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, float alpha = .5f)
+    {
+        byte r = (byte)Lerp(r1, r2, alpha);
+        byte g = (byte)Lerp(g1, g2, alpha);
+        byte b = (byte)Lerp(b1, b2, alpha);
+        return (r, g, b);
+    }
 }

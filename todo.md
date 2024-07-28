@@ -12,23 +12,19 @@
 1. More level variation
     - Not too much, it is the backrooms
 1. More varied enemies & enemy AI
+1. Save files
+1. Controller input
+1. Rewrite audio system as to not create a new device instance for every sound played
+1. Redo GUI safe/unsafe system to allow ElementSafety.Neither elements to be enabled/disabled
+1. Lighting
 1. Post processing effects
     - Maybe more efficient ones also
-1. Controller input
-1. Graffitis
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
-1. Make post process effect type attribute based
-1. Lighting
-1. Redo GUI safe/unsafe system to allow ElementSafety.Neither to be enabled/disabled
 
 ---
 ## Bugfixes
-1. Audio is choppy when mutliple sounds are playing at once
-    - Probably has _nothing_ to do with the fact that I create a new Device for every AudioSource
 1. Fix player sprites not showing up via adding logic to the welcome handler
 1. Implement collision for WorldObjects
-1. Multiplayer
-    - Client disconnect handling
 1. Fix pathfinding bugs
     - Dijkstra's shortest path
     - Pathfinding shortcuts

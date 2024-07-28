@@ -55,6 +55,7 @@ public class Game
 
         rend.map = map = new(new Tile[0, 0]) {
             texturesStr = [null, null, null, "wall", "pillar"],
+            graffitiTexturesStr = ["biggus_dickus"],
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
             floorTexScale = .1f,
@@ -64,7 +65,10 @@ public class Game
         };
 
         cameraController = new(camera, mpManager, window, input, map, rend);
-        GenerateMap(RNG.signedInt);
+
+        int levelSeed = RNG.signedInt;
+        GenerateMap(levelSeed);
+        map.GenerateGraffitis(2000, levelSeed);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
         inventory = new(window, rend, this, input, cameraController, new(5, 2), invColors);

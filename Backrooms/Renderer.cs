@@ -23,6 +23,7 @@ public unsafe class Renderer
     public ushort[] heightBuf;
     public event Action dimensionsChanged;
     public float wallHeight = 1f;
+    public bool useFastColorBlend = true;
 
     private float _fogEpsilon, _fogMaxDist;
     private readonly Comparison<SpriteRenderer> sprComparison;
@@ -310,21 +311,69 @@ public unsafe class Renderer
 
         UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
-        int texX = (wallX * ((tex?.w ?? 1) - 1)).Floor();
+        int texX = (wallX * (tex?.wb ?? 0)).Floor();
         if(vert && dir.x > 0f || !vert && dir.y < 0f)
             texX = tex.w - texX - 1;
-
         float texStep = tex.h / height;
         float texPos = (y0 - virtCenter.y + halfHeight) * texStep;
-        int texMask = tex.h-1;
+
+        int graffiti = map.graffitis[mPos.x, mPos.y];
+        bool hasGraffiti = graffiti != 0;
+        UnsafeGraphic gTex;
+        int gTexX;
+        float gTexStep, gTexPos;
+
+        if(hasGraffiti)
+        {
+            gTex = map.graffitiTextures[graffiti-1];
+            gTexX = (wallX * gTex.wb).Floor();
+            gTexStep = gTex.h / height;
+            gTexPos = (y0 - virtCenter.y + halfHeight) * gTexStep;
+        }
+        else
+            (gTex, gTexX, gTexStep, gTexPos) = (null, 0, 0f, 0f);
 
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x*3;
 
         for(int y = y0; y <= y1; y++)
         {
-            int texY = (int)texPos & texMask;
+            if(hasGraffiti)
+            {
+                byte* gTexScan = gTex.scan0 + ((int)gTexPos & gTex.hb)*gTex.stride + gTexX*4;
+                gTexPos += gTexStep;
+                byte alpha = *(gTexScan+3);
+
+                if(alpha == 0xff)
+                {
+                    *scan = (byte)(*gTexScan * brightness);
+                    *(scan+1) = (byte)(*(gTexScan+1) * brightness);
+                    *(scan+2) = (byte)(*(gTexScan+2) * brightness);
+                }
+                else if(alpha != 0)
+                {
+                    if(useFastColorBlend)
+                        (*(scan+2), *(scan+1), *scan) =
+                            Utils.BlendColorsCrude(
+                                *(scan+2), *(scan+1), *scan,
+                                (byte)(*(gTexScan+2) * brightness), (byte)(*(gTexScan+1) * brightness), (byte)(*gTexScan * brightness),
+                                alpha/255f);
+                    else
+                        (*(scan+2), *(scan+1), *scan) =
+                            Utils.BlendColors(
+                                *(scan+2), *(scan+1), *scan,
+                                (byte)(*(gTexScan+2) * brightness), (byte)(*(gTexScan+1) * brightness), (byte)(*gTexScan * brightness),
+                                alpha/255f);
+                }
+
+                if(alpha != 0)
+                {
+                    scan += data.Stride;
+                    continue;
+                }
+            }
+
+            byte* texScan = tex.scan0 + ((int)texPos & tex.hb)*tex.stride + texX*3;
             texPos += texStep;
-            byte* texScan = tex.scan0 + texY*tex.stride + texX*3;
 
             *scan = (byte)(*texScan * brightness);
             *(scan+1) = (byte)(*(texScan+1) * brightness);
@@ -383,12 +432,28 @@ public unsafe class Renderer
                 {
                     int texY = Utils.Clamp(((y - drawCenter + size.y/2f) * spr.graphic.hb / size.y).Floor(), 0, spr.graphic.hb);
                     byte* colScan = texScan + texY*spr.graphic.stride;
+                    byte alpha = *(colScan+3);
 
-                    if(*(colScan+3) > 0x80)
+                    if(alpha == 0xff)
                     {
                         *scan = (byte)(*colScan * brightness);
                         *(scan+1) = (byte)(*(colScan+1) * brightness);
                         *(scan+2) = (byte)(*(colScan+2) * brightness);
+                    }
+                    else if(alpha != 0)
+                    {
+                        if(useFastColorBlend)
+                            (*(scan+2), *(scan+1), *scan) =
+                                Utils.BlendColorsCrude(
+                                    *(scan+2), *(scan+1), *scan,
+                                    (byte)(*(colScan+2) * brightness), (byte)(*(colScan+1) * brightness), (byte)(*colScan * brightness),
+                                    alpha/255f);
+                        else
+                            (*(scan+2), *(scan+1), *scan) =
+                                Utils.BlendColors(
+                                    *(scan+2), *(scan+1), *scan,
+                                    (byte)(*(colScan+2) * brightness), (byte)(*(colScan+1) * brightness), (byte)(*colScan * brightness),
+                                    alpha/255f);
                     }
                 }
 

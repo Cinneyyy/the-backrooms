@@ -18,7 +18,7 @@ public class RectSolidColorElement(string name, Color color, bool fastBlend, Vec
         int maxX = Math.Min(screenSize.x, rend.virtRes.x - screenLocation.x);
 
         float alpha = color.A/255f;
-        float r = Utils.Sqr(color.R/255f), g = Utils.Sqr(color.G/255f), b = Utils.Sqr(color.B/255f);
+        float r = color.R/255f, g = color.G/255f, b = color.B/255f;
 
         for(int i = 0; i < maxY; i++)
         {
@@ -35,9 +35,9 @@ public class RectSolidColorElement(string name, Color color, bool fastBlend, Vec
                 }
                 else
                 {
-                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), b, alpha)) * 255f);
-                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), g, alpha)) * 255f);
-                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel/255f), r, alpha)) * 255f);
+                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), b*b, alpha)) * 255f);
+                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel++/255f), g*g, alpha)) * 255f);
+                    *pixel = (byte)(MathF.Sqrt(Utils.Lerp(Utils.Sqr(*pixel/255f), r*r, alpha)) * 255f);
                 }
             }
 

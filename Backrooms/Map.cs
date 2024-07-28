@@ -7,10 +7,15 @@ namespace Backrooms;
 
 public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 {
+    /// <summary>Array of UnsafeGraphic WITHOUT transparency (=> Format24bppRgb)</summary>
     public UnsafeGraphic[] textures = [];
+    /// <summary>Array of UnsafeGraphic WITH transparency (=> Format32bppArgb)</summary>
+    public UnsafeGraphic[] graffitiTextures = [];
+    /// <summary>UnsafeGraphic WITHOUT transparency (=> Format24bppRgb)</summary>
     public UnsafeGraphic floorTex, ceilTex;
     public float floorTexScale = 1f, ceilTexScale = 1f;
     public float floorLuminance = .5f, ceilLuminance = .5f;
+    public int[,] graffitis;
 
     private Tile[,] tiles = tiles;
     private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
@@ -28,6 +33,10 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     public string ceilTexStr
     {
         set => ceilTex = new(Resources.sprites[value], false);
+    }
+    public string[] graffitiTexturesStr
+    {
+        set => graffitiTextures = value.Select(id => new UnsafeGraphic(Resources.sprites[id], true)).ToArray();
     }
 
 
@@ -62,7 +71,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     }
 
 
-    IEnumerator IEnumerable.GetEnumerator() 
+    IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
 
@@ -89,9 +98,18 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
         => Add(row.Cast<Tile>().ToArray());
 
     public void LoadTextures(params string[] textureIds)
-        => textures = (from tId in textureIds
-                      select tId == null ? null : new UnsafeGraphic(Resources.sprites[tId], false))
-                      .ToArray();
+        => textures = textureIds.Select(id => id is null ? null : new UnsafeGraphic(Resources.sprites[id], false)).ToArray();
+
+    public void GenerateGraffitis(int amount, int? seed = null)
+    {
+        graffitis = new int[tiles.Length0(), tiles.Length1()];
+
+        if(seed is not null)
+            RNG.SetSeed(seed.Value);
+
+        for(int i = 0; i < amount; i++)
+            graffitis[RNG.Range(graffitis.Length0()), RNG.Range(graffitis.Length1())] = RNG.Range(graffitiTextures.Length) + 1;
+    }
 
     public UnsafeGraphic TextureAt(int x, int y)
         => textures[(int)this[x, y]];
@@ -106,7 +124,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
         {
             tile = Tile.Air;
             return false;
-        } 
+        }
 
         tile = tiles[idx.x, idx.y];
         return IsCollidingTile(tile);
@@ -132,8 +150,8 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
             return IsCollidingTile(type);
         }
 
-        Tile collA = this[tile.x + offset.x, tile.y], 
-             collB = this[tile.x, offset.y + tile.y], 
+        Tile collA = this[tile.x + offset.x, tile.y],
+             collB = this[tile.x, offset.y + tile.y],
              collC = this[tile + offset];
 
         // sorry
