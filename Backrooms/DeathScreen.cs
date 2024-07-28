@@ -47,7 +47,7 @@ public partial class DeathScreen
     public void Enable()
     {
         gui.enabled = true;
-        Bitmap lastView = rend.Draw(DrawParams.Columns | DrawParams.Sprites | DrawParams.PostEffects);
+        Bitmap lastView = rend.Draw();
         gui.GetElement<ImageElement>("background").graphic = new(lastView);
         PlayAnimation().StartCoroutine(win);
     }

@@ -14,9 +14,6 @@ public abstract unsafe class PostProcessEffect(bool enabled = true)
     /// <summary>Apply and draw effect to data</summary>
     public void Apply(BitmapData data)
     {
-        if(!enabled)
-            return;
-
         if(!requireRefBitmap)
         {
             Exec((byte*)data.Scan0, data.Stride, data.Width, data.Height);

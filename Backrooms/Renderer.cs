@@ -24,7 +24,9 @@ public unsafe class Renderer
     public event Action dimensionsChanged;
     public float wallHeight = 1f;
 
+    private float _fogEpsilon, _fogMaxDist;
     private readonly Comparison<SpriteRenderer> sprComparison;
+    private readonly ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
 
     public Vec2i virtRes { get; private set; }
@@ -39,12 +41,33 @@ public unsafe class Renderer
     public float singleUpscaleFactor { get; private set; }
     public float virtRatio { get; private set; }
     public float physRatio { get; private set; }
+    public float fogCoefficient { get; private set; }
+    public float fogEpsilon
+    {
+        get => _fogEpsilon;
+        set {
+            _fogEpsilon = value;
+            fogCoefficient = MathF.Log(value) / fogMaxDist;
+        }
+    }
+    public float fogMaxDist
+    {
+        get => _fogMaxDist;
+        set {
+            _fogMaxDist = value;
+            fogCoefficient = MathF.Log(fogEpsilon) / value;
+        }
+    }
 
 
     public Renderer(Vec2i virtRes, Vec2i physRes, Window window)
     {
         this.window = window;
         UpdateResolution(virtRes, physRes);
+
+        camera = new(90f, 20f, 0f);
+        _fogEpsilon = 0.015625f;
+        fogMaxDist = camera.maxRenderDist - 1f;
 
         sprComparison = (a, b) => {
             float aDist = (camera.pos - a.pos).sqrLength, bDist = (camera.pos - b.pos).sqrLength;
@@ -89,52 +112,98 @@ public unsafe class Renderer
         dimensionsChanged?.Invoke();
     }
 
-    public unsafe Bitmap Draw(DrawParams drawParams = DrawParams.All)
+    public bool PrepareDraw(out Bitmap bitmap, out BitmapData data)
     {
         if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
-            return new(1, 1);
+        {
+            bitmap = null;
+            data = null;
+            return false;
+        }
 
         Array.Fill(depthBuf, 1f);
         Array.Fill(heightBuf, (ushort)0u);
-        Bitmap bitmap = new(virtRes.x, virtRes.y);
-        BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        if((drawParams & DrawParams.Columns) != 0)
-            Parallel.For(0, virtRes.x, x => DrawColumn(data, x));
-        else if((drawParams & DrawParams.ColumnsNonParallel) != 0)
-            for(int x = 0; x < virtRes.x; x++)
-                DrawColumn(data, x);
+        bitmap = new(virtRes.x, virtRes.y);
+        data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        if((drawParams & DrawParams.FloorAndCeil) != 0)
-            Parallel.For(0, virtCenter.y, y => DrawFloorAndCeil(data, y));
-        else if((drawParams & DrawParams.FloorAndCeilNonParallel) != 0)
-            for(int y = 0; y < virtCenter.y; y++)
-                DrawFloorAndCeil(data, y);
+        return true;
+    }
 
-        if((drawParams & DrawParams.Sprites) != 0)
-            foreach(SpriteRenderer spr in sprites.Where(sr => sr is not null).OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
-                if(spr.enabled)
-                    DrawSprite(data, spr);
+    public void DrawWalls(BitmapData data)
+        => Parallel.For(0, data.Width, parallelOptions, x => DrawColumn(data, x));
 
-        if((drawParams & DrawParams.PostEffects) != 0)
-            foreach(PostProcessEffect effect in postProcessEffects)
+    public void DrawWallsNonParallel(BitmapData data)
+    {
+        for(int x = 0; x < data.Width; x++)
+            DrawColumn(data, x);
+    }
+
+    public void DrawFloorAndCeil(BitmapData data)
+        => Parallel.For(0, data.Height/2, y => DrawRow(data, y));
+
+    public void DrawFloorAndCeilNonParallel(BitmapData data)
+    {
+        for(int y = 0, c = data.Height/2; y < c; y++)
+            DrawRow(data, y);
+    }
+
+    public void DrawSprites(BitmapData data)
+    {
+        foreach(SpriteRenderer spr in sprites
+            .Where(sr => sr is not null && sr.enabled)
+            .OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
+            DrawSprite(data, spr);
+    }
+
+    public void ApplyPostEffects(BitmapData data)
+    {
+        foreach(PostProcessEffect effect in postProcessEffects)
+            if(effect.enabled)
                 effect.Apply(data);
+    }
 
-        if((drawParams & DrawParams.Gui) != 0)
-            foreach(GuiGroup group in guiGroups)
-                group.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
+    public void DrawUnsafeGui(BitmapData data)
+    {
+        foreach(GuiGroup group in guiGroups)
+            group.DrawUnsafeElements((byte*)data.Scan0, data.Stride, data.Width, data.Height);
+    }
+
+    public void DrawSafeGui(Bitmap bitmap)
+    {
+        using Graphics g = Graphics.FromImage(bitmap);
+
+        foreach(GuiGroup group in guiGroups)
+            group.DrawSafeElements(g);
+    }
+
+    public void Draw(Bitmap bitmap, BitmapData data)
+    {
+        DrawWalls(data);
+        DrawFloorAndCeil(data);
+        DrawSprites(data);
+        ApplyPostEffects(data);
+        DrawUnsafeGui(data);
 
         bitmap.UnlockBits(data);
 
-        if((drawParams & DrawParams.Gui) != 0)
-            using(Graphics g = Graphics.FromImage(bitmap))
-                foreach(GuiGroup group in guiGroups)
-                    group.DrawSafeElements(g);
+        DrawSafeGui(bitmap);
+    }
 
+    public Bitmap Draw()
+    {
+        PrepareDraw(out Bitmap bitmap, out BitmapData data);
+        Draw(bitmap, data);
         return bitmap;
     }
 
-    private unsafe void DrawFloorAndCeil(BitmapData data, int y)
+    public float GetDistanceFog(float dist)
+        => MathF.Exp(fogCoefficient * dist);
+    public float GetDistanceFog01(float dist01)
+        => GetDistanceFog(dist01 * _fogMaxDist);
+
+
+    private void DrawRow(BitmapData data, int y)
     {
         float rowDist = wallHeight * virtCenter.y / y;
 
@@ -161,7 +230,7 @@ public unsafe class Renderer
 
             floor += step;
 
-            float fog = GetDistanceFog(Utils.Clamp01((camera.pos - floor).length / camera.maxRenderDist));
+            float fog = GetDistanceFog((camera.pos - floor).length);
 
             float floorBrightness = map.floorLuminance * fog;
             byte* floorCol = map.floorTex.scan0 + map.floorTex.stride*floorTex.y + 3*floorTex.x;
@@ -234,7 +303,7 @@ public unsafe class Renderer
 
         heightBuf[x] = (ushort)halfHeight;
 
-        float brightness = (vert ? .75f : .5f) * GetDistanceFog(normDist);
+        float brightness = (vert ? .75f : .5f) * GetDistanceFog(dist);
         //const float light_spacing = 20f, light_strength = 2f;
         //float lightDistSqr = Utils.Sqr(hitPos.x - (hitPos.x / light_spacing).Round() * light_spacing) + Utils.Sqr(hitPos.y - (hitPos.y / light_spacing).Round() * light_spacing);
         //brightness = Utils.Clamp01(brightness * light_strength / (1f + lightDistSqr));
@@ -276,7 +345,7 @@ public unsafe class Renderer
             return;
 
         float normDist = transform.y/camera.maxRenderDist;
-        float brightness = GetDistanceFog(normDist);
+        float brightness = GetDistanceFog(transform.y);
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();
@@ -329,8 +398,4 @@ public unsafe class Renderer
             scan += 3 - backpaddle;
         }
     }
-
-
-    public static float GetDistanceFog(float dist01)
-        => .75f * Utils.Sqr(1f - dist01);
 }

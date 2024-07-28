@@ -41,8 +41,9 @@ public class Game
     public Game(Window window)
     {
         win = window;
-        rend = window.renderer;
         input = window.input;
+        rend = window.renderer;
+        camera = rend.camera;
 
         audioManager = new(win);
 
@@ -62,15 +63,13 @@ public class Game
             ceilLuminance = .5f
         };
 
-        rend.camera = camera = new(90f, 20f, 0f);
         cameraController = new(camera, mpManager, window, input, map, rend);
+        GenerateMap(RNG.signedInt);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
         inventory = new(window, rend, this, input, cameraController, new(5, 2), invColors);
         inventory.AddItem("vodka");
         inventory.AddItem("oli");
-
-        GenerateMap(RNG.signedInt);
 
         startMenu = new(window, rend, camera, cameraController, map, mpManager);
 
@@ -223,17 +222,13 @@ public class Game
         if(input.KeyDown(Keys.L))
         {
             map.textures[(int)Tile.Pillar] = map.textures[(int)Tile.Wall] = map.ceilTex = map.floorTex = new("lukas", false);
+            map.floorTexScale = 1f;
 
             UnsafeGraphic table = new("table");
-            HashSet<Vec2i> positions = [];
 
             for(int i = 0; i < 500; i++)
             {
                 Vec2i pos = new(RNG.Range(map.size.x), RNG.Range(map.size.y));
-                if(positions.Contains(pos))
-                    continue;
-
-                positions.Add(pos);
                 worldObjects.Add(new(rend, win, cameraController, input, inventory, pos + Vec2f.half, table, Item.items["vodka"]));
             }
         }

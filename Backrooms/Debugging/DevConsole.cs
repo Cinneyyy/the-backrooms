@@ -247,23 +247,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
             new(["count_tick_listeners", "tick_listeners", "tick_lists"],
             args => Out(Log.DevCmd, $"{win.GetTickInvocationList().Length} listeners are subscribed to win.tick"),
-            "COUNT_TICK_LISTENERS", [0]),
-
-            new(["draw_params"],
-            args => {
-                string numStr = args[0];
-                byte val;
-
-                if(numStr.StartsWith("0b")) val = Convert.ToByte(numStr[2..], 2);
-                else if(numStr.StartsWith("0x")) val = Convert.ToByte(numStr[2..], 16);
-                else if(numStr.StartsWith("0o")) val = Convert.ToByte(numStr[2..], 8);
-                else val = Convert.ToByte(numStr);
-
-                DrawParams drawParams = (DrawParams)val;
-                win.drawParams = drawParams;
-                Out(Log.DevCmd, $"Set draw params to {val} ({drawParams})");
-            },
-            "DRAW_PARAMS <byte>", [1])
+            "COUNT_TICK_LISTENERS", [0])
         ];
     }
 

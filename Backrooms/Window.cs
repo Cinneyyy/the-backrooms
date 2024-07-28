@@ -20,7 +20,6 @@ public class Window : Form
     public readonly Screen screen;
     public float fpsCountFreq = 1f;
     public float fixedDeltaTime = 1/32f;
-    public DrawParams drawParams = DrawParams.All;
 
     private readonly PictureBoxWithDrawOptions pictureBox;
     private readonly DateTime startTime;
@@ -180,7 +179,7 @@ public class Window : Form
                     pulsesElapsed++;
                 }
 
-                Bitmap renderResult = renderer.Draw(drawParams);
+                Bitmap renderResult = renderer.Draw();
                 Image lastImg = pictureBox.Image;
                 pictureBox.Image = renderResult;
                 lastImg.Dispose();
