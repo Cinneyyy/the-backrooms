@@ -11,7 +11,7 @@ public abstract class EntityInstance
     public readonly EntityType type;
     public readonly EntityTags tags;
     public readonly SpriteRenderer sprRend;
-    public readonly AudioSource audioSrc;
+    public readonly AudioPlayback audioPlayback;
     public float audioMinDist = .65f, absFalloffBegin = 10f, absFalloffEnd = 15f;
     public Path currPath = new(pointArr: []);
 
@@ -33,14 +33,13 @@ public abstract class EntityInstance
 
         sprRend = new(Vec2f.zero, tags.size, type.providedSprite) {
             enabled = false,
-            elevation = tags.elevation
+            elevation = tags.elevation == 69f ? tags.size.y/2f - 0.5f : tags.elevation
         };
         manager.rend.sprites.Add(sprRend);
 
-        audioSrc = new(type.providedAudio, true) {
-            disposeStream = false,
+        audioPlayback = new(type.providedAudio, true) {
             volume = 0f,
-            panStrategy = new SinPanStrategy()
+            loop = true
         };
 
         if(type.implementedCallbacks.Contains(nameof(Tick))) manager.window.tick += Tick;
@@ -49,8 +48,8 @@ public abstract class EntityInstance
         if(type.implementedCallbacks.Contains(nameof(GenerateMap))) manager.game.generateMap += GenerateMap;
 
         if(tags.manageSprRendPos) manager.window.tick += dt => sprRend.pos = pos;
-        if(tags.manageAudioVol) manager.window.tick += dt => audioSrc.volume = GetVolume(playerDist);
-        if(tags.manageAudioPan) manager.window.tick += dt => audioSrc.panning = Vec2f.Pan(pos, playerPos, playerAngle) * .875f;
+        if(tags.manageAudioVol) manager.window.tick += dt => audioPlayback.volume = GetVolume(playerDist);
+        if(tags.manageAudioPan) manager.window.tick += dt => audioPlayback.panning = Vec2f.Pan(pos, playerPos, playerAngle) * .85f;
 
         if(type.pathfinding is not null)
         {

@@ -264,6 +264,7 @@ public unsafe class Renderer
 
         bool hit = false, vert = false;
         int steps = 0;
+        Side side = 0;
         const int max_steps = 256;
 
         while(!hit)
@@ -273,12 +274,14 @@ public unsafe class Renderer
                 sideDist.x += deltaDist.x;
                 mPos.x += step.x;
                 vert = true;
+                side = dir.x < 0f ? Side.West : Side.East;
             }
             else
             {
                 sideDist.y += deltaDist.y;
                 mPos.y += step.y;
                 vert = false;
+                side = dir.y < 0f ? Side.North : Side.South;
             }
 
             if(steps++ >= max_steps) // this instead of !map.InBounds(...), because I want rendering outside of map to be cool
@@ -309,8 +312,11 @@ public unsafe class Renderer
         //float lightDistSqr = Utils.Sqr(hitPos.x - (hitPos.x / light_spacing).Round() * light_spacing) + Utils.Sqr(hitPos.y - (hitPos.y / light_spacing).Round() * light_spacing);
         //brightness = Utils.Clamp01(brightness * light_strength / (1f + lightDistSqr));
 
-        UnsafeGraphic tex = map.TextureAt(mPos);
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
+        if(side is Side.West or Side.South)
+            wallX = 1f - wallX;
+
+        UnsafeGraphic tex = map.TextureAt(mPos);
         int texX = (wallX * (tex?.wb ?? 0)).Floor();
         if(vert && dir.x > 0f || !vert && dir.y < 0f)
             texX = tex.w - texX - 1;

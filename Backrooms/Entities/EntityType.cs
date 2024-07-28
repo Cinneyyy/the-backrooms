@@ -17,7 +17,7 @@ public class EntityType
     public readonly Assembly behaviourAsm;
     public readonly Type behaviourType;
     public readonly Image providedSprite;
-    public readonly WaveStream providedAudio;
+    public readonly LoopingWaveStream providedAudio;
     public readonly string[] implementedCallbacks;
     public readonly IPathfindingAlgorithm pathfinding;
     public readonly EntityManager manager;
@@ -32,7 +32,7 @@ public class EntityType
             // Load provided files
             tags = JsonSerializer.Deserialize<EntityTags>(File.ReadAllText($"{dataPath}/tags.json"));
             providedSprite = tags.sprite is null ? Resources.sprites["empty"] : Image.FromFile($"{dataPath}/{tags.sprite}");
-            providedAudio = tags.audio is null ? Resources.audios["silence"] : Utils.FileToWaveStream($"{dataPath}/{tags.audio}");
+            providedAudio = new(tags.audio is null ? Resources.audios["silence"] : Utils.FileToWaveStream($"{dataPath}/{tags.audio}"), true);
 
             // Compile behaviour
             IEnumerable<string> srcFiles = Directory.GetFiles(dataPath, "*.cs", SearchOption.AllDirectories).Select(File.ReadAllText);

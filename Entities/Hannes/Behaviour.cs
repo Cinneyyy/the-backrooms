@@ -10,7 +10,7 @@ public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(
     public override void Awake()
     {
         sprRend.enabled = true;
-        audioSrc.Play();
+        audioPlayback.Play();
         pos = playerPos;
     }
 

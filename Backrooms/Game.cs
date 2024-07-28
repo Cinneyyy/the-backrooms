@@ -22,7 +22,6 @@ public class Game
     public readonly Renderer rend;
     public readonly Camera camera;
     public readonly Input input;
-    public readonly AudioManager audioManager;
     public readonly EntityManager entityManager;
     public readonly MpManager mpManager;
     public readonly Map map;
@@ -46,17 +45,15 @@ public class Game
         rend = window.renderer;
         camera = rend.camera;
 
-        audioManager = new(win);
-
         mpManager = new();
         SetUpMpManager();
 
         playerStats = new(this);
-        playerStats.takeDamage += () => audioManager.PlayOneShot("oof");
+        playerStats.takeDamage += () => AudioPlayback.PlayOneShot("oof");
 
         rend.map = map = new(new Tile[0, 0]) {
             texturesStr = [null, null, null, "wall", "pillar"],
-            graffitiTexturesStr = ["biggus_dickus"],
+            graffitiTexturesStr = ["biggus_dickus", "wojak1", "wojak2", "wojak3", "amon_gus", "cool", "gott_strafe_england", "heisenberg", "loss", "olaf"],
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
             floorTexScale = .1f,
@@ -69,7 +66,7 @@ public class Game
 
         int levelSeed = RNG.signedInt;
         GenerateMap(levelSeed);
-        map.GenerateGraffitis(2000, levelSeed);
+        map.GenerateGraffitis(2500, levelSeed);
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
         inventory = new(window, rend, this, input, cameraController, new(5, 2), invColors);
@@ -113,6 +110,8 @@ public class Game
 
         entityManager = new(mpManager, window, map, camera, this, rend);
         entityManager.LoadEntities("Entities");
+        entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
+        entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
         //foreach(EntityType type in entityManager.types)
         //    type.Instantiate();
 

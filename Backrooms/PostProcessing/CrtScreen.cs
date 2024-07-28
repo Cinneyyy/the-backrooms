@@ -19,7 +19,7 @@ public class CrtScreen(Vec2f? distortionConstants = null, CrtScreen.CrtLensFunct
         for(int x = 0; x < w; x++)
         {
             float height = size(x/(w-1f), distortionConstants.y);
-            
+
             int heightPx = (height * h).Floor();
             int y0 = ((h - heightPx)/2f).Floor(), y1 = ((h + heightPx)/2f).Floor();
 
@@ -71,7 +71,7 @@ public class CrtScreen(Vec2f? distortionConstants = null, CrtScreen.CrtLensFunct
 
             byte* scan = scan0 + y*stride;
             Buffer.MemoryCopy(scan, row, w*3, w*3);
-            
+
             for(int x = 0; x < 3*x0; x++)
                 *scan++ = 0;
 
