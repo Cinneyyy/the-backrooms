@@ -253,22 +253,12 @@ public unsafe class Renderer
             *floorScan++ = (byte)(*floorCol * floorBrightness);
 
             float ceilBrightness = map.ceilLuminance * fog;
-            if(lighting && isLightTile)
-            {
-                byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
+            byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
 
-                if(*ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f)
-                    *ceilScan++ = *ceilScan++ = *ceilScan++ = 0xff;
-                else
-                {
-                    *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
-                    *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
-                    *ceilScan++ = (byte)Utils.Clamp(*ceilCol * ceilBrightness, 0f, 255f);
-                }
-            }
+            if(lighting && isLightTile && *ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f)
+                *ceilScan++ = *ceilScan++ = *ceilScan++ = 0xff;
             else
             {
-                byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
                 *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
                 *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
                 *ceilScan++ = (byte)(*ceilCol * ceilBrightness);
