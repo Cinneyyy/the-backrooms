@@ -236,7 +236,8 @@ public unsafe class Renderer
 
             floor += step;
 
-            float fog = GetDistanceFog((camera.pos - floor).length);
+            float tileDist = (camera.pos - floor).length;
+            float fog = GetDistanceFog(tileDist);
             float lightDist = 0f;
             if(lighting)
             {
@@ -254,15 +255,16 @@ public unsafe class Renderer
             float ceilBrightness = map.ceilLuminance * fog;
             if(lighting && isLightTile)
             {
-                if(isLightTile)
-                    //ceilBrightness *= 1.75f * (MathF.Pow(-MathF.Abs(2f * (lightDist - .5f)), 3f) + 1f);
-                    //ceilBrightness *= 1.75f * (MathF.Pow(MathF.Abs(2f * (lightDist - .5f)), 3f) + 1f);
-                    ceilBrightness *= 1.75f * (MathF.Pow(MathF.Abs(2f * (lightDist - .5f)), 2f) + .66666f);
-
                 byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
-                *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
-                *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
-                *ceilScan++ = (byte)Utils.Clamp(*ceilCol * ceilBrightness, 0f, 255f);
+
+                if(*ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f)
+                    *ceilScan++ = *ceilScan++ = *ceilScan++ = 0xff;
+                else
+                {
+                    *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
+                    *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
+                    *ceilScan++ = (byte)Utils.Clamp(*ceilCol * ceilBrightness, 0f, 255f);
+                }
             }
             else
             {
