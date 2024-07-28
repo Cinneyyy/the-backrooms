@@ -12,7 +12,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     /// <summary>Array of UnsafeGraphic WITH transparency (=> Format32bppArgb)</summary>
     public UnsafeGraphic[] graffitiTextures = [];
     /// <summary>UnsafeGraphic WITHOUT transparency (=> Format24bppRgb)</summary>
-    public UnsafeGraphic floorTex, ceilTex;
+    public UnsafeGraphic floorTex, ceilTex, lightTex;
     public float floorTexScale = 1f, ceilTexScale = 1f;
     public float floorLuminance = .5f, ceilLuminance = .5f;
     public int[,] graffitis;
@@ -33,6 +33,10 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     public string ceilTexStr
     {
         set => ceilTex = new(Resources.sprites[value], false);
+    }
+    public string lightTexStr
+    {
+        set => lightTex = new(Resources.sprites[value], false);
     }
     public string[] graffitiTexturesStr
     {

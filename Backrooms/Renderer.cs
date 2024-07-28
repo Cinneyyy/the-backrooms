@@ -24,6 +24,8 @@ public unsafe class Renderer
     public event Action dimensionsChanged;
     public float wallHeight = 1f;
     public bool useFastColorBlend = true;
+    public bool lighting = true;
+    public float lightSpacing = 10f, lightStrength = 2.25f;
 
     private float _fogEpsilon, _fogMaxDist;
     private readonly Comparison<SpriteRenderer> sprComparison;
@@ -225,13 +227,23 @@ public unsafe class Renderer
 
             Vec2f texFrac = floor - floor.Floor();
             Vec2i floorTex = (map.floorTex.size * texFrac * map.floorTexScale).Floor() & map.floorTex.bounds;
+
+            bool isLightTile = floor.Ceil() % lightSpacing == Vec2i.zero;
+            UnsafeGraphic ceilingTex = isLightTile ? map.lightTex : map.ceilTex;
             Vec2i ceilTex = new(
-                Utils.Clamp((map.ceilTex.size.x * texFrac.x * map.ceilTexScale).Floor(), 0, map.ceilTex.wb),
-                Utils.Clamp((map.ceilTex.size.y * texFrac.y * map.ceilTexScale).Floor(), 0, map.ceilTex.hb));
+                Utils.Clamp((ceilingTex.size.x * texFrac.x * map.ceilTexScale).Floor(), 0, ceilingTex.wb),
+                Utils.Clamp((ceilingTex.size.y * texFrac.y * map.ceilTexScale).Floor(), 0, ceilingTex.hb));
 
             floor += step;
 
             float fog = GetDistanceFog((camera.pos - floor).length);
+            float lightDist = 0f;
+            if(lighting)
+            {
+                float lightDistSqr = Utils.Sqr(floor.x + .5f - (floor.x / lightSpacing).Round() * lightSpacing) + Utils.Sqr(floor.y + .5f - (floor.y / lightSpacing).Round() * lightSpacing);
+                lightDist = MathF.Sqrt(lightDistSqr);
+                fog = Utils.Clamp01(fog * GetDistanceFog(lightDist) * lightStrength / (1f + lightDistSqr));
+            }
 
             float floorBrightness = map.floorLuminance * fog;
             byte* floorCol = map.floorTex.scan0 + map.floorTex.stride*floorTex.y + 3*floorTex.x;
@@ -240,10 +252,25 @@ public unsafe class Renderer
             *floorScan++ = (byte)(*floorCol * floorBrightness);
 
             float ceilBrightness = map.ceilLuminance * fog;
-            byte* ceilCol = map.ceilTex.scan0 + map.ceilTex.stride*ceilTex.y + 3*ceilTex.x;
-            *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
-            *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
-            *ceilScan++ = (byte)(*ceilCol * ceilBrightness);
+            if(lighting && isLightTile)
+            {
+                if(isLightTile)
+                    //ceilBrightness *= 1.75f * (MathF.Pow(-MathF.Abs(2f * (lightDist - .5f)), 3f) + 1f);
+                    //ceilBrightness *= 1.75f * (MathF.Pow(MathF.Abs(2f * (lightDist - .5f)), 3f) + 1f);
+                    ceilBrightness *= 1.75f * (MathF.Pow(MathF.Abs(2f * (lightDist - .5f)), 2f) + .66666f);
+
+                byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
+                *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
+                *ceilScan++ = (byte)Utils.Clamp(*ceilCol++ * ceilBrightness, 0f, 255f);
+                *ceilScan++ = (byte)Utils.Clamp(*ceilCol * ceilBrightness, 0f, 255f);
+            }
+            else
+            {
+                byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
+                *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
+                *ceilScan++ = (byte)(*ceilCol++ * ceilBrightness);
+                *ceilScan++ = (byte)(*ceilCol * ceilBrightness);
+            }
         }
     }
 
@@ -308,9 +335,11 @@ public unsafe class Renderer
         heightBuf[x] = (ushort)halfHeight;
 
         float brightness = (vert ? .75f : .5f) * GetDistanceFog(dist);
-        //const float light_spacing = 20f, light_strength = 2f;
-        //float lightDistSqr = Utils.Sqr(hitPos.x - (hitPos.x / light_spacing).Round() * light_spacing) + Utils.Sqr(hitPos.y - (hitPos.y / light_spacing).Round() * light_spacing);
-        //brightness = Utils.Clamp01(brightness * light_strength / (1f + lightDistSqr));
+        if(lighting)
+        {
+            float lightDistSqr = Utils.Sqr(hitPos.x + .5f - (hitPos.x / lightSpacing).Round() * lightSpacing) + Utils.Sqr(hitPos.y + .5f - (hitPos.y / lightSpacing).Round() * lightSpacing);
+            brightness = Utils.Clamp01(brightness * GetDistanceFog(MathF.Sqrt(lightDistSqr)) * lightStrength / (1f + lightDistSqr));
+        }
 
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
         if(side is Side.West or Side.South)

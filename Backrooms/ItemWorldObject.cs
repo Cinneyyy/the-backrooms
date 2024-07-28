@@ -34,10 +34,7 @@ public class ItemWorldObject : WorldObject
 
     private void OnInteract()
     {
-        if(itemRend.enabled)
-        {
+        if(itemRend.enabled && inv.AddItem(item))
             itemRend.enabled = false;
-            inv.AddItem(item);
-        }
     }
 }

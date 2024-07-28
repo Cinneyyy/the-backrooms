@@ -44,6 +44,7 @@
     <None Remove="Resources\Textures\graffitis\wojak1.png" />
     <None Remove="Resources\Textures\graffitis\wojak2.png" />
     <None Remove="Resources\Textures\graffitis\wojak3.png" />
+    <None Remove="Resources\Textures\light.png" />
     <None Remove="Resources\Textures\lukas.png" />
     <None Remove="Resources\Textures\missing.png" />
     <None Remove="Resources\Textures\nocursor.cur" />
@@ -77,6 +78,7 @@
     <EmbeddedResource Include="Resources\Textures\graffitis\wojak3.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Textures\light.png" />
     <EmbeddedResource Include="Resources\Textures\lukas.png" />
     <EmbeddedResource Include="Resources\Textures\missing.png" />
   </ItemGroup>

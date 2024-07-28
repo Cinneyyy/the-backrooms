@@ -56,6 +56,7 @@ public class Game
             graffitiTexturesStr = ["biggus_dickus", "wojak1", "wojak2", "wojak3", "amon_gus", "cool", "gott_strafe_england", "heisenberg", "loss", "olaf"],
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
+            lightTexStr = "light",
             floorTexScale = .1f,
             ceilTexScale = 1f,
             floorLuminance = .5f,
@@ -110,8 +111,7 @@ public class Game
 
         entityManager = new(mpManager, window, map, camera, this, rend);
         entityManager.LoadEntities("Entities");
-        entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
-        entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
+        //entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
         //foreach(EntityType type in entityManager.types)
         //    type.Instantiate();
 

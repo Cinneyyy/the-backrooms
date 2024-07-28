@@ -247,7 +247,19 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
             new(["count_tick_listeners", "tick_listeners", "tick_lists"],
             args => Out(Log.DevCmd, $"{win.GetTickInvocationList().Length} listeners are subscribed to win.tick"),
-            "COUNT_TICK_LISTENERS", [0])
+            "COUNT_TICK_LISTENERS", [0]),
+
+            new(["light_strength", "lstrength", "lightstr"],
+            args => ParseNumber(args.First(), ref win.renderer.lightStrength),
+            "LIGHT_STRENGTH <float>", [1]),
+
+            new(["light_spacing", "lspacing", "lightspc"],
+            args => ParseNumber(args.First(), ref win.renderer.lightSpacing),
+            "LIGHT_SPACING <float>", [1]),
+
+            new(["lighting", "light_switch"],
+            args => ParseBool(args.FirstOrDefault(), ref win.renderer.lighting),
+            "LIGHTING <on/off>", [0, 1])
         ];
     }
 
