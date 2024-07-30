@@ -26,3 +26,4 @@
     - Pathfinding shortcuts
 1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio and in fullScreen mode (GUI Groups)
     - May have something to do with screenOffset
+1. Light sources interfering with each other at too little distances

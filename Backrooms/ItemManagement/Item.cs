@@ -20,7 +20,7 @@ public abstract class Item(string name, string desc, bool consumeOnUse, UnsafeGr
         static void load_sprites()
         {
             foreach((string id, Item item) in items)
-                item.graphic = Resources.unsafeGraphics[id];
+                item.graphic = Resources.graphics[id];
         }
 
         if(Resources.finishedInit) load_sprites();

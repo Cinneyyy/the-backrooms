@@ -24,4 +24,7 @@ public class SpriteRenderer(Vec2f pos, Vec2f size, UnsafeGraphic graphic) : IDis
 
     public void SetImage(Image image)
         => graphic = new(image, true);
+
+    public void Ground()
+        => elevation = (size.y - 1f) / 2f;
 }

@@ -22,7 +22,7 @@ public static class Resources
 
 
     public static readonly Dictionary<string, Image> sprites = [];
-    public static readonly Dictionary<string, UnsafeGraphic> unsafeGraphics = [];
+    public static readonly Dictionary<string, UnsafeGraphic> graphics = [];
     public static readonly Dictionary<string, Icon> icons = [];
     public static readonly Dictionary<string, WaveStream> audios = [];
     public static readonly Dictionary<string, FontFamily> fonts = [];
@@ -58,8 +58,8 @@ public static class Resources
                 case ResType.Image:
                 {
                     Image image = Image.FromStream(stream);
-                    sprites.Add(name, image); 
-                    unsafeGraphics.Add(name, new(image));
+                    sprites.Add(name, image);
+                    graphics.Add(name, new(image));
                     break;
                 }
                 case ResType.Font:

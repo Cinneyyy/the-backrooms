@@ -5,16 +5,41 @@ VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Backrooms", "Backrooms.csproj", "{E1084580-599A-4464-9933-F90C86DBA582}"
 EndProject
+Project("{911E67C6-3D85-4FCE-B560-20A9C3E3FF48}") = "backrooms-game", "bin\Debug\net8.0-windows\backrooms-game.exe", "{04303E0F-6E8F-4F6E-B45A-A08076857FA3}"
+	ProjectSection(DebuggerProjectSystem) = preProject
+		PortSupplier = 00000000-0000-0000-0000-000000000000
+		Executable = F:\Projects\Git\backrooms\bin\Debug\net8.0-windows\backrooms-game.exe
+		RemoteMachine = DESKTOP-45TUVIF
+		StartingDirectory = F:\Projects\Git\backrooms\bin\Debug\net8.0-windows
+		Arguments = screen1
+		Environment = Default
+		LaunchingEngine = 00000000-0000-0000-0000-000000000000
+		UseLegacyDebugEngines = No
+		LaunchSQLEngine = No
+		AttachLaunchAction = No
+		IORedirection = Auto
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E1084580-599A-4464-9933-F90C86DBA582}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1084580-599A-4464-9933-F90C86DBA582}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E1084580-599A-4464-9933-F90C86DBA582}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E1084580-599A-4464-9933-F90C86DBA582}.Debug|x64.Build.0 = Debug|Any CPU
 		{E1084580-599A-4464-9933-F90C86DBA582}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1084580-599A-4464-9933-F90C86DBA582}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E1084580-599A-4464-9933-F90C86DBA582}.Release|x64.ActiveCfg = Release|Any CPU
+		{E1084580-599A-4464-9933-F90C86DBA582}.Release|x64.Build.0 = Release|Any CPU
+		{04303E0F-6E8F-4F6E-B45A-A08076857FA3}.Debug|Any CPU.ActiveCfg = Release|x64
+		{04303E0F-6E8F-4F6E-B45A-A08076857FA3}.Debug|x64.ActiveCfg = Release|x64
+		{04303E0F-6E8F-4F6E-B45A-A08076857FA3}.Release|Any CPU.ActiveCfg = Release|x64
+		{04303E0F-6E8F-4F6E-B45A-A08076857FA3}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

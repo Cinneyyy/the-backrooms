@@ -65,10 +65,10 @@ public class Game
 
         cameraController = new(camera, mpManager, window, input, map, rend);
 
+        rend.lightDistribution = new GridLightDistribution(10);
         int levelSeed = RNG.signedInt;
         GenerateMap(levelSeed);
         map.GenerateGraffitis(2500, levelSeed);
-        rend.lightDistribution = new GridLightDistribution(10);
         //rend.lightDistribution = new PointLightDistribution(map.size);
         //(rend.lightDistribution as PointLightDistribution).AddLightSources(
         //    Enumerable.Range(0, 2000)
@@ -152,6 +152,12 @@ public class Game
             generator.GeneratePillarRooms();
 
             map.SetTiles(generator.FormatTiles());
+
+            for(int x = 0; x < map.size.x; x++)
+                for(int y = 0; y < map.size.y; y++)
+                    if(rend.lightDistribution.IsLightTile(new(x, y)))
+                        map[x, y] = Tile.Air;
+
             camPos = map.size/2f;
         }
 
@@ -255,6 +261,20 @@ public class Game
         mpManager.connectedToServer += () => {
             GenerateMap(mpManager.serverState.levelSeed);
             camera.pos = mpManager.clientState.pos;
+
+            foreach(KeyValuePair<ushort, ClientState> kvp in mpManager.clientStates.Where(c => c.Key != mpManager.clientId))
+                handleClientConnect(kvp.Key);
+        };
+
+        mpManager.disconnectedFromServer += () => {
+            foreach(KeyValuePair<ushort, ClientState> kvp in mpManager.clientStates.Where(c => c.Key != mpManager.clientId))
+            {
+                win.tick -= kvp.Value.updaterDelegate;
+                rend.sprites.Remove(kvp.Value.renderer);
+            }
+
+            mpManager.clientStates.Clear();
+            startMenu.startGui.enabled = true;
         };
 
         mpManager.receiveClientRequest += req => {
@@ -268,20 +288,25 @@ public class Game
             }
         };
 
-        mpManager.clientConnected += id => {
+        void handleClientConnect(ushort id)
+        {
             if(id == mpManager.clientId)
                 return;
 
             ClientState state = mpManager.clientStates[id];
 
-            state.renderer = new(state.pos, new Vec2f(.4f, .9f), new UnsafeGraphic("hazmat_suit"));
+            UnsafeGraphic graphic = Resources.graphics["hazmat_suit"];
+            state.renderer = new(state.pos, new Vec2f(graphic.whRatio * .75f, .75f), graphic);
+            state.renderer.Ground();
             rend.sprites.Add(state.renderer);
 
             state.updaterDelegate = _ => state.renderer.pos = state.pos;
             win.tick += state.updaterDelegate;
-        };
+        }
 
-        mpManager.clientDisconnected += id => {
+        mpManager.remoteClientConnected += handleClientConnect;
+
+        mpManager.remoteClientDisconnected += id => {
             if(id == mpManager.clientId)
                 return;
 

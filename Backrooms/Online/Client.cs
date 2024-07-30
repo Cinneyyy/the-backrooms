@@ -18,6 +18,7 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
     public event ReceivePacketHandler handleMiscPacket;
     public event MpManager<TSState, TCState, TReq>.RequestHandler receiveRequest;
     public event MpManager<TSState, TCState, TReq>.ClientEvent clientConnected, clientDisconnected;
+    public event Action finishConnect, disconnect;
 
     private TcpClient remoteHost;
     private bool receiveInput;
@@ -41,6 +42,7 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             remoteIpAddress = ipAddress;
             remotePort = port;
             receiveInput = true;
+            isConnected = true;
 
             remoteHost = new(ipAddress, port);
 
@@ -62,9 +64,11 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
             return;
         }
 
-        isConnected = false;
         receiveInput = false;
+        isConnected = false;
         remoteHost.Close();
+
+        disconnect?.Invoke();
 
         Out(Log.Client, $"Disconnected from server at {remoteIpAddress}:{remotePort}");
 
@@ -77,6 +81,12 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
     {
         try
         {
+            if(!remoteHost.Connected && isConnected)
+            {
+                Disconnect();
+                return;
+            }
+
             byte[] data = members is null or []
                 ? BinarySerializer<T>.Serialize(packet, commonState.packetCompression)
                 : BinarySerializer<T>.SerializeMembers(packet, members, commonState.packetCompression);
@@ -101,6 +111,12 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
     {
         try
         {
+            if(!remoteHost.Connected && isConnected)
+            {
+                Disconnect();
+                return;
+            }
+
             remoteHost.GetStream().Write(data, 0, data.Length);
 
             outgoingPacketData += data.Length;
@@ -128,7 +144,12 @@ public class Client<TSState, TCState, TReq>(MpManager<TSState, TCState, TReq> mp
 
         try
         {
-            while(receiveInput && stream.Read(buf, 0, buf.Length) is int bytesRead && bytesRead > 0)
+            while(!remoteHost.Connected)
+                Thread.Sleep(1);
+
+            finishConnect?.Invoke();
+
+            while(receiveInput && remoteHost.Connected && stream.Read(buf, 0, buf.Length) is int bytesRead && bytesRead > 0)
                 try
                 {
                     PacketType type = (PacketType)buf[0];

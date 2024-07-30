@@ -423,7 +423,7 @@ public unsafe class Renderer
         float normDist = transform.y/camera.maxRenderDist;
         float brightness = GetDistanceFog(transform.y);
         if(lighting)
-            lightDistribution.ComputeLighting(this, brightness, spr.pos);
+            brightness = lightDistribution.ComputeLighting(this, brightness, spr.pos);
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();

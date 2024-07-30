@@ -18,6 +18,7 @@ public class Window : Form
     public event Action pulse;
     public event Action visible;
     public readonly Screen screen;
+    public readonly string[] cmdArgs;
     public float fpsCountFreq = 1f;
     public float fixedDeltaTime = 1/32f;
 
@@ -58,12 +59,16 @@ public class Window : Form
     }
 
 
-    public Window(Vec2i virtualResolution, string windowTitle, string iconManifest, bool lockCursor, bool hideCursor, Action<Window> load = null, Action<float> tick = null)
+    public Window(Vec2i virtualResolution, string windowTitle, string[] cmdArgs, string iconManifest, bool lockCursor, bool hideCursor, Action<Window> load = null, Action<float> tick = null)
     {
         DevConsole.Hide();
 
+        this.cmdArgs = cmdArgs;
+        CmdArgInterpreter interpretedArgs = new(cmdArgs);
+        if(interpretedArgs.invalid) interpretedArgs = null;
+
         // Initialize
-        screen = Screen.FromPoint(Cursor.Position);
+        screen = interpretedArgs?.screen is null ? Screen.FromPoint(Cursor.Position) : Screen.AllScreens[interpretedArgs.screen.Value];
         DoubleBuffered = true;
         BackColor = Color.Black;
         StartPosition = FormStartPosition.CenterScreen;

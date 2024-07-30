@@ -13,8 +13,8 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
     public delegate void ClientEvent(ushort id);
 
 
-    public event Action connectedToServer;
-    public event ClientEvent clientConnected, clientDisconnected;
+    public event Action connectedToServer, disconnectedFromServer;
+    public event ClientEvent remoteClientConnected, remoteClientDisconnected;
     public event RequestHandler receiveClientRequest, receiveServerRequest;
     public readonly CommonState commonState = commonState ?? new();
     public readonly Dictionary<ushort, TCState> clientStates = [];
@@ -45,9 +45,15 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
         }
 
         client = new(this);
-        client.receiveRequest += receiveClientRequest;
-        client.clientConnected += clientConnected;
-        client.clientDisconnected += clientDisconnected;
+
+        client.receiveRequest += req => receiveClientRequest?.Invoke(req);
+        client.clientConnected += id => remoteClientConnected?.Invoke(id);
+        client.clientDisconnected += id => remoteClientDisconnected?.Invoke(id);
+        client.disconnect += () => {
+            isConnected = false;
+            disconnectedFromServer?.Invoke();
+        };
+
         client.Connect(ipAddress, port);
     }
 

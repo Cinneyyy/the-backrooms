@@ -87,7 +87,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 };
             }
         }) {
-            IsBackground = true
+            IsBackground = false
         };
 
         win.Shown += (_, _) => thread.Start();
