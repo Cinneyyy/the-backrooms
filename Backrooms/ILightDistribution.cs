@@ -4,9 +4,15 @@ namespace Backrooms;
 
 public interface ILightDistribution
 {
-    float ClosestSqrLightDist(Vec2f pt);
-    bool IsInLightTile(Vec2f pt);
+    Vec2i ClosestLightSource(Vec2f pt);
+    bool IsLightTile(Vec2i pt);
 
+
+    public float ClosestSqrLightDist(Vec2f pt)
+        => (pt + Vec2f.half - ClosestLightSource(pt)).sqrLength;
+
+    public bool InLightTile(Vec2f pt)
+        => IsLightTile(pt.Floor());
 
     public float ComputeLighting(Renderer rend, float currBrightness, Vec2f hitPoint)
     {

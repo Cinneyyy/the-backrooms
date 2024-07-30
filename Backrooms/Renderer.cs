@@ -214,6 +214,9 @@ public unsafe class Renderer
     {
         float rowDist = wallHeight * virtCenter.y / y;
 
+        if(rowDist > fogMaxDist)
+            return;
+
         Vec2f step = rowDist * 2 * camera.plane / virtRes.x;
         Vec2f floor = camera.pos + rowDist * (camera.forward - camera.plane);
 
@@ -229,10 +232,11 @@ public unsafe class Renderer
                 continue;
             }
 
-            Vec2f texFrac = floor - floor.Floor();
+            Vec2i tile = floor.Floor();
+            Vec2f texFrac = floor - tile;
             Vec2i floorTex = (map.floorTex.size * texFrac * map.floorTexScale).Floor() & map.floorTex.bounds;
 
-            bool isLightTile = lightDistribution.IsInLightTile(floor);
+            bool isLightTile = lightDistribution.IsLightTile(tile);
             UnsafeGraphic ceilingTex = isLightTile ? map.lightTex : map.ceilTex;
             Vec2i ceilTex = new(
                 Utils.Clamp((ceilingTex.size.x * texFrac.x * map.ceilTexScale).Floor(), 0, ceilingTex.wb),

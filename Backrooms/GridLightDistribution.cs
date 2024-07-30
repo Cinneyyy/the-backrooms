@@ -5,12 +5,9 @@ public class GridLightDistribution(int spacing) : ILightDistribution
     public int spacing = spacing;
 
 
-    public float ClosestSqrLightDist(Vec2f pt)
-    {
-        Vec2f closestSrcRel = pt + Vec2f.half - (pt / spacing).Round() * spacing;
-        return closestSrcRel.sqrLength;
-    }
+    public Vec2i ClosestLightSource(Vec2f pt)
+        => (pt / spacing).Round() * spacing;
 
-    public bool IsInLightTile(Vec2f pt)
-        => pt.Ceil() % spacing == Vec2i.zero;
+    public bool IsLightTile(Vec2i pt)
+        => (pt + Vec2i.one) % spacing == Vec2i.zero;
 }

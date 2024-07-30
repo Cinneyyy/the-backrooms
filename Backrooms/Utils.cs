@@ -301,4 +301,9 @@ public static class Utils
         byte b = (byte)Lerp(b1, b2, alpha);
         return (r, g, b);
     }
+
+    public static bool IsEmpty(this Tile tile)
+        => Backrooms.Map.IsEmptyTile(tile);
+    public static bool IsColliding(this Tile tile)
+        => Backrooms.Map.IsCollidingTile(tile);
 }

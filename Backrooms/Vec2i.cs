@@ -18,6 +18,7 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
 
 
     public readonly int sqrLength => x*x + y*y;
+    public readonly float sqrLengthF => sqrLength;
     public readonly float length => MathF.Sqrt(sqrLength);
     public readonly int min => Math.Min(x, y);
     public readonly int max => Math.Max(x, y);

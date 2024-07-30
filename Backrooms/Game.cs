@@ -68,6 +68,12 @@ public class Game
         int levelSeed = RNG.signedInt;
         GenerateMap(levelSeed);
         map.GenerateGraffitis(2500, levelSeed);
+        rend.lightDistribution = new GridLightDistribution(10);
+        //rend.lightDistribution = new PointLightDistribution(map.size);
+        //(rend.lightDistribution as PointLightDistribution).AddLightSources(
+        //    Enumerable.Range(0, 2000)
+        //    .Select(i => RNG.Vec2i(map.size))
+        //    .Where(pt => map[pt].IsEmpty()));
 
         ColorBlock invColors = new(Color.Black, 125, 185, 225);
         inventory = new(window, rend, this, input, cameraController, new(5, 2), invColors);

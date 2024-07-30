@@ -50,4 +50,22 @@ public static class RNG
 
     public static bool Chance(float chance = .5f)
         => value <= chance;
+
+    public static Vec2i Vec2i(Vec2i min, Vec2i max)
+        => new(Range(min.x, max.x), Range(min.y, max.y));
+    public static Vec2i Vec2i(Vec2i max)
+        => new(Range(max.x), Range(max.y));
+    public static Vec2i Vec2i(int minX, int minY, int maxX, int maxY)
+        => new(Range(minX, maxX), Range(minY, maxY));
+    public static Vec2i Vec2i(int maxX, int maxY)
+        => new(Range(maxX), Range(maxY));
+
+    public static Vec2f Vec2f(Vec2f min, Vec2f max)
+        => new(Range(min.x, max.x), Range(min.y, max.y));
+    public static Vec2f Vec2f(Vec2f max)
+        => new(Range(max.x), Range(max.y));
+    public static Vec2f Vec2f(float minX, float minY, float maxX, float maxY)
+        => new(Range(minX, maxX), Range(minY, maxY));
+    public static Vec2f Vec2f(float maxX, float maxY)
+        => new(Range(maxX), Range(maxY));
 }
