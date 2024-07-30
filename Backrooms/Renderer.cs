@@ -25,8 +25,9 @@ public unsafe class Renderer
     public float wallHeight = 1f;
     public bool useFastColorBlend = true;
     public bool lighting = true;
-    public int lightSpacing = 9;
     public float lightStrength = 2f;
+    public float minBrightness = 0f;//.001f;
+    public ILightDistribution lightDistribution;
 
     private float _fogEpsilon, _fogMaxDist;
     private readonly Comparison<SpriteRenderer> sprComparison;
@@ -64,13 +65,13 @@ public unsafe class Renderer
     }
 
 
-    public Renderer(Vec2i virtRes, Vec2i physRes, Window window)
+    public Renderer(Vec2i virtRes, Vec2i physRes, Window window, ILightDistribution lightDistribution = null)
     {
         this.window = window;
         UpdateResolution(virtRes, physRes);
 
         camera = new(90f, 20f, 0f);
-        _fogEpsilon = 0.015625f;
+        _fogEpsilon = 0.015625f; // 2^-6
         fogMaxDist = camera.maxRenderDist - 1f;
 
         sprComparison = (a, b) => {
@@ -81,6 +82,8 @@ public unsafe class Renderer
             else
                 return b.importance.CompareTo(a.importance);
         };
+
+        this.lightDistribution = lightDistribution ?? new GridLightDistribution(10);
     }
 
 
@@ -229,7 +232,7 @@ public unsafe class Renderer
             Vec2f texFrac = floor - floor.Floor();
             Vec2i floorTex = (map.floorTex.size * texFrac * map.floorTexScale).Floor() & map.floorTex.bounds;
 
-            bool isLightTile = floor.Ceil() % lightSpacing == Vec2i.zero;
+            bool isLightTile = lightDistribution.IsInLightTile(floor);
             UnsafeGraphic ceilingTex = isLightTile ? map.lightTex : map.ceilTex;
             Vec2i ceilTex = new(
                 Utils.Clamp((ceilingTex.size.x * texFrac.x * map.ceilTexScale).Floor(), 0, ceilingTex.wb),
@@ -239,13 +242,8 @@ public unsafe class Renderer
 
             float tileDist = (camera.pos - floor).length;
             float fog = GetDistanceFog(tileDist);
-            float lightDist = 0f;
             if(lighting)
-            {
-                float lightDistSqr = Utils.Sqr(floor.x + .5f - (floor.x / lightSpacing).Round() * lightSpacing) + Utils.Sqr(floor.y + .5f - (floor.y / lightSpacing).Round() * lightSpacing);
-                lightDist = MathF.Sqrt(lightDistSqr);
-                fog = Utils.Clamp01(fog * GetDistanceFog(lightDist) * lightStrength / (1f + lightDistSqr));
-            }
+                fog = lightDistribution.ComputeLighting(this, fog, floor);
 
             float floorBrightness = map.floorLuminance * fog;
             byte* floorCol = map.floorTex.scan0 + map.floorTex.stride*floorTex.y + 3*floorTex.x;
@@ -329,10 +327,7 @@ public unsafe class Renderer
 
         float brightness = (vert ? .75f : .5f) * GetDistanceFog(dist);
         if(lighting)
-        {
-            float lightDistSqr = Utils.Sqr(hitPos.x + .5f - (hitPos.x / lightSpacing).Round() * lightSpacing) + Utils.Sqr(hitPos.y + .5f - (hitPos.y / lightSpacing).Round() * lightSpacing);
-            brightness = Utils.Clamp01(brightness * GetDistanceFog(MathF.Sqrt(lightDistSqr)) * lightStrength / (1f + lightDistSqr));
-        }
+            brightness = lightDistribution.ComputeLighting(this, brightness, hitPos);
 
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
         if(side is Side.West or Side.South)
@@ -424,10 +419,7 @@ public unsafe class Renderer
         float normDist = transform.y/camera.maxRenderDist;
         float brightness = GetDistanceFog(transform.y);
         if(lighting)
-        {
-            float lightDistSqr = Utils.Sqr(spr.pos.x + .5f - (spr.pos.x / lightSpacing).Round() * lightSpacing) + Utils.Sqr(spr.pos.y + .5f - (spr.pos.y / lightSpacing).Round() * lightSpacing);
-            brightness = Utils.Clamp01(brightness * GetDistanceFog(MathF.Sqrt(lightDistSqr)) * lightStrength / (1f + lightDistSqr));
-        }
+            lightDistribution.ComputeLighting(this, brightness, spr.pos);
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();

@@ -254,7 +254,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "LIGHT_STRENGTH <float>", [1]),
 
             new(["light_spacing", "lspacing", "lightspc"],
-            args => ParseNumber(args.First(), ref win.renderer.lightSpacing),
+            args => ParseNumber(args.First(), ref (win.renderer.lightDistribution as GridLightDistribution).spacing),
             "LIGHT_SPACING <float>", [1]),
 
             new(["lighting", "light_switch"],
