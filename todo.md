@@ -13,7 +13,6 @@
     - Not too much, it is the backrooms
 1. More varied enemies & enemy AI
 1. Controller input
-1. Lighting
 1. Post processing effects
     - Maybe more efficient ones also
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP

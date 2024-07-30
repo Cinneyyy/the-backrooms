@@ -53,7 +53,7 @@ public class Game
 
         rend.map = map = new(new Tile[0, 0]) {
             texturesStr = [null, null, null, "wall", "pillar"],
-            graffitiTexturesStr = ["biggus_dickus", "wojak1", "wojak2", "wojak3", "amon_gus", "cool", "gott_strafe_england", "heisenberg", "loss", "olaf"],
+            graffitiTexturesStr = Resources.sprites.Where(kvp => kvp.Key.StartsWith("gr_")).Select(kvp => kvp.Key).ToArray(),
             floorTexStr = "carpet",
             ceilTexStr = "ceiling",
             lightTexStr = "light",
@@ -196,6 +196,9 @@ public class Game
 
         if(input.KeyDown(Keys.F1))
             win.ToggleCursor();
+
+        if(input.KeyDown(Keys.F))
+            rend.lighting ^= true;
 
         if(input.KeyDown(Keys.Escape))
         {

@@ -25,7 +25,8 @@ public unsafe class Renderer
     public float wallHeight = 1f;
     public bool useFastColorBlend = true;
     public bool lighting = true;
-    public float lightSpacing = 10f, lightStrength = 2.25f;
+    public int lightSpacing = 9;
+    public float lightStrength = 2f;
 
     private float _fogEpsilon, _fogMaxDist;
     private readonly Comparison<SpriteRenderer> sprComparison;
@@ -255,7 +256,7 @@ public unsafe class Renderer
             float ceilBrightness = map.ceilLuminance * fog;
             byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
 
-            if(lighting && isLightTile && *ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f)
+            if(lighting && isLightTile && *ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f && Map.IsEmptyTile(map[floor.Floor()]))
                 *ceilScan++ = *ceilScan++ = *ceilScan++ = 0xff;
             else
             {
@@ -422,6 +423,11 @@ public unsafe class Renderer
 
         float normDist = transform.y/camera.maxRenderDist;
         float brightness = GetDistanceFog(transform.y);
+        if(lighting)
+        {
+            float lightDistSqr = Utils.Sqr(spr.pos.x + .5f - (spr.pos.x / lightSpacing).Round() * lightSpacing) + Utils.Sqr(spr.pos.y + .5f - (spr.pos.y / lightSpacing).Round() * lightSpacing);
+            brightness = Utils.Clamp01(brightness * GetDistanceFog(MathF.Sqrt(lightDistSqr)) * lightStrength / (1f + lightDistSqr));
+        }
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
         Vec2i size = (spr.size * Math.Abs(virtRes.y/transform.y)).Floor();

@@ -35,15 +35,16 @@
     <None Remove="Resources\Textures\checkmark.png" />
     <None Remove="Resources\Textures\empty.png" />
     <None Remove="Resources\Textures\floor.png" />
-    <None Remove="Resources\Textures\graffitis\amon_gus.png" />
-    <None Remove="Resources\Textures\graffitis\cool.png" />
-    <None Remove="Resources\Textures\graffitis\gott_strafe_england.png" />
-    <None Remove="Resources\Textures\graffitis\heisenberg.png" />
-    <None Remove="Resources\Textures\graffitis\loss.png" />
-    <None Remove="Resources\Textures\graffitis\Olaf.png" />
-    <None Remove="Resources\Textures\graffitis\wojak1.png" />
-    <None Remove="Resources\Textures\graffitis\wojak2.png" />
-    <None Remove="Resources\Textures\graffitis\wojak3.png" />
+    <None Remove="Resources\Textures\graffitis\gr_amon_gus.png" />
+    <None Remove="Resources\Textures\graffitis\gr_cool.png" />
+    <None Remove="Resources\Textures\graffitis\gr_gott_strafe_england.png" />
+    <None Remove="Resources\Textures\graffitis\gr_heisenberg.png" />
+    <None Remove="Resources\Textures\graffitis\gr_loss.png" />
+    <None Remove="Resources\Textures\graffitis\gr_olaf.png" />
+    <None Remove="Resources\Textures\graffitis\gr_wojak1.png" />
+    <None Remove="Resources\Textures\graffitis\gr_wojak2.png" />
+    <None Remove="Resources\Textures\graffitis\gr_wojak3.png" />
+    <None Remove="Resources\Textures\graffitis\gr_wojak4.png" />
     <None Remove="Resources\Textures\light.png" />
     <None Remove="Resources\Textures\lukas.png" />
     <None Remove="Resources\Textures\missing.png" />
@@ -62,22 +63,23 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\Audio\silence.mp3" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\amon_gus.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\biggus_dickus.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\cool.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\gott_strafe_england.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\heisenberg.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\loss.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\olaf.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\wojak1.png">
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_amon_gus.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_biggus_dickus.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_cool.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_gott_strafe_england.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_heisenberg.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_loss.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_olaf.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak1.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Resources\Textures\graffitis\wojak2.png">
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak2.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Resources\Textures\graffitis\wojak3.png">
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak3.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak4.png" />
     <EmbeddedResource Include="Resources\Textures\light.png" />
     <EmbeddedResource Include="Resources\Textures\lukas.png" />
     <EmbeddedResource Include="Resources\Textures\missing.png" />
