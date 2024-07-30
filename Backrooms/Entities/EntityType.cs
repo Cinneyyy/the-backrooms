@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using Backrooms.Pathfinding;
-using NAudio.Wave;
 using IO = System.IO;
 
 namespace Backrooms.Entities;

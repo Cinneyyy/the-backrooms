@@ -6,30 +6,34 @@ using System.Collections;
 using Backrooms.Debugging;
 using Backrooms.Coroutines;
 using Backrooms.SaveSystem;
+using Backrooms.Entities;
 
 namespace Backrooms;
 
 public class StartMenu
 {
-    public MpManager mpManager;
-
+    private readonly EntityManager entityManager;
+    private readonly MpManager mpManager;
     private readonly Window win;
     private readonly FontFamily font;
     private readonly Camera cam;
     private readonly CameraController camController;
     private readonly Map map;
     private readonly Coroutine backgroundSequenceCoroutine;
+    private readonly Game game;
 
-    public readonly GuiGroup startGui, settingsGui;
+    public readonly GuiGroup startGui, settingsGui, spGui, mpGui, mpHostGui, mpJoinGui;
 
 
-    public StartMenu(Window win, Renderer rend, Camera cam, CameraController camController, Map map, MpManager mpManager, string fontFamily = "cascadia_code")
+    public StartMenu(Game game, Window win, Renderer rend, Camera cam, CameraController camController, Map map, MpManager mpManager, EntityManager entityManager, string fontFamily = "cascadia_code")
     {
         this.win = win;
         this.mpManager = mpManager;
         this.cam = cam;
         this.camController = camController;
         this.map = map;
+        this.entityManager = entityManager;
+        this.game = game;
 
         font = Resources.fonts[fontFamily];
 
@@ -38,10 +42,46 @@ public class StartMenu
         startGui = new(rend, "sm_start", false, true) {
             new TextElement("title", "The Backrooms", font, 30f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
 
-            new ButtonElement("start_sp", "Singleplayer", font, 15f, Color.Yellow, colors, true, () => ClickStart(false), new(.5f, .4f), new(.4f, .1f)),
-            new ButtonElement("start_mp", "Multiplayer", font, 15f, Color.Yellow, colors, true, () => ClickStart(true), new(.5f, .525f), new(.4f, .1f)),
+            new ButtonElement("start_sp", "Singleplayer", font, 15f, Color.Yellow, colors, true, () => SwitchGui(startGui, spGui), new(.5f, .4f), new(.4f, .1f)),
+            new ButtonElement("start_mp", "Multiplayer", font, 15f, Color.Yellow, colors, true, () => SwitchGui(startGui, mpGui), new(.5f, .525f), new(.4f, .1f)),
             new ButtonElement("settings", "Settings", font, 15f, Color.Yellow, colors, true, OpenSettings, new(.5f, .65f), new(.4f, .1f)),
             new ButtonElement("quit", "Quit", font, 15f, Color.Yellow, colors, true, () => Window.Exit(), new(.5f, .775f), new(.4f, .1f)),
+
+            //new InputFieldElement("text_test", font, 12.5f, Color.Yellow, colors, new(.5f, .9f), new(.4f, .1f))
+        };
+        //startGui.GetElement<InputFieldElement>("text_test").valueChanged += v => Out(Log.Debug, v);
+
+        spGui = new(rend, "sm_sp", false, false) {
+            new TextElement("title", "Singleplayer", font, 25f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
+
+            new ButtonElement("start", "Start", font, 15f, Color.Yellow, colors, true, () => { spGui.enabled = false; }, new(.5f, .7f), new(.2f, .1f)),
+
+            new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, () => SwitchGui(spGui, startGui), new(.5f, .85f), new(.2f, .1f)),
+        };
+
+        mpGui = new(rend, "sm_mp", false, false) {
+            new TextElement("title", "Multiplayer", font, 25f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
+
+            new ButtonElement("host", "Host", font, 15f, Color.Yellow, colors, true, () => SwitchGui(mpGui, mpHostGui), new(.5f, .6f), new(.2f, .1f)),
+            new ButtonElement("join", "Join", font, 15f, Color.Yellow, colors, true, () => SwitchGui(mpGui, mpJoinGui), new(.5f, .7f), new(.2f, .1f)),
+
+            new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, () => SwitchGui(mpGui, startGui), new(.5f, .85f), new(.2f, .1f)),
+        };
+
+        mpHostGui = new(rend, "sm_mp_host", false, false) {
+            new TextElement("title", "Multiplayer - Host", font, 25f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
+
+            new ButtonElement("start", "Start", font, 15f, Color.Yellow, colors, true, () => ClickStartMp(true, 8080, "127.0.0.1"), new(.5f, .7f), new(.2f, .1f)),
+
+            new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, () => SwitchGui(mpHostGui, mpGui), new(.5f, .85f), new(.2f, .1f)),
+        };
+
+        mpJoinGui = new(rend, "sm_mp_join", false, false) {
+            new TextElement("title", "Multiplayer - Join", font, 25f, Color.Yellow, Vec2f.half, new(.5f, .2f), Vec2f.zero),
+
+            new ButtonElement("start", "Start", font, 15f, Color.Yellow, colors, true, () => ClickStartMp(false, 8080, "127.0.0.1"), new(.5f, .7f), new(.2f, .1f)),
+
+            new ButtonElement("back", "Back", font, 15f, Color.Yellow, colors, true, () => SwitchGui(mpJoinGui, mpGui), new(.5f, .85f), new(.2f, .1f)),
         };
 
         Vec2i native = rend.physRes;
@@ -75,32 +115,22 @@ public class StartMenu
     }
 
 
-    private void ClickStart(bool mp)
+    private void ClickStartSp()
     {
+        backgroundSequenceCoroutine.Cancel();
+        win.SetCursor(false);
+        camController.canMove = true;
 
-        if(!mp)
-        {
-            // TODO: sp screen
+        game.GenerateMap(0);
+    }
 
-            backgroundSequenceCoroutine.Cancel();
-            startGui.enabled = false;
-            win.SetCursor(false);
-            camController.canMove = true;
+    private void ClickStartMp(bool host, int port, string ip)
+    {
+        backgroundSequenceCoroutine.Cancel();
+        win.SetCursor(false);
+        camController.canMove = true;
 
-            mpManager.Start(true, "127.0.0.1", 8080);
-
-        }
-        else
-        {
-            // TODO: mp screen
-
-            backgroundSequenceCoroutine.Cancel();
-            startGui.enabled = false;
-            win.SetCursor(false);
-            camController.canMove = true;
-
-            mpManager.Start(false, "127.0.0.1", 8080);
-        }
+        mpManager.Start(host, host ? Utils.GetLocalIPAddress() : ip, port);
     }
 
     private void OpenSettings()
@@ -173,5 +203,12 @@ public class StartMenu
                 turnCooldown--;
             }
         }
+    }
+
+
+    private static void SwitchGui(GuiGroup disable, GuiGroup enable)
+    {
+        disable.enabled = false;
+        enable.enabled = true;
     }
 }

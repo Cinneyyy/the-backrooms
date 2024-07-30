@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Backrooms.Entities;
 
@@ -39,4 +38,7 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
         EntityType data = new(this, directoryPath);
         types.Add(data);
     }
+
+    public EntityInstance Instantiate(string typeName)
+        => types.Find(e => e.tags.instance == typeName).Instantiate();
 }

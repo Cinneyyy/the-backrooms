@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Backrooms.Serialization;
 
-/// <summary>Supports all number types, string, bool, char, Vec2f, Vec2i and enums</summary>
+/// <summary>Supports all number types, string, bool, char, Vec2f, Vec2i, and enums</summary>
 public static class PrimitiveSerializer
 {
     public static void Serialize(Type type, object value, BinaryWriter writer)

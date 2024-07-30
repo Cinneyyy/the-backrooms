@@ -35,8 +35,8 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
 
     public override void OnAddedToGroup()
     {
-        input = rend.input;
         group.groupEnabledTick += Tick;
+        input = group.input;
 
         group.AddMany([backgroundElem, checkmarkElem, textElem]);
 
@@ -46,7 +46,15 @@ public class CheckboxElement(string name, string text, FontFamily font, float te
     public override void OnRemovedFromGroup()
     {
         group.groupEnabledTick -= Tick;
+        input = null;
+
         group.RemoveMany([backgroundElem, checkmarkElem, textElem]);
+    }
+
+    public void SetWithoutNotify(bool value)
+    {
+        checkmarkElem.enabled = value;
+        _isOn = value;
     }
 
 

@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace Backrooms.Gui;
 
-[GuiElement]
+[GuiElement()]
 public class ButtonElement(string name, string text, FontFamily font, float fontSize, Color textColor, ColorBlock colors, bool fastBlend, Action onClick, Vec2f location, Vec2f size, Vec2f? anchor = null, bool hasText = true)
     : GuiElement(name, location, size, anchor)
 {
@@ -21,8 +21,8 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     public override void OnAddedToGroup()
     {
-        input = rend.input;
         group.groupEnabledTick += Tick;
+        input = group.input;
 
         group.Add(backgroundElem);
         if(hasText)
@@ -32,6 +32,7 @@ public class ButtonElement(string name, string text, FontFamily font, float font
     public override void OnRemovedFromGroup()
     {
         group.groupEnabledTick -= Tick;
+        input = null;
 
         group.Remove(backgroundElem);
         if(hasText)
@@ -49,6 +50,9 @@ public class ButtonElement(string name, string text, FontFamily font, float font
 
     private void Tick(float dt)
     {
+        if(!enabled)
+            return;
+
         bool isHovering = input.ContainsNormCursorCentered(location, size * group.guiToVirtRatio);
 
         if(isHovering)

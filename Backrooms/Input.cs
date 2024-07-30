@@ -23,6 +23,26 @@ public partial class Input
     public Vec2f normMouseDelta { get; private set; }
     public bool cursorOffScreen => mousePos.x < screenLoc.x || mousePos.y < screenLoc.y || mousePos.x >= screenLoc.x + screenRes.x || mousePos.y >= screenLoc.y + screenRes.y;
     public bool anyKey => keyState.Count > 0;
+    public bool anyKeyDown
+    {
+        get {
+            foreach(Keys key in keyState)
+                if(!lastKeyState.Contains(key))
+                    return true;
+
+            return false;
+        }
+    }
+    public bool anyKeyUp
+    {
+        get {
+            foreach(Keys key in lastKeyState)
+                if(!keyState.Contains(key))
+                    return true;
+
+            return false;
+        }
+    }
 
 
     public Input(Renderer rend, Vec2i screenLoc, bool lockCursor)

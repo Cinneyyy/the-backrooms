@@ -28,7 +28,7 @@ public class ValueSelectorElement : GuiElement
                     OverflowBehaviour.None => value,
                     OverflowBehaviour.Clamp => Utils.Clamp(value, 0, values.Length-1),
                     OverflowBehaviour.Mod => Utils.Mod(value, values.Length),
-                    _ => throw new("Invalid OverflowBehaviour")
+                    _ => throw new($"Invalid OverflowBehaviour: {overflowBehaviour} ({(int)overflowBehaviour})")
                 };
 
             _value = value;
@@ -77,8 +77,8 @@ public class ValueSelectorElement : GuiElement
 
     public override void OnAddedToGroup()
     {
-        input = group.rend.input;
         group.groupEnabledTick += Tick;
+        input = group.input;
 
         group.AddMany([leftBackgroundElem, rightBackgroundElem, leftArrowElem, rightArrowElem, textElem]);
 
@@ -89,7 +89,23 @@ public class ValueSelectorElement : GuiElement
     public override void OnRemovedFromGroup()
     {
         group.groupEnabledTick -= Tick;
+        input = null;
+
         group.RemoveMany([leftBackgroundElem, rightBackgroundElem, leftArrowElem, rightArrowElem, textElem]);
+    }
+
+    public void SetWithoutNotify(int value)
+    {
+        if(value < 0 || value >= values.Length)
+            value = overflowBehaviour switch {
+                OverflowBehaviour.None => value,
+                OverflowBehaviour.Clamp => Utils.Clamp(value, 0, values.Length-1),
+                OverflowBehaviour.Mod => Utils.Mod(value, values.Length),
+                _ => throw new($"Invalid OverflowBehaviour: {overflowBehaviour} ({(int)overflowBehaviour})")
+            };
+
+        _value = value;
+        textElem.text = values[value];
     }
 
 

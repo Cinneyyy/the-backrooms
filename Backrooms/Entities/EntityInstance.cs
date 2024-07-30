@@ -1,5 +1,5 @@
-﻿using System.Linq;
-using NAudio.Wave.SampleProviders;
+﻿using System;
+using System.Linq;
 using Backrooms.Pathfinding;
 
 namespace Backrooms.Entities;
@@ -33,7 +33,7 @@ public abstract class EntityInstance
 
         sprRend = new(Vec2f.zero, tags.size, type.providedSprite) {
             enabled = false,
-            elevation = tags.elevation == 69f ? tags.size.y/2f - 0.5f : tags.elevation
+            elevation = tags.elevation == 69f ? (tags.size.y - 1f)/2f : tags.elevation
         };
         manager.rend.sprites.Add(sprRend);
 

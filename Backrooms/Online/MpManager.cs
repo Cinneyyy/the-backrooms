@@ -13,7 +13,7 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
     public delegate void ClientEvent(ushort id);
 
 
-    public event Action connectedToServer, disconnectedFromServer;
+    public event Action connectedToServer, disconnectedFromServer, startAsHost, startAsClient;
     public event ClientEvent remoteClientConnected, remoteClientDisconnected;
     public event RequestHandler receiveClientRequest, receiveServerRequest;
     public readonly CommonState commonState = commonState ?? new();
@@ -37,10 +37,12 @@ public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
         this.ipAddress = ipAddress;
         this.port = port;
 
+        (isHost ? startAsHost : startAsClient)?.Invoke();
+
         if(host)
         {
             server = new(this);
-            server.receiveRequest += receiveServerRequest;
+            server.receiveRequest += req => receiveServerRequest?.Invoke(req);
             server.StartHost(port);
         }
 

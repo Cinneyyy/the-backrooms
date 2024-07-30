@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Sockets;
+using System.Net;
 using System.Numerics;
 using System.Text;
 using System.Windows.Forms;
@@ -306,4 +308,22 @@ public static class Utils
         => Backrooms.Map.IsEmptyTile(tile);
     public static bool IsColliding(this Tile tile)
         => Backrooms.Map.IsCollidingTile(tile);
+
+    public static string GetLocalIPAddress()
+    {
+        foreach(IPAddress ip in Dns.GetHostEntry(Dns.GetHostName()).AddressList)
+            if(ip.AddressFamily == AddressFamily.InterNetwork)
+                return ip.ToString();
+
+        throw new($"No network adapters with an IPv4 address in the system! (host name: {Dns.GetHostName()})");
+    }
+
+    public static char? ToChar(this Keys key)
+        => (key ^ Keys.Shift ^ Keys.Control) switch {
+            >= Keys.A and <= Keys.Z => (char)('a' + key - Keys.A + ((key & Keys.Shift) != 0 ? 'A' - 'a' : 0)),
+            >= Keys.D0 and <= Keys.D9 => (char)('0' + key - Keys.D0),
+            Keys.Space => ' ',
+            Keys.OemPeriod => '.',
+            _ => null
+        };
 }

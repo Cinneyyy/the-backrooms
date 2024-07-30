@@ -18,6 +18,9 @@ namespace Backrooms;
 
 public class Game
 {
+    public const int GraffitiCount = 1750;
+
+
     public readonly Window win;
     public readonly Renderer rend;
     public readonly Camera camera;
@@ -66,9 +69,7 @@ public class Game
         cameraController = new(camera, mpManager, window, input, map, rend);
 
         rend.lightDistribution = new GridLightDistribution(10);
-        int levelSeed = RNG.signedInt;
-        GenerateMap(levelSeed);
-        map.GenerateGraffitis(2500, levelSeed);
+        GenerateMap(RNG.signedInt);
         //rend.lightDistribution = new PointLightDistribution(map.size);
         //(rend.lightDistribution as PointLightDistribution).AddLightSources(
         //    Enumerable.Range(0, 2000)
@@ -79,8 +80,6 @@ public class Game
         inventory = new(window, rend, this, input, cameraController, new(5, 2), invColors);
         inventory.AddItem("vodka");
         inventory.AddItem("oli");
-
-        startMenu = new(window, rend, camera, cameraController, map, mpManager);
 
         window.console.Add(new(["noclip", "no_clip"], args => window.console.ParseBool(args.FirstOrDefault(), ref cameraController.noClip), "NO_CLIP <enabled>", [0, 1]));
 
@@ -106,7 +105,6 @@ public class Game
         rend.postProcessEffects.Add(atlas);
         rend.postProcessEffects.Add(zBufDisplay);
 
-        deathScreen = new(cameraController, playerStats, this, rend, win, startMenu);
 
         //HVDistortion distortion = new(x => {
         //    float strength = 1f - playerStats.sanity;
@@ -116,10 +114,14 @@ public class Game
         //renderer.postProcessEffects.Add(distortion);
 
         entityManager = new(mpManager, window, map, camera, this, rend);
-        entityManager.LoadEntities("Entities");
+        //entityManager.LoadEntities("Entities");
         //entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
         //foreach(EntityType type in entityManager.types)
         //    type.Instantiate();
+
+        startMenu = new(this, window, rend, camera, cameraController, map, mpManager, entityManager);
+
+        deathScreen = new(cameraController, playerStats, this, rend, win, startMenu);
 
         SaveManager.Load(SaveFile.Settings);
         DevConsole.windowMode = SaveManager.settings.devConsole ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide;
@@ -152,6 +154,7 @@ public class Game
             generator.GeneratePillarRooms();
 
             map.SetTiles(generator.FormatTiles());
+            map.GenerateGraffitis(GraffitiCount, seed);
 
             for(int x = 0; x < map.size.x; x++)
                 for(int y = 0; y < map.size.y; y++)
@@ -284,6 +287,7 @@ public class Game
                     GenerateMap(mpManager.serverState.levelSeed);
                     break;
                 default:
+                    Out(Log.MpManager, $"Unknown/unhandled client request: {req} ({(int)req})");
                     break;
             }
         };
