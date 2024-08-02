@@ -18,6 +18,7 @@
     - Maybe more efficient ones also
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
 1. InputFieldElement
+    - Then a sensible host/join screen (yk, one where you don't select the ip-address using a ValueSelectorElement)
 
 ---
 ## Bugfixes
@@ -29,3 +30,4 @@
 1. GUI elements do not correctly detect cursor position at virtual ratios different from the physical ratio and in fullScreen mode (GUI Groups)
     - May have something to do with screenOffset
 1. Light sources interfering with each other at too little distances
+1. Camera sometimes ends up in a colliding tile after generating the map somehow

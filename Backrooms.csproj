@@ -11,6 +11,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace></RootNamespace>
     <StartupObject>Backrooms.Program</StartupObject>
+    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -55,13 +56,13 @@
     <None Remove="Resources\Textures\table.png" />
     <None Remove="Resources\Textures\up_arrow.png" />
     <None Remove="Resources\Textures\vodka.png" />
+    <None Remove="Resources\Textures\walter1.png" />
+    <None Remove="Resources\Textures\walter2.png" />
     <None Remove="Resources\wall.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Audio\oof.mp3">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Audio\oof.mp3" />
     <EmbeddedResource Include="Resources\Audio\silence.mp3" />
     <EmbeddedResource Include="Resources\Textures\graffitis\gr_amon_gus.png" />
     <EmbeddedResource Include="Resources\Textures\graffitis\gr_biggus_dickus.png" />
@@ -70,15 +71,9 @@
     <EmbeddedResource Include="Resources\Textures\graffitis\gr_heisenberg.png" />
     <EmbeddedResource Include="Resources\Textures\graffitis\gr_loss.png" />
     <EmbeddedResource Include="Resources\Textures\graffitis\gr_olaf.png" />
-    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak1.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak2.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak3.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak1.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak2.png" />
+    <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak3.png" />
     <EmbeddedResource Include="Resources\Textures\graffitis\gr_wojak4.png" />
     <EmbeddedResource Include="Resources\Textures\light.png" />
     <EmbeddedResource Include="Resources\Textures\lukas.png" />
@@ -97,9 +92,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\Textures\carpet.jpg" />
     <EmbeddedResource Include="Resources\Textures\ceiling.png" />
-    <EmbeddedResource Include="Resources\Textures\checkmark.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Textures\checkmark.png" />
     <EmbeddedResource Include="Resources\Textures\empty.png" />
     <EmbeddedResource Include="Resources\Textures\floor.png" />
     <EmbeddedResource Include="Resources\Textures\nocursor.cur" />
@@ -111,6 +104,8 @@
     <EmbeddedResource Include="Resources\Textures\up_arrow.png" />
     <EmbeddedResource Include="Resources\Textures\vodka.png" />
     <EmbeddedResource Include="Resources\Textures\wall.png" />
+    <EmbeddedResource Include="Resources\Textures\walter1.png" />
+    <EmbeddedResource Include="Resources\Textures\walter2.png" />
   </ItemGroup>
 
   <ItemGroup>

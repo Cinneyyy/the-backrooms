@@ -161,14 +161,14 @@ public class Game
                     if(rend.lightDistribution.IsLightTile(new(x, y)))
                         map[x, y] = Tile.Air;
 
-            camPos = map.size/2f;
+            camPos = map.size/2;
         }
 
         generate();
 
         while(camPos.Floor() is Vec2i cPos)
             if(map.InBounds(cPos))
-                if(Map.IsCollidingTile(map[cPos]))
+                if(map.IsCollidingTile(cPos))
                     camPos += Vec2f.right;
                 else
                     break;
@@ -299,7 +299,7 @@ public class Game
 
             ClientState state = mpManager.clientStates[id];
 
-            UnsafeGraphic graphic = Resources.graphics["hazmat_suit"];
+            UnsafeGraphic graphic = Resources.graphics[RNG.coinToss ? "walter1" : "walter2"];
             state.renderer = new(state.pos, new Vec2f(graphic.whRatio * .75f, .75f), graphic);
             state.renderer.Ground();
             rend.sprites.Add(state.renderer);

@@ -22,7 +22,7 @@ public class Atlas(Map map, Camera cam, Vec2i size, Vec2i loc) : PostProcessEffe
             for(int x = 0; x < size.x; x++)
             {
                 Color32 col = tile switch {
-                    _ when tile == cam => new(0xff),
+                    _ when tile == cam => new(0xff0000),
                     _ when !map.InBounds(tile) => new(0),
                     _ => map[tile] switch {
                         Tile.Air => new(0x20),

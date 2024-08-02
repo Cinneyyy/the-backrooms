@@ -7,11 +7,11 @@ namespace Backrooms;
 
 public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 {
-    /// <summary>Array of UnsafeGraphic WITHOUT transparency (=> Format24bppRgb)</summary>
+    /// <summary>Array of UnsafeGraphics WITHOUT transparency (=> Format24bppRgb)</summary>
     public UnsafeGraphic[] textures = [];
-    /// <summary>Array of UnsafeGraphic WITH transparency (=> Format32bppArgb)</summary>
+    /// <summary>Array of UnsafeGraphics WITH transparency (=> Format32bppArgb)</summary>
     public UnsafeGraphic[] graffitiTextures = [];
-    /// <summary>UnsafeGraphic WITHOUT transparency (=> Format24bppRgb)</summary>
+    /// <summary>UnsafeGraphics WITHOUT transparency (=> Format24bppRgb)</summary>
     public UnsafeGraphic floorTex, ceilTex, lightTex;
     public float floorTexScale = 1f, ceilTexScale = 1f;
     public float floorLuminance = .5f, ceilLuminance = .5f;
@@ -221,9 +221,17 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
            where predicate(this[neighbor])
            select neighbor;
 
+    public bool IsEmptyTile(Vec2i loc)
+        => IsEmptyTile(this[loc]);
+
+    public bool IsCollidingTile(Vec2i loc)
+        => IsCollidingTile(this[loc]);
+
+
 
     public static bool IsEmptyTile(Tile tile)
         => tile is Tile.Air or Tile.BigRoomAir or Tile.PillarRoomAir;
+
     public static bool IsCollidingTile(Tile tile)
-        => !IsEmptyTile(tile);
+        => tile is Tile.Wall or Tile.Pillar;
 }
