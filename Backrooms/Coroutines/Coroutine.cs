@@ -26,6 +26,13 @@ public class Coroutine
 
     public void Tick(float dt)
     {
+        if(cancelled || !iterator.MoveNext())
+        {
+            win.tick -= Tick;
+            isFinished = true;
+            return;
+        }
+
         if(currInstruction is not null)
         {
             if(!currInstruction.KeepWaiting(dt))
@@ -39,13 +46,6 @@ public class Coroutine
                 currSubRoutine = null;
             else
                 return;
-        }
-
-        if(cancelled || !iterator.MoveNext())
-        {
-            win.tick -= Tick;
-            isFinished = true;
-            return;
         }
 
         if(iterator.Current is ICoroutineInstruction instruction && instruction is not null)

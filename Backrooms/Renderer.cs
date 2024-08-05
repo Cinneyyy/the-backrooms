@@ -72,7 +72,7 @@ public unsafe class Renderer
 
         camera = new(90f, 20f, 0f);
         _fogEpsilon = 0.015625f; // 2^-6
-        fogMaxDist = camera.maxRenderDist - 1f;
+        fogMaxDist = camera.maxFogDist - 1f;
 
         sprComparison = (a, b) => {
             float aDist = (camera.pos - a.pos).sqrLength, bDist = (camera.pos - b.pos).sqrLength;
@@ -219,7 +219,7 @@ public unsafe class Renderer
     {
         float rowDist = wallHeight * virtCenter.y / y;
 
-        if(rowDist > fogMaxDist)
+        if(float.IsInfinity(rowDist) || float.IsNaN(rowDist))
             return;
 
         Vec2f step = rowDist * 2 * camera.plane / virtRes.x;
@@ -319,10 +319,10 @@ public unsafe class Renderer
         }
 
         float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
-        float normDist = Utils.Clamp01(dist / camera.maxRenderDist);
+        float normDist = Utils.Clamp01(dist / camera.maxFogDist);
         Vec2f hitPos = camera.pos + dir * dist;
 
-        if(depthBuf[x] < normDist || dist > camera.maxRenderDist || dist < 0f)
+        if(depthBuf[x] < normDist || dist < 0f)
             return;
 
         depthBuf[x] = normDist;
@@ -422,10 +422,10 @@ public unsafe class Renderer
         Vec2f relPos = spr.pos - camera.pos;
         Vec2f transform = new Vec2f(dir.y*relPos.x - dir.x*relPos.y, plane.x*relPos.y - plane.y*relPos.x) / (dir.y*plane.x - dir.x*plane.y);
 
-        if(transform.y >= camera.maxRenderDist || transform.y <= 0)
+        if(transform.y >= camera.maxFogDist || transform.y <= 0)
             return;
 
-        float normDist = transform.y/camera.maxRenderDist;
+        float normDist = transform.y/camera.maxFogDist;
         float brightness = GetDistanceFog(transform.y);
         if(lighting)
             brightness = lightDistribution.ComputeLighting(this, brightness, spr.pos);
