@@ -119,22 +119,20 @@ public unsafe class Renderer
         dimensionsChanged?.Invoke();
     }
 
-    public bool PrepareDraw(out Bitmap bitmap, out BitmapData data)
+    public bool PrepareDraw()
     {
-        if(camera is null || map is null || !drawIfCursorOffscreen && input.cursorOffScreen)
-        {
-            bitmap = null;
-            data = null;
-            return false;
-        }
-
         Array.Fill(depthBuf, 1f);
         Array.Fill(heightBuf, (ushort)0u);
 
+        return camera is not null && map is not null && (drawIfCursorOffscreen || !input.cursorOffScreen);
+    }
+
+    public bool PrepareDrawAndCreateBitmap(out Bitmap bitmap, out BitmapData data)
+    {
         bitmap = new(virtRes.x, virtRes.y);
         data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-        return true;
+        return PrepareDraw();
     }
 
     public void DrawWalls(BitmapData data)
@@ -197,10 +195,17 @@ public unsafe class Renderer
         DrawSafeGui(bitmap);
     }
 
+    public void Draw(Bitmap bitmap)
+    {
+        BitmapData data = bitmap.LockBits(new(0, 0, virtRes.x, virtRes.y), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+        Draw(bitmap, data);
+    }
+
     public Bitmap Draw()
     {
-        PrepareDraw(out Bitmap bitmap, out BitmapData data);
-        Draw(bitmap, data);
+        if(PrepareDrawAndCreateBitmap(out Bitmap bitmap, out BitmapData data))
+            Draw(bitmap, data);
+
         return bitmap;
     }
 

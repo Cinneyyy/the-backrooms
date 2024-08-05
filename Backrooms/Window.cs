@@ -151,6 +151,9 @@ public class Window : Form
 
         visible?.Invoke();
         DateTime lastFrame = DateTime.UtcNow;
+        Bitmap backbuf = new(renderer.virtRes.x, renderer.virtRes.y);
+        pictureBox.Image = new Bitmap(renderer.virtRes.x, renderer.virtRes.y);
+
         while(Visible)
             try
             {
@@ -184,10 +187,10 @@ public class Window : Form
                     pulsesElapsed++;
                 }
 
-                Bitmap renderResult = renderer.Draw();
-                Image lastImg = pictureBox.Image;
-                pictureBox.Image = renderResult;
-                lastImg.Dispose();
+                if(renderer.PrepareDraw())
+                    renderer.Draw(backbuf);
+
+                (pictureBox.Image, backbuf) = (backbuf, pictureBox.Image as Bitmap);
             }
             catch(InvalidOperationException exc)
             {
