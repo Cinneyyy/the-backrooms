@@ -5,13 +5,13 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Threading;
+using System.Collections.Generic;
 using System.Linq;
 using Backrooms.Gui;
 using Backrooms.ItemManagement;
 using Backrooms.Entities;
 using Backrooms.Online;
 using Backrooms.Debugging;
-using System.Collections.Generic;
 using Backrooms.SaveSystem;
 
 namespace Backrooms;
@@ -33,11 +33,11 @@ public class Game
     public readonly Inventory inventory;
     public readonly PlayerStats playerStats;
     public readonly DeathScreen deathScreen;
+    public readonly RoomGenerator generator = new();
+    public readonly DebugHud debugHud;
     public event Action<Vec2f> generateMap;
     public bool playerDead;
 
-    private readonly RoomGenerator generator = new();
-    private readonly TextElement debugTextLhs, debugTextRhs;
     private readonly List<ItemWorldObject> worldObjects = [];
 
 
@@ -82,14 +82,6 @@ public class Game
         inventory.AddItem("oli");
 
         window.console.Add(new(["noclip", "no_clip"], args => window.console.ParseBool(args.FirstOrDefault(), ref cameraController.noClip), "NO_CLIP <enabled>", [0, 1]));
-
-        debugTextLhs = new("lhs", "0 fps", FontFamily.GenericMonospace, 15f, Color.White, Vec2f.zero, Vec2f.zero, Vec2f.zero);
-        debugTextRhs = new("rhs", "0 fps", FontFamily.GenericMonospace, 15f, Color.White, Vec2f.right, Vec2f.right, Vec2f.zero);
-        rend.guiGroups.Add(new(rend, "debug", true) {
-            debugTextLhs,
-            debugTextRhs
-        });
-
         window.tick += Tick;
 
         Atlas atlas = new(map, camera, new(rend.virtRes.y - 32), new(16 + (rend.virtRes.x - rend.virtRes.y) / 2, 16));
@@ -114,14 +106,15 @@ public class Game
         //renderer.postProcessEffects.Add(distortion);
 
         entityManager = new(mpManager, window, map, camera, this, rend);
-        //entityManager.LoadEntities("Entities");
+        entityManager.LoadEntities("Entities");
+        entityManager.Instantiate("Olaf.Behaviour");
         //entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
         //foreach(EntityType type in entityManager.types)
         //    type.Instantiate();
 
         startMenu = new(this, window, rend, camera, cameraController, map, mpManager, entityManager);
-
         deathScreen = new(cameraController, playerStats, this, rend, win, startMenu);
+        debugHud = new DebugHud(this, false, FontFamily.GenericMonospace, 15f, Color.White);
 
         SaveManager.Load(SaveFile.Settings);
         DevConsole.windowMode = SaveManager.settings.devConsole ? DevConsole.WindowMode.Restore : DevConsole.WindowMode.Hide;
@@ -187,28 +180,6 @@ public class Game
 
     private void Tick(float dt)
     {
-        if(debugTextLhs.enabled)
-        {
-            debugTextLhs.text =
-                $"""
-                {win.currFps} fps
-                {(mpManager.isConnected ? $"Client #{mpManager.clientId}" : "Not connected")}
-                Pos: {camera.pos.Floor():$x, $y}
-                Map size: {map.size}
-                Seed: {generator.seed}
-                Entities: {entityManager.instances.Count}
-                Sprites: {rend.sprites.Count}
-                """;
-
-            debugTextRhs.text =
-                $"""
-                Health: {playerStats.health:0%}
-                Saturation: {playerStats.saturation:0%}
-                Hydration: {playerStats.hydration:0%}
-                Sanity: {playerStats.sanity:0%}
-                """;
-        }
-
         if(input.KeyDown(Keys.F1))
             win.ToggleCursor();
 

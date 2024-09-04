@@ -15,6 +15,16 @@ public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(
         pos = playerPos;
     }
 
+    public override void Pulse()
+    {
+        Logger.Out(Logger.Log.Debug, pos.ToString());
+    }
+
+    public override void Tick(float dt)
+    {
+        sprRend.pos = pos;
+    }
+
     public override void GenerateMap(Vec2f center)
         => pos = center;
 

@@ -4,7 +4,7 @@ using Backrooms.Serialization;
 
 namespace Backrooms.Online;
 
-public class MpManager<TSState, TCState, TReq> (CommonState commonState = null)
+public class MpManager<TSState, TCState, TReq>(CommonState commonState = null)
     where TSState : Packet<TSState>, new()
     where TCState : Packet<TCState>, new()
     where TReq : struct, Enum

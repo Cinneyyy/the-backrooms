@@ -4,6 +4,7 @@
 ---
 ## Features
 1. Add inventory functionality (use/drop/etc.)
+1. Packet Compiler (-> Send only 1 packet/frame, containing multiple smaller packets)
 1. Finish up main menu
     - Multiplayer/Singleplayer options
     - More settings
@@ -18,7 +19,7 @@
     - Maybe more efficient ones also
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
 1. InputFieldElement
-    - Then a sensible host/join screen (yk, one where you don't select the ip-address using a ValueSelectorElement)
+    - Then a sensible host/join screen (yk, one where you don't select the ip-address using ValueSelectorElements)
 
 ---
 ## Bugfixes

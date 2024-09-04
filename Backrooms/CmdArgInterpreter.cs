@@ -16,8 +16,12 @@ public class CmdArgInterpreter
                 switch(arg)
                 {
                     case var _ when arg.StartsWith("screen"):
-                        screen = int.Parse(arg[^1].ToString());
+                    {
+                        string screenArg = arg["screen".Length..];
+                        if(screenArg is not ("?" or "m"))
+                            screen = int.Parse(screenArg.ToString());
                         break;
+                    }
                 }
         }
         catch(Exception exc)

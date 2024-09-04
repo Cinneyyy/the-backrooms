@@ -187,14 +187,21 @@ public class Window : Form
                     pulsesElapsed++;
                 }
 
-                if(renderer.PrepareDraw())
-                    renderer.Draw(backbuf);
+#if DEBUG
+                if(input.KeyDown(Keys.P))
+                    System.Diagnostics.Debugger.Break();
+#endif
 
-                (pictureBox.Image, backbuf) = (backbuf, pictureBox.Image as Bitmap);
+                if(renderer.PrepareDraw())
+                {
+                    renderer.Draw(backbuf);
+                    (pictureBox.Image, backbuf) = (backbuf, pictureBox.Image as Bitmap);
+                }
             }
             catch(InvalidOperationException exc)
             {
-                Out(Log.Info, $"InvlidOperationException in main UpdateLoop (Window.cs) ;; {exc.Message}");
+                // Change {exc} to {exc.Message} later, when the fucking flickering bug is fixed
+                Out(Log.Info, $"InvlidOperationException in main UpdateLoop (Window.cs) ;; {exc}");
             }
             catch(Exception exc)
             {

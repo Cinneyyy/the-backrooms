@@ -2,7 +2,7 @@
   "profiles": {
     "Backrooms": {
       "commandName": "Project",
-      "commandLineArgs": "screen0"
+      "commandLineArgs": "screen1"
     }
   }
 }
