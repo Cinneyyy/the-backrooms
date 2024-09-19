@@ -12,6 +12,7 @@
     <RootNamespace></RootNamespace>
     <StartupObject>Backrooms.Program</StartupObject>
     <PublishSingleFile>true</PublishSingleFile>
+    <Configurations>Debug;Release;Debug (Two Instances);Release (Two Instances)</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
@@ -109,7 +110,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Entities\Olaf\Behaviour.cs">
+    <None Include="Entities\Olaf\Code\Behaviour.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Entities\Hannes\Behaviour.cs">

@@ -7,7 +7,7 @@ namespace Hannes;
 
 public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(manager, type)
 {
-    public override void Awake()
+    public void Awake()
     {
         sprRend.enabled = true;
         audioPlayback.Play();

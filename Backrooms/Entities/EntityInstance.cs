@@ -21,8 +21,10 @@ public abstract class EntityInstance
     public Vec2f playerPos => manager.camera.pos;
     public float playerAngle => manager.camera.angle;
     public float playerDist => (playerPos - pos).length;
+    public Tile playerTile => manager.map[playerPos.Floor()];
     public PlayerStats playerStats => manager.game.playerStats;
-    public bool linOfSightToPlayer => manager.map.LineOfSight(pos, playerPos);
+    public bool lineOfSightToPlayer => manager.map.LineOfSight(pos, playerPos);
+    public Tile currTile => manager.map[pos.Floor()];
 
 
     public EntityInstance(EntityManager manager, EntityType type)
@@ -33,7 +35,7 @@ public abstract class EntityInstance
 
         sprRend = new(Vec2f.zero, tags.size, type.providedSprite) {
             enabled = false,
-            elevation = tags.elevation == 69f ? (tags.size.y - 1f)/2f : tags.elevation
+            elevation = tags.elevation ?? (tags.size.y - 1f)/2f
         };
         manager.rend.sprites.Add(sprRend);
 
@@ -51,13 +53,10 @@ public abstract class EntityInstance
         if(tags.manageAudioVol) manager.window.tick += dt => audioPlayback.volume = GetVolume(playerDist);
         if(tags.manageAudioPan) manager.window.tick += dt => audioPlayback.panning = Vec2f.Pan(pos, playerPos, playerAngle) * .85f;
 
-        if(type.pathfinding is not null)
+        if(tags.managedPathfindingSpeed is float pathfindingSpeed)
         {
             manager.window.pulse += () => currPath = type.pathfinding.FindPath(manager.map, pos.Floor(), playerPos.Floor());
-            manager.window.tick += dt => {
-                if(currPath.points is { Length: > 0 })
-                    pos += (currPath.GetNextPoint(pos, .5f - tags.size.x/2f) - pos).normalized * tags.managedPathfinding.Value.speed * dt;
-            };
+            manager.window.tick += dt => TraversePath(pathfindingSpeed, dt);
         }
 
         if(type.tags.managedContactDamage is EntityTags.ManagedContactDamage mcd)
@@ -70,11 +69,13 @@ public abstract class EntityInstance
                     playerStats.health -= mcd.damage;
                 }
             };
+    }
 
-        if(manager.mpManager.isConnected)
-            Awake();
-        else
-            manager.mpManager.connectedToServer += Awake;
+
+    protected void TraversePath(float speed, float dt)
+    {
+        if(currPath.points is { Length: > 0 })
+            pos += (currPath.GetNextPoint(pos, .5f - tags.size.x/2f) - pos).normalized * speed * dt;
     }
 
 
@@ -85,6 +86,5 @@ public abstract class EntityInstance
     public virtual float GetVolume(float dist)
         => AudioRolloff.ForcedFalloff(dist, AudioRolloff.GetVolumeSqr(dist, audioMinDist), absFalloffBegin, absFalloffEnd);
 
-    public abstract void Awake();
     public abstract void Destroy();
 }

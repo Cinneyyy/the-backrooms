@@ -156,7 +156,7 @@ public unsafe class Renderer
     public void DrawSprites(BitmapData data)
     {
         foreach(SpriteRenderer spr in sprites
-            .Where(sr => sr is not null && sr.enabled)
+            .Where(sr => sr?.enabled ?? false)
             .OrderByDescending(sr => (sr.pos - camera.pos).sqrLength))
             DrawSprite(data, spr);
     }

@@ -22,7 +22,8 @@ public class EntityManager(MpManager mpManager, Window window, Map map, Camera c
     {
         foreach(string path in
             Directory.GetDirectories(directoryPath, "", SearchOption.TopDirectoryOnly)
-            .Concat(Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly)))
+            .Concat(Directory.GetFiles(directoryPath, "*.zip", SearchOption.TopDirectoryOnly)
+                .Where(f => !Directory.Exists(Path.GetFileNameWithoutExtension(f)))))
             LoadEntity(path);
     }
 

@@ -42,22 +42,22 @@ public class EntityType
 
             // Get callbacks
             implementedCallbacks = typeof(EntityInstance).GetMethods()
-                                   .Where(m => !m.IsAbstract && m.IsVirtual)
-                                   .Where(m => behaviourType.GetMethod(m.Name)?.DeclaringType == behaviourType)
-                                   .Select(m => m.Name)
-                                   .ToArray();
+                .Where(m => !m.IsAbstract && m.IsVirtual)
+                .Where(m => behaviourType.GetMethod(m.Name)?.DeclaringType == behaviourType)
+                .Select(m => m.Name)
+                .ToArray();
 
-            // Load pathfinding, if managed
-            if(tags.managedPathfinding is EntityTags.ManagedPathfinding pathfindingData)
+            // Load pathfinding algorithm
+            if(tags.pathfindingAlgorithm is not null)
             {
                 IEnumerable<Type> algorithmTypes = AppDomain.CurrentDomain.GetAssemblies()
-                                                   .Select(asm => asm.GetType(pathfindingData.algorithmName))
-                                                   .Where(t => t is not null);
+                    .Select(asm => asm.GetType(tags.pathfindingAlgorithm))
+                    .Where(t => t is not null);
 
                 if(algorithmTypes.Count() > 1)
-                    throw new($"Found more than one ({algorithmTypes.Count()}) types matching the type name '{pathfindingData.algorithmName}'");
+                    throw new($"Found more than one ({algorithmTypes.Count()}) types matching the type name '{tags.pathfindingAlgorithm}'");
                 if(!algorithmTypes.Any())
-                    throw new($"Found no suitable type with the name '{pathfindingData.algorithmName}'");
+                    throw new($"Found no suitable type with the name '{tags.pathfindingAlgorithm}'");
 
                 pathfinding = Activator.CreateInstance(algorithmTypes.Single()) as IPathfindingAlgorithm;
             }
@@ -75,7 +75,7 @@ public class EntityType
 
     public EntityInstance Instantiate()
     {
-        EntityInstance inst = Activator.CreateInstance(behaviourType, [manager, this]) as EntityInstance;
+        EntityInstance inst = Activator.CreateInstance(behaviourType, manager, this) as EntityInstance;
         manager.instances.Add(inst);
         return inst;
     }

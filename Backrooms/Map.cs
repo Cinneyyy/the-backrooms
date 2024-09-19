@@ -86,6 +86,23 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
                 yield return new(x, y);
     }
 
+    public Vec2i RandomTile()
+    {
+        Vec2i tile;
+        do tile = new(RNG.Range(size.x), RNG.Range(size.y));
+        while(this[tile].IsColliding());
+
+        return tile;
+    }
+    public Vec2i RandomTile(Vec2i loc, int spread)
+    {
+        Vec2i tile;
+        do tile = new(Utils.Clamp(RNG.Range(loc.x - spread, loc.x + spread), 0, size.x-1), Utils.Clamp(RNG.Range(loc.y - spread, loc.y + spread), 0, size.y-1));
+        while(this[tile].IsColliding());
+
+        return tile;
+    }
+
     public void Add(params Tile[] row)
     {
         tiles ??= new Tile[_size.x = row.Length, 0];

@@ -4,14 +4,17 @@
         "x": 0.85,
         "y": 0.85
     },
-    "elevation": 69.0,
-    "managedPathfinding": {
-        "algorithmName": "Backrooms.Pathfinding.BreadthFirstSearch",
-        "speed": 3.0
+    "managedContactDamage": {
+        "damage": 0.0,
+        "cooldown": 1.0,
+        "maxDist": 0.5
     },
+    "elevation": null,
+    "pathfindingAlgorithm": "Backrooms.Pathfinding.BreadthFirstSearch",
+    "managedPathfindingSpeed": null,
     "sprite": "oli.png",
     "audio": "audio.mp3",
-    "manageSprRendPos": true,
+    "manageSprRendPos": false,
     "manageAudioVol": true,
     "manageAudioPan": true,
     "audioPadding": 1.0

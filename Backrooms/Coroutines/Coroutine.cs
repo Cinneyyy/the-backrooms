@@ -26,10 +26,9 @@ public class Coroutine
 
     public void Tick(float dt)
     {
-        if(cancelled || !iterator.MoveNext())
+        if(cancelled)
         {
-            win.tick -= Tick;
-            isFinished = true;
+            Cancel();
             return;
         }
 
@@ -48,9 +47,15 @@ public class Coroutine
                 return;
         }
 
-        if(iterator.Current is ICoroutineInstruction instruction && instruction is not null)
+        if(!iterator.MoveNext())
+        {
+            Cancel();
+            return;
+        }
+
+        if(iterator.Current is ICoroutineInstruction instruction)
             currInstruction = instruction;
-        else if(iterator.Current is IEnumerator subRoutine && subRoutine is not null)
+        else if(iterator.Current is IEnumerator subRoutine)
             currSubRoutine = subRoutine.StartCoroutine(win);
     }
 

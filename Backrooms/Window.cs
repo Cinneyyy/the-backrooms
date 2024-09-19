@@ -151,8 +151,8 @@ public class Window : Form
 
         visible?.Invoke();
         DateTime lastFrame = DateTime.UtcNow;
-        Bitmap backbuf = new(renderer.virtRes.x, renderer.virtRes.y);
-        pictureBox.Image = new Bitmap(renderer.virtRes.x, renderer.virtRes.y);
+        Bitmap backbuf = new(renderer.virtRes.x, renderer.virtRes.y),
+               frontBuf = new(renderer.virtRes.x, renderer.virtRes.y);
 
         while(Visible)
             try
@@ -195,7 +195,8 @@ public class Window : Form
                 if(renderer.PrepareDraw())
                 {
                     renderer.Draw(backbuf);
-                    (pictureBox.Image, backbuf) = (backbuf, pictureBox.Image as Bitmap);
+                    (frontBuf, backbuf) = (backbuf, frontBuf);
+                    pictureBox.Image = frontBuf;
                 }
             }
             catch(InvalidOperationException exc)
