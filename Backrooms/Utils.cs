@@ -10,6 +10,7 @@ using System.Text;
 using System.Windows.Forms;
 using Backrooms.Coroutines;
 using NAudio.Wave;
+using System.Text.RegularExpressions;
 
 namespace Backrooms;
 
@@ -326,4 +327,13 @@ public static class Utils
             Keys.OemPeriod => '.',
             _ => null
         };
+
+    public static T If<T>(this T t, bool predicate, Func<T, T> transform)
+        => predicate ? transform(t) : t;
+
+    public static TTarget IfHasValue<TTarget, TNullable>(this TTarget t, TNullable? nullable, Func<TTarget, TNullable, TTarget> transform) where TNullable : struct
+        => nullable is TNullable value ? transform(t, value) : t;
+
+    public static string Replace(this string str, Regex match, MatchEvaluator evaluator)
+        => match.Replace(str, evaluator);
 }

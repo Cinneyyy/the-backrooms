@@ -17,10 +17,10 @@
     - Maybe more efficient ones also
 1. InputFieldElement
     - Then a sensible host/join screen (yk, one where you don't select the ip-address using ValueSelectorElements)
-
+    
 ---
 ## Technical Changes/Additions
-1. Packet Compiler (-> Send only 1 packet/frame, containing multiple smaller packets)
+1. Packet Compiler (-> Only 1 server write/frame, containing multiple smaller packets)
 1. Entity syncing across clients
 1. Switch from gridcast rendering to BSP rendering or do some rendering using WPP
 1. Better/faster pathfinding

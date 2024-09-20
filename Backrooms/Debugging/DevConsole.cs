@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Backrooms.Gui;
 
@@ -93,6 +94,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
         win.Shown += (_, _) => thread.Start();
 
         cmds = [
+
             new(["help", "?", "cmd_list", "cmds", "commands", "command_list"],
             args => {
                 if(args.Length == 1)
@@ -119,6 +121,63 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             new(["query_if_empty", "emptyquery"],
             args => ParseBool(args.FirstOrDefault(), ref queryIfEmpty),
             "QUERY_IF_EMPTY <value>", [0, 1]),
+
+            new(["log", "set_log"],
+            args =>
+            {
+                if(args[0] == "?")
+                {
+                    foreach(Logger logger in loggers)
+                        if(logger != GetLogger(Log.DevCmd))
+                            WriteLine($"§f0Log type \"§f1{logger.name}§f0\" is currently {(logger.enabled ? "enabled" : "disabled")}", [GetLogger(Log.DevCmd).color, logger.color], [], autoPrefixFB: false);
+
+                    return;
+                }
+
+                if(args[0] == "*")
+                    args[0] = "*\\DevCmd";
+
+                if(args[0].StartsWith("*\\"))
+                    args[0] = Enum.GetNames<Log>()
+                        .Where(n => !args[0].Contains(n, StringComparison.OrdinalIgnoreCase))
+                        .Where(n => !n.Equals(nameof(Log.DevCmd), StringComparison.OrdinalIgnoreCase))
+                        .FormatStr(",");
+
+                foreach(string logName in args[0].Split(','))
+                {
+                    Log log = Enum.Parse<Log>(logName, true);
+                    if(log == Log.DevCmd)
+                    {
+                        Out(Log.DevCmd, "Cannot disable log type \"DevCmd\"", "");
+                        continue;
+                    }
+
+                    Logger logger = GetLogger(log);
+                    bool prevValue = logger.enabled;
+                    ParseBool(args.ElementAtOrDefault(1), ref logger.enabled, logChange: false);
+                    WriteLine($"§f0Log type \"§f1{log}§f0\" is {(prevValue == logger.enabled ? "currently" : "now")} {(logger.enabled ? "enabled" : "disabled")}", [GetLogger(Log.DevCmd).color, logger.color], [], autoPrefixFB: false);
+                }
+            }, "SET_LOG <name|*|*\\exclude|?> <enabled>", [1, 2]),
+
+            new(["sprites_through_walls", "stw", "xray", "sprite_overdraw"],
+            args => ParseBool(args.FirstOrDefault(), ref win.renderer.overdrawSprites),
+            "SPRITE_OVERDRAW <value>", [0, 1]),
+
+            new(["fog_max_dist", "fog_dist", "fog_max"],
+            args => ParseNumber(args.FirstOrDefault(), win.renderer, r => r.fogMaxDist),
+            "FOG_MAX_DIST <value>", [0, 1]),
+
+            new(["fog_coefficient", "fog_coeff"],
+            args => ParseNumber(args.FirstOrDefault(), win.renderer, r => r.fogCoefficient),
+            "FOG_COEFFICIENT <value>", [0, 1]),
+
+            new(["fog_epsilon", "fog_eps"],
+            args => ParseNumber(args.FirstOrDefault(), win.renderer, r => r.fogEpsilon),
+            "FOG_EPSILON <value>", [0, 1]),
+
+            new(["no_fog", "hide_fog", "unhüll_everything_from_the_thick_nebel"],
+            args => ParseBool(args.FirstOrDefault(), () => !win.renderer.fogEnabled, f => win.renderer.fogEnabled = !f),
+            "NO_FOG <value>", [0, 1]),
 
             new(["resolution", "res", "set_resolution", "set_res"],
             args => {
@@ -258,7 +317,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
             "LIGHT_SPACING <float>", [1]),
 
             new(["lighting", "light_switch"],
-            args => ParseBool(args.FirstOrDefault(), ref win.renderer.lighting),
+            args => ParseBool(args.FirstOrDefault(), ref win.renderer.lightingEnabled),
             "LIGHTING <on/off>", [0, 1])
         ];
     }
@@ -298,7 +357,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
     }
 
 
-    public void ParseBool(string strVal, ref bool target, bool throwExcIfFailed = true)
+    public void ParseBool(string strVal, ref bool target, bool throwExcIfFailed = true, bool logChange = true)
     {
         if(string.IsNullOrWhiteSpace(strVal))
             strVal = queryIfEmpty ? "?" : "^";
@@ -315,7 +374,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 target ^= true;
                 break;
             case "q" or "query" or "?":
-                Out(Log.DevCmd, $"The current value is {target}");
+                OutIf(Log.DevCmd, logChange, $"The current value is {target}");
                 return;
             default:
                 if(throwExcIfFailed)
@@ -324,7 +383,7 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                     break;
         }
 
-        Out(Log.DevCmd, $"The value is now set to {target}");
+        OutIf(Log.DevCmd, logChange, $"The value is now set to {target}");
     }
     public void ParseBool(string strVal, Func<bool> get, Action<bool> set, bool throwExcIfFailed = true)
     {
@@ -332,39 +391,62 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
         ParseBool(strVal, ref value, throwExcIfFailed);
         set(value);
     }
-    public void ParseBool<T>(string strVal, T target, Expression<Func<T, bool>> outExpr, bool throwExcIfFailed = true)
+    public void ParseBool<T>(string strVal, T target, Expression<Func<T, bool>> getSet, bool throwExcIfFailed = true)
     {
-        MemberExpression expr = outExpr.Body as MemberExpression;
+        MemberExpression expr = getSet.Body as MemberExpression;
         PropertyInfo prop = expr.Member as PropertyInfo;
         bool value = (bool)prop.GetValue(target);
         ParseBool(strVal, ref value, throwExcIfFailed);
         prop.SetValue(target, value);
     }
 
-    public static void ParseNumber<T>(string str, ref T field) where T : INumber<T>
+    public static void ParseNumber<T>(string strVal, ref T field) where T : INumber<T>
     {
-        if(string.IsNullOrWhiteSpace(str) || str is "q" or "query" or "?")
+        if(string.IsNullOrWhiteSpace(strVal) || strVal is "q" or "query" or "?")
             Out(Log.DevCmd, $"The current value is {field}");
         else
-            field = T.Parse(str, null);
+            field = T.Parse(strVal, null);
     }
-
-    public static void ParseVector<T>(string str, ref T field) where T : IVector<T>
-        => field = T.Parse(str.Split(','));
-
-    public static void WriteLine(object message, Color32? fore = null, Color32? back = null)
+    public static void ParseNumber<T>(string strVal, Func<T> get, Action<T> set) where T : INumber<T>
     {
-        StringBuilder sb = new();
-
-        if(fore is Color32 fc)
-            sb.Append($"\x1b[38;2;{fc.r};{fc.g};{fc.b}m");
-        if(back is Color32 bc)
-            sb.Append($"\x1b[48;2;{bc.r};{bc.g};{bc.b}m");
-
-        sb.Append(message.ToString());
-        Console.WriteLine(sb.ToString());
-        Console.ResetColor();
+        T value = get();
+        ParseNumber(strVal, ref value);
+        set(value);
     }
+    public static void ParseNumber<TTarget, TNumber>(string strVal, TTarget target, Expression<Func<TTarget, TNumber>> getSet) where TNumber : INumber<TNumber>
+    {
+        MemberExpression expr = getSet.Body as MemberExpression;
+        PropertyInfo prop = expr.Member as PropertyInfo;
+        TNumber value = (TNumber)prop.GetValue(target);
+        ParseNumber(strVal, ref value);
+        prop.SetValue(target, value);
+    }
+
+    public static void ParseVector<T>(string strVal, ref T field) where T : IVector<T>
+        => field = T.Parse(strVal.Split(','));
+
+    [GeneratedRegex("§f([0-9]+)")]
+    private static partial Regex FgRegex();
+    [GeneratedRegex("§f([0-9]+)")]
+    private static partial Regex BgRegex();
+
+    /// <summary>Format color using §fx (foreground), §bx (background), §r (reset) and §§ ('§' literal)</summary>
+    public static string AddColor(string message, Color32[] fore = null, Color32[] back = null)
+    {
+        static string formatCol(Color32 c) => $"\x1b[38;2;{c.r};{c.g};{c.b}m";
+        return AddColor(message, fore?.Select(formatCol).ToArray() ?? [], back?.Select(formatCol).ToArray() ?? []);
+    }
+    /// <summary>Format color using §fx (foreground), §bx (background), §r (reset) and §§ ('§' literal)</summary>
+    public static string AddColor(string message, string[] fore, string[] back)
+        => (message + "§r")
+            .Replace(FgRegex(), m => fore[int.Parse(m.Groups[1].Value)])
+            .Replace(BgRegex(), m => back[int.Parse(m.Groups[1].Value)])
+            .Replace("§r", "\x1b[0m")
+            .Replace("§§", "§");
+
+    /// <summary>Format color using §fx (foreground), §bx (background), §r (reset) and §§ ('§' literal)</summary>
+    public static void WriteLine(object message, Color32[] fore = null, Color32[] back = null, bool autoPrefixFB = true)
+        => Console.WriteLine(AddColor(autoPrefixFB ? $"{(fore is null ? "" : "§f0")}{(back is null ? "" : "§b0")}{message}" : message.ToString(), fore, back));
 
     #region P/Invoke Interfacing
     public static nint PostMessage(ConsoleKey key, uint msg = 0x100u)

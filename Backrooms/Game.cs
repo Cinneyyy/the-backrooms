@@ -184,7 +184,7 @@ public class Game
             win.ToggleCursor();
 
         if(input.KeyDown(Keys.F))
-            rend.lighting ^= true;
+            rend.lightingEnabled ^= true;
 
         if(input.KeyDown(Keys.Escape))
         {

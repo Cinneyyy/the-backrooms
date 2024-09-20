@@ -16,12 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Entities\Olaf\Behaviour.cs" />
-    <Compile Remove="Entities\Hannes\Behaviour.cs" />
-    <Compile Remove="Entities\Stickboy\Behaviour.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Resources\Audio\oof.mp3" />
     <None Remove="Resources\Audio\silence.mp3" />
     <None Remove="Resources\Fonts\cascadia_code.ttf" />
@@ -110,6 +104,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Entities\Olaf\Code\AiState.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Entities\Olaf\Code\Behaviour.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

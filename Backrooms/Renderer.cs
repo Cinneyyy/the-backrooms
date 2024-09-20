@@ -24,10 +24,12 @@ public unsafe class Renderer
     public event Action dimensionsChanged;
     public float wallHeight = 1f;
     public bool useFastColorBlend = true;
-    public bool lighting = true;
+    public bool lightingEnabled = true;
     public float lightStrength = 2f;
     public float minBrightness = 0f;//.001f;
     public ILightDistribution lightDistribution;
+    public bool overdrawSprites = false;
+    public bool fogEnabled = true;
 
     private float _fogEpsilon, _fogMaxDist;
     private readonly Comparison<SpriteRenderer> sprComparison;
@@ -210,9 +212,9 @@ public unsafe class Renderer
     }
 
     public float GetDistanceFog(float dist)
-        => MathF.Exp(fogCoefficient * dist);
+        => fogEnabled ? MathF.Exp(fogCoefficient * dist) : 1f;
     public float GetDistanceFog01(float dist01)
-        => GetDistanceFog(dist01 * _fogMaxDist);
+        => fogEnabled ? GetDistanceFog(dist01 * _fogMaxDist) : 1f;
 
 
     private void DrawRow(BitmapData data, int y)
@@ -251,7 +253,7 @@ public unsafe class Renderer
 
             float tileDist = (camera.pos - floor).length;
             float fog = GetDistanceFog(tileDist);
-            if(lighting)
+            if(lightingEnabled)
                 fog = lightDistribution.ComputeLighting(this, fog, floor);
 
             float floorBrightness = map.floorLuminance * fog;
@@ -263,7 +265,7 @@ public unsafe class Renderer
             float ceilBrightness = map.ceilLuminance * fog;
             byte* ceilCol = ceilingTex.scan0 + ceilingTex.stride*ceilTex.y + 3*ceilTex.x;
 
-            if(lighting && isLightTile && *ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f && Map.IsEmptyTile(map[floor.Floor()]))
+            if(lightingEnabled && isLightTile && *ceilCol == 0xff && *(ceilCol+1) == 0xff && *(ceilCol+2) == 0xff && tileDist < 10f && Map.IsEmptyTile(map[floor.Floor()]))
                 *ceilScan++ = *ceilScan++ = *ceilScan++ = 0xff;
             else
             {
@@ -335,7 +337,7 @@ public unsafe class Renderer
         heightBuf[x] = (ushort)halfHeight;
 
         float brightness = (vert ? .75f : .5f) * GetDistanceFog(dist);
-        if(lighting)
+        if(lightingEnabled)
             brightness = lightDistribution.ComputeLighting(this, brightness, hitPos);
 
         float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
@@ -422,12 +424,12 @@ public unsafe class Renderer
         Vec2f relPos = spr.pos - camera.pos;
         Vec2f transform = new Vec2f(dir.y*relPos.x - dir.x*relPos.y, plane.x*relPos.y - plane.y*relPos.x) / (dir.y*plane.x - dir.x*plane.y);
 
-        if(transform.y >= camera.maxFogDist || transform.y <= 0)
+        if(!overdrawSprites && transform.y >= camera.maxFogDist || transform.y <= 0)
             return;
 
         float normDist = transform.y/camera.maxFogDist;
         float brightness = GetDistanceFog(transform.y);
-        if(lighting)
+        if(lightingEnabled)
             brightness = lightDistribution.ComputeLighting(this, brightness, spr.pos);
 
         int locX = (virtCenter.x * (1 + transform.x/transform.y)).Floor();
@@ -449,7 +451,7 @@ public unsafe class Renderer
 
         for(int x = x0; x < x1; x++)
         {
-            if(normDist > depthBuf[x])
+            if(!overdrawSprites && normDist > depthBuf[x])
             {
                 scan += 3;
                 continue;

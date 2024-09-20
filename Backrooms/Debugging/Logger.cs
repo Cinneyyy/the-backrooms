@@ -38,19 +38,19 @@ public class Logger(Log log, Color32 color, bool enabled = true)
     ];
 
 
-    public void Out(object message, string prefix = "[$n]")
+    public void Out(object message, string prefix = "[$n] ")
     {
         if(enabled)
-            DevConsole.WriteLine($"{prefix.Replace("$n", name)} {message}", fore: color);
+            DevConsole.WriteLine($"{prefix.Replace("$n", name)}{message}", fore: [color]);
     }
 
     public void OutErr(Exception exc, string format = "$e")
     {
         if(enabled)
 #if DEBUG
-            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.ToString())}", fore: color, back: new(ErrBackground));
+            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.ToString())}", fore: [color], back: [new(ErrBackground)]);
 #else
-            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.Message)}", fore: color, back: new(ErrBackground));
+            DevConsole.WriteLine($"[{name}] {format.Replace("$e", exc.Message)}", fore: [color], back: [new(ErrBackground)]);
 #endif
     }
 
@@ -68,18 +68,23 @@ public class Logger(Log log, Color32 color, bool enabled = true)
     public void Assert(bool assertion, object assertionFailed)
     {
         if(!assertion)
-            DevConsole.WriteLine($"[{name}] {assertionFailed}", fore: color, back: new(AssertBackground));
+            DevConsole.WriteLine($"[{name}] {assertionFailed}", fore: [color], back: [new(AssertBackground)]);
     }
     public void Assert(bool assertion, Func<object> assertionFailed)
     {
         if(!assertion)
-            DevConsole.WriteLine($"[{name}] {assertionFailed()}", fore: color, back: new(AssertBackground));
+            DevConsole.WriteLine($"[{name}] {assertionFailed()}", fore: [color], back: [new(AssertBackground)]);
     }
 
 
-    public static void Out(Logger logger, object message, string prefix = "[$n]")
+    public static Logger GetLogger(int index)
+        => loggers[index];
+    public static Logger GetLogger(Log log)
+        => loggers[(int)log];
+
+    public static void Out(Logger logger, object message, string prefix = "[$n] ")
         => logger.Out(message, prefix);
-    public static void Out(Log logger, object message, string prefix = "[$n]")
+    public static void Out(Log logger, object message, string prefix = "[$n] ")
         => loggers[(int)logger].Out(message, prefix);
 
     public static void OutErr(Logger logger, Exception exc, string format = "$e")

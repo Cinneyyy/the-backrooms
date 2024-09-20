@@ -29,9 +29,10 @@ public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(
             AiState.Fleeing => 3.5f,
             _ => 0f
         }, dt);
-
-        Out(Log.Entity, $"AI State: {aiState}; Pos: {pos.Floor()}; Target: {targetPos}");
     }
+
+    public override void Pulse()
+        => Out(Log.Entity, $"AI State: {aiState}; Pos: {pos.Floor()}; Target: {targetPos}");
 
     public override void GenerateMap(Vec2f center)
     {
