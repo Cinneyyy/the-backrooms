@@ -45,7 +45,7 @@ public class Window : Form
             if(!Visible || (_cursorVisible == value))
                 return;
 
-            pictureBox.Cursor = value ? Cursors.Default : new(Resources.GetManifestStream("Resources.Textures.nocursor.cur"));
+            pictureBox.Cursor = value ? Cursors.Default : new(Resources.GetManifestStream("Resources.textures.nocursor.cur"));
             _cursorVisible = value;
         }
     }
@@ -194,8 +194,9 @@ public class Window : Form
 
                 if(renderer.PrepareDraw())
                 {
-                    renderer.Draw(backbuf);
-                    (frontBuf, backbuf) = (backbuf, frontBuf);
+                    //(frontBuf, backbuf) = (backbuf, frontBuf);
+                    frontBuf = new Bitmap(renderer.virtRes.x, renderer.virtRes.y);
+                    renderer.Draw(frontBuf);
                     pictureBox.Image = frontBuf;
                 }
             }

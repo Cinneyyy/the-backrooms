@@ -1,4 +1,4 @@
-﻿namespace Backrooms;
+﻿namespace Backrooms.Entities;
 
 public readonly record struct EntityTags
 {

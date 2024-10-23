@@ -9,7 +9,7 @@ namespace Olaf;
 
 public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(manager, type)
 {
-    public float minRoamSeconds = 30f, maxRoamSeconds = 70f, minChaseSeconds = 10f, maxChaseSeconds = 22.5f, minSearchSeconds = 25f, maxSearchSeconds = 40f, maxStalkDist = 40f, chaseDist = 15f;
+    public float minRoamSeconds = 30f, maxRoamSeconds = 70f, minChaseSeconds = 12.5f, maxChaseSeconds = 22.5f, minSearchSeconds = 25f, maxSearchSeconds = 40f, maxStalkDist = 40f, chaseDistRoom = 15f, chaseDistCorridor = 6.5f;
     public int playerSearchSpread = 30;
     public AiState aiState;
     public Vec2f targetPos;
@@ -22,11 +22,11 @@ public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(
         sprRend.pos = pos;
         TraversePath(aiState switch
         {
-            AiState.Roaming => 3f,
-            AiState.Searching => 1.75f,
-            AiState.Stalking => lineOfSightToPlayer ? 4f : .5f,
-            AiState.Chasing => 4f,
-            AiState.Fleeing => 3.5f,
+            AiState.Roaming => 1.5f,
+            AiState.Searching => 2f,
+            AiState.Stalking => lineOfSightToPlayer ? .5f : 2.5f,
+            AiState.Chasing => 3.25f,
+            AiState.Fleeing => 4f,
             _ => 0f
         }, dt);
     }
@@ -123,6 +123,13 @@ public class Behaviour(EntityManager manager, EntityType type) : EntityInstance(
 
                 case AiState.Stalking:
                 {
+                    float chaseDist = currTile switch
+                    {
+                        Tile.Air => chaseDistCorridor,
+                        Tile.PillarRoomAir or Tile.BigRoomAir => chaseDistRoom,
+                        _ => 0f
+                    };
+
                     float sqrDist = (playerPos - pos).sqrLength;
                     if(sqrDist < chaseDist*chaseDist) // Got close enough to player
                     {

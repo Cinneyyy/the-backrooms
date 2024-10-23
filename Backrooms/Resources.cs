@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NAudio.Wave;
 
 namespace Backrooms;
@@ -21,11 +24,11 @@ public static class Resources
     }
 
 
-    public static readonly Dictionary<string, Image> sprites = [];
-    public static readonly Dictionary<string, UnsafeGraphic> graphics = [];
-    public static readonly Dictionary<string, Icon> icons = [];
-    public static readonly Dictionary<string, WaveStream> audios = [];
-    public static readonly Dictionary<string, FontFamily> fonts = [];
+    public static readonly FrozenDictionary<string, Image> sprites;
+    public static readonly FrozenDictionary<string, UnsafeGraphic> graphics;
+    public static readonly FrozenDictionary<string, Icon> icons;
+    public static readonly FrozenDictionary<string, WaveStream> audios;
+    public static readonly FrozenDictionary<string, FontFamily> fonts;
     public static event Action onFinishInit;
     public static readonly bool finishedInit;
 
@@ -35,6 +38,12 @@ public static class Resources
 
     static Resources()
     {
+        Dictionary<string, Image> sprites = [];
+        Dictionary<string, UnsafeGraphic> graphics = [];
+        Dictionary<string, Icon> icons = [];
+        Dictionary<string, WaveStream> audios = [];
+        Dictionary<string, FontFamily> fonts = [];
+
         foreach(string manifest in assembly.GetManifestResourceNames())
         {
             string ext = Path.GetExtension(manifest).ToLower();
@@ -92,6 +101,12 @@ public static class Resources
                 stream.Dispose();
         }
 
+        Resources.sprites = sprites.ToFrozenDictionary();
+        Resources.graphics = graphics.ToFrozenDictionary();
+        Resources.icons = icons.ToFrozenDictionary();
+        Resources.audios = audios.ToFrozenDictionary();
+        Resources.fonts = fonts.ToFrozenDictionary();
+
         finishedInit = true;
         onFinishInit?.Invoke();
     }
@@ -102,4 +117,11 @@ public static class Resources
 
     public static Stream GetManifestStream(string manifest)
         => assembly.GetManifestResourceStream(manifest);
+
+    public static IEnumerable<T> GetResources<T>(FrozenDictionary<string, T> dict, IEnumerable<string> names)
+        => names.Select(n => dict[n]);
+    public static IEnumerable<T> GetResources<T>(FrozenDictionary<string, T> dict, string baseName, Range range)
+        => GetResources(dict, Enumerable.Range(range.Start.Value, range.End.Value).Select(i => baseName + i));
+    public static IEnumerable<T> GetResources<T>(FrozenDictionary<string, T> dict, string baseName, int startIndex, int endIndex)
+        => GetResources(dict, baseName, startIndex..endIndex);
 }

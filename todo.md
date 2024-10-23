@@ -26,6 +26,7 @@
 1. Better/faster pathfinding
 1. Seperate/compile settings into single class
 1. Change entity code to mod code and make entities just be part of a "mod"
+1. Search exact player location if in Tile.Air (Entity AI)
  
 ---
 ## Bugfixes

@@ -19,9 +19,11 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
 
     private Tile[,] tiles = tiles;
     private Vec2i _size = new(tiles?.Length0() ?? 0, tiles?.Length1() ?? 0);
+    private Vec2i _center = new(tiles?.Length0() / 2 ?? 0, tiles?.Length1() / 2 ?? 0);
 
 
     public Vec2i size => _size;
+    public Vec2i center => _center;
     public string[] texturesStr
     {
         set => LoadTextures(value);
@@ -114,6 +116,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
         for(int x = 0; x < row.Length; x++)
             tiles[x, tiles.Length1() - 1] = row[x];
         _size.y++;
+        _center = size/2;
     }
     public void Add(params byte[] row)
         => Add(row.Cast<Tile>().ToArray());
@@ -141,7 +144,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     {
         Vec2i idx = pt.Floor();
 
-        if(idx.x < 0 || idx.x >= _size.x || idx.y < 0 || idx.y >= _size.y)
+        if(idx.x < 0 || idx.x >= size.x || idx.y < 0 || idx.y >= size.y)
         {
             tile = Tile.Air;
             return false;
@@ -199,6 +202,7 @@ public class Map(Tile[,] tiles) : IEnumerable<Vec2i>
     {
         this.tiles = tiles;
         _size = new(tiles.Length0(), tiles.Length1());
+        _center = size/2;
     }
 
     public bool LineOfSight(Vec2f a, Vec2f b)

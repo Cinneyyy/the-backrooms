@@ -184,12 +184,26 @@ public unsafe class Renderer
             group.DrawSafeElements(g);
     }
 
+    //public void ExecuteRenderInjections()
+    //{
+    //    if(renderInjection is not null)
+    //        for(int x = 0; x < virtRes.x; x++)
+    //            for(int y = 0; y < virtRes.y; y++)
+    //            {
+    //                ()
+    //            }
+    //}
+
     public void Draw(Bitmap bitmap, BitmapData data)
     {
         DrawWalls(data);
         DrawFloorAndCeil(data);
         DrawSprites(data);
         ApplyPostEffects(data);
+
+        //if(renderInjections?.GetInvocationList()?.Length is > 0)
+        //    ExecuteRenderInjections();
+
         DrawUnsafeGui(data);
 
         bitmap.UnlockBits(data);
@@ -449,6 +463,8 @@ public unsafe class Renderer
         byte* scan = (byte*)data.Scan0 + y0*data.Stride + x0*3;
         int backpaddle = (y1 - y0) * data.Stride;
 
+        UnsafeGraphic graphic = spr.GetGraphic(camera.pos);
+
         for(int x = x0; x < x1; x++)
         {
             if(!overdrawSprites && normDist > depthBuf[x])
@@ -457,8 +473,8 @@ public unsafe class Renderer
                 continue;
             }
 
-            int texX = Utils.Clamp(((x - (locX - size.x/2f)) * spr.graphic.wb / size.x).Floor(), 0, spr.graphic.wb);
-            byte* texScan = spr.graphic.scan0 + 4*texX;
+            int texX = Utils.Clamp(((x - (locX - size.x/2f)) * graphic.wb / size.x).Floor(), 0, graphic.wb);
+            byte* texScan = graphic.scan0 + 4*texX;
 
             for(int y = y0; y < y1; y++)
             {
@@ -466,8 +482,8 @@ public unsafe class Renderer
 
                 if(draw)
                 {
-                    int texY = Utils.Clamp(((y - drawCenter + size.y/2f) * spr.graphic.hb / size.y).Floor(), 0, spr.graphic.hb);
-                    byte* colScan = texScan + texY*spr.graphic.stride;
+                    int texY = Utils.Clamp(((y - drawCenter + size.y/2f) * graphic.hb / size.y).Floor(), 0, graphic.hb);
+                    byte* colScan = texScan + texY*graphic.stride;
                     byte alpha = *(colScan+3);
 
                     if(alpha == 0xff)

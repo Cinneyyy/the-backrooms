@@ -12,7 +12,8 @@ public abstract class EntityInstance
     public readonly EntityTags tags;
     public readonly SpriteRenderer sprRend;
     public readonly AudioPlayback audioPlayback;
-    public float audioMinDist = .65f, absFalloffBegin = 10f, absFalloffEnd = 15f;
+    public float audioMinDist = .75f, absFalloffBegin = 17.5f, absFalloffEnd = 25f;
+    //public float audioMinDist = .65f, absFalloffBegin = 10f, absFalloffEnd = 15f;
     public Path currPath = new(pointArr: []);
 
     private float damageCooldown;
