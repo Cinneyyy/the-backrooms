@@ -16,7 +16,6 @@ public record struct Vec2i(int x, int y) : IEnumerable<int>, IVector<Vec2i>
     public static readonly Vec2i up = new(0, 1), down = -up;
     public static readonly Vec2i[] directions = [up, down, left, right];
 
-
     public readonly int sqrLength => x*x + y*y;
     public readonly float sqrLengthF => sqrLength;
     public readonly float length => MathF.Sqrt(sqrLength);

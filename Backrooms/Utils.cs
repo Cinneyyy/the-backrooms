@@ -61,6 +61,10 @@ public static class Utils
     public static float Clamp01(float f)
         => Clamp(f, 0f, 1f);
 
+    public static TOut Pipe<TIn, TOut>(this TIn @in, Func<TIn, TOut> func)
+        => func(@in);
+
+
     public static void ResizeArr2D<T>(ref T[,] arr, int newX, int newY)
     {
         T[,] res = new T[newX, newY];

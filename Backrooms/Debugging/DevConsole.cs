@@ -427,14 +427,15 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
 
     [GeneratedRegex("§f([0-9]+)")]
     private static partial Regex FgRegex();
-    [GeneratedRegex("§f([0-9]+)")]
+    [GeneratedRegex("§b([0-9]+)")]
     private static partial Regex BgRegex();
 
     /// <summary>Format color using §fx (foreground), §bx (background), §r (reset) and §§ ('§' literal)</summary>
     public static string AddColor(string message, Color32[] fore = null, Color32[] back = null)
     {
-        static string formatCol(Color32 c) => $"\x1b[38;2;{c.r};{c.g};{c.b}m";
-        return AddColor(message, fore?.Select(formatCol).ToArray() ?? [], back?.Select(formatCol).ToArray() ?? []);
+        return AddColor(message,
+            fore?.Select(c => $"\x1b[38;2;{c.r};{c.g};{c.b}m").ToArray() ?? [],
+            back?.Select(c => $"\x1b[48;2;{c.r};{c.g};{c.b}m").ToArray() ?? []);
     }
     /// <summary>Format color using §fx (foreground), §bx (background), §r (reset) and §§ ('§' literal)</summary>
     public static string AddColor(string message, string[] fore, string[] back)

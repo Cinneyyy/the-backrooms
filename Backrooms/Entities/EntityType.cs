@@ -35,7 +35,11 @@ public class EntityType
 
             // Compile behaviour
             IEnumerable<string> srcFiles = Directory.GetFiles(dataPath, "*.cs", SearchOption.AllDirectories).Select(File.ReadAllText);
-            behaviourAsm = CsCompiler.BuildAssembly([..srcFiles], IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLower());
+            string asmName = IO::Path.GetFileNameWithoutExtension(dataPath).Replace(' ', '-').ToLowerInvariant();
+            behaviourAsm = CsCompiler.BuildAssembly([..srcFiles], asmName, dataPath, out bool usedCachedDll);
+
+            Out(Log.Entity, (usedCachedDll ? "Loaded entity code from " : "Compiled entity code to ") + $"{dataPath}{(IO::Path.DirectorySeparatorChar)}{asmName}.dll");
+
             behaviourType = behaviourAsm.GetType(tags.instance);
             if(!behaviourType.IsAssignableTo(typeof(EntityInstance)))
                 throw new($"The behaviour instance type must be derived from EntityBase");

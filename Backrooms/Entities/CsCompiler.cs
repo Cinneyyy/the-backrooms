@@ -6,16 +6,53 @@ using System.Reflection;
 using System.IO;
 using Microsoft.CodeAnalysis.Emit;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Backrooms.Entities;
 
 public static class CsCompiler
 {
-    public static readonly IEnumerable<MetadataReference> referenceAssemblies = AppDomain.CurrentDomain.GetAssemblies().Select(asm => MetadataReference.CreateFromFile(asm.Location));
+#if PUBLISH_SINGLE_FILE
+    public static readonly IEnumerable<MetadataReference> referenceAssemblies = fuck off; // TODO
+#else
+    public static readonly IEnumerable<MetadataReference> referenceAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+        .Select(static asm => MetadataReference.CreateFromFile(asm.Location));
+#endif
 
 
-    public static Assembly BuildAssembly(string[] sourceFiles, string assemblyName)
+    public static string CalculateChecksumFile(string[] strings)
     {
+        StringBuilder sb = new();
+
+        foreach(string str in strings)
+            str
+            .Pipe(Encoding.Default.GetBytes)
+            .Pipe(SHA256.HashData)
+            .Pipe(BitConverter.ToString)
+            .Replace("-", "")
+            .ToLowerInvariant()
+            .Pipe(sb.AppendLine);
+
+        return sb.ToString();
+    }
+
+    public static Assembly BuildAssembly(string[] sourceFiles, string assemblyName, string outputDir, out bool usedCachedDll)
+    {
+        outputDir = Path.TrimEndingDirectorySeparator(outputDir);
+
+        string
+            checksum = null,
+            dllPath = $"{outputDir}/{assemblyName}.dll",
+            checksumPath = $"{outputDir}/{assemblyName}.sha256";
+
+
+        if(File.Exists(dllPath) && (checksum = CalculateChecksumFile(sourceFiles)) == File.ReadAllText(checksumPath))
+        {
+            usedCachedDll = true;
+            return Assembly.LoadFrom(dllPath);
+        }
+
         CompilationOptions options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
         Compilation compilation = CSharpCompilation.Create(assemblyName)
@@ -23,8 +60,8 @@ public static class CsCompiler
             .AddReferences(referenceAssemblies)
             .AddSyntaxTrees(sourceFiles.Select(f => CSharpSyntaxTree.ParseText(f)));
 
-        using MemoryStream stream = new();
-        EmitResult emit = compilation.Emit(stream);
+        EmitResult emit = compilation.Emit($"{outputDir}/{assemblyName}.dll");
+        File.WriteAllText($"{outputDir}/{assemblyName}.sha256", checksum ?? CalculateChecksumFile(sourceFiles));
 
         if(!emit.Success)
         {
@@ -38,9 +75,14 @@ public static class CsCompiler
             foreach(Diagnostic err in errors)
                 Out(Log.Entity, $"{err.Id} ;; {err.GetMessage()}\n");
 
+            usedCachedDll = false;
             return null;
         }
 
-        return Assembly.Load(stream.ToArray());
+        using MemoryStream memStream = new();
+        compilation.Emit(memStream);
+
+        usedCachedDll = false;
+        return Assembly.Load(memStream.ToArray());
     }
 }

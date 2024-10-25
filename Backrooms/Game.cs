@@ -106,7 +106,7 @@ public class Game
         //renderer.postProcessEffects.Add(distortion);
 
         entityManager = new(mpManager, window, map, camera, this, rend);
-        //entityManager.LoadEntities("Entities");
+        entityManager.LoadEntities("Entities");
         //entityManager.Instantiate("Olaf.Behaviour");
         //entityManager.types.Find(t => t.tags.instance == "Olaf.Behaviour").Instantiate();
         //foreach(EntityType type in entityManager.types)

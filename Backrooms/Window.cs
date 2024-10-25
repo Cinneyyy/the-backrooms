@@ -192,11 +192,14 @@ public class Window : Form
                     System.Diagnostics.Debugger.Break();
 #endif
 
+                // Remove (a, b) = (b, a), in favour of if-based swapping
+                //
                 if(renderer.PrepareDraw())
                 {
-                    //(frontBuf, backbuf) = (backbuf, frontBuf);
-                    frontBuf = new Bitmap(renderer.virtRes.x, renderer.virtRes.y);
-                    renderer.Draw(frontBuf);
+                    renderer.Draw(backbuf);
+
+                    (frontBuf, backbuf) = (backbuf, frontBuf);
+
                     pictureBox.Image = frontBuf;
                 }
             }

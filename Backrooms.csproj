@@ -11,7 +11,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace></RootNamespace>
     <StartupObject>Backrooms.Program</StartupObject>
-    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSingleFile>false</PublishSingleFile>
+    <DefineConstants Condition="'$(PublishSingleFile)'=='true'">PUBLISH_SINGLE_FILE</DefineConstants>
     <Configurations>Debug;Release;Debug (Two Instances);Release (Two Instances)</Configurations>
   </PropertyGroup>
 
