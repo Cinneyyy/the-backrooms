@@ -4,7 +4,7 @@ using System.Windows.Forms;
 
 namespace Backrooms;
 
-public partial class Input
+public class Input
 {
     public bool lockCursor;
     public KeyMap keyMap;

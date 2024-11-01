@@ -45,7 +45,7 @@ public class Window : Form
             if(!Visible || (_cursorVisible == value))
                 return;
 
-            pictureBox.Cursor = value ? Cursors.Default : new(Resources.GetManifestStream("Resources.textures.nocursor.cur"));
+            pictureBox.Cursor = value ? Cursors.Default : new(Resources.GetManifestStream("res.textures.nocursor.cur"));
             _cursorVisible = value;
         }
     }

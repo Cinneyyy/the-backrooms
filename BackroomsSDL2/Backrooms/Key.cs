@@ -1,0 +1,81 @@
+﻿using KC = SDL2.SDL.SDL_Keycode;
+
+namespace Backrooms;
+
+public enum Key
+{
+    None = KC.SDLK_UNKNOWN,
+
+    Lmb = 1,
+    Rmb = 2,
+    Mmb = 3,
+
+    Backspace = KC.SDLK_BACKSPACE,
+    Tab = KC.SDLK_TAB,
+    Return = KC.SDLK_RETURN,
+    Esc = KC.SDLK_ESCAPE,
+    Space = KC.SDLK_SPACE,
+
+    LCtrl = KC.SDLK_LCTRL,
+    LShift = KC.SDLK_LSHIFT,
+    LAlt = KC.SDLK_LALT,
+    RCtrl = KC.SDLK_RCTRL,
+    RShift = KC.SDLK_RSHIFT,
+    RAlt = KC.SDLK_RALT,
+
+    Left = KC.SDLK_LEFT,
+    Right = KC.SDLK_RIGHT,
+    Up = KC.SDLK_UP,
+    Down = KC.SDLK_DOWN,
+
+    A = KC.SDLK_a,
+    B = KC.SDLK_b,
+    C = KC.SDLK_c,
+    D = KC.SDLK_d,
+    E = KC.SDLK_e,
+    F = KC.SDLK_f,
+    G = KC.SDLK_g,
+    H = KC.SDLK_h,
+    I = KC.SDLK_i,
+    J = KC.SDLK_j,
+    K = KC.SDLK_k,
+    L = KC.SDLK_l,
+    M = KC.SDLK_m,
+    N = KC.SDLK_n,
+    O = KC.SDLK_o,
+    P = KC.SDLK_p,
+    Q = KC.SDLK_q,
+    R = KC.SDLK_r,
+    S = KC.SDLK_s,
+    T = KC.SDLK_t,
+    U = KC.SDLK_u,
+    V = KC.SDLK_v,
+    W = KC.SDLK_w,
+    X = KC.SDLK_x,
+    Y = KC.SDLK_y,
+    Z = KC.SDLK_z,
+
+    N0 = KC.SDLK_0,
+    N1 = KC.SDLK_1,
+    N2 = KC.SDLK_2,
+    N3 = KC.SDLK_3,
+    N4 = KC.SDLK_4,
+    N5 = KC.SDLK_5,
+    N6 = KC.SDLK_6,
+    N7 = KC.SDLK_7,
+    N8 = KC.SDLK_8,
+    N9 = KC.SDLK_9,
+
+    F1 = KC.SDLK_F1,
+    F2 = KC.SDLK_F2,
+    F3 = KC.SDLK_F3,
+    F4 = KC.SDLK_F4,
+    F5 = KC.SDLK_F5,
+    F6 = KC.SDLK_F6,
+    F7 = KC.SDLK_F7,
+    F8 = KC.SDLK_F8,
+    F9 = KC.SDLK_F9,
+    F10 = KC.SDLK_F10,
+    F11 = KC.SDLK_F11,
+    F12 = KC.SDLK_F12
+}

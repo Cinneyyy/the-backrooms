@@ -52,9 +52,11 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
         win.tick += Tick;
 
         GetConsoleMode(stdHandle, out int consoleMode);
-        SetConsoleMode(stdHandle, consoleMode | 0b100);
+        SetConsoleMode(stdHandle, consoleMode | 0x4);
 
-        thread = new(() => {
+        thread =
+        new(() =>
+        {
             while(run())
             {
                 string input = Console.ReadLine();
@@ -65,7 +67,8 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                 string[] args = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
                 // Execute next tick, as to avoid race conditions
-                nextTick = () => {
+                nextTick = () =>
+                {
                     Cmd cmd;
 
                     try
@@ -87,14 +90,15 @@ public partial class DevConsole : IEnumerable<DevConsole.Cmd>
                     cmd.invoke(args[1..]);
                 };
             }
-        }) {
+        })
+        {
             IsBackground = false
         };
 
         win.Shown += (_, _) => thread.Start();
 
-        cmds = [
-
+        cmds =
+        [
             new(["help", "?", "cmd_list", "cmds", "commands", "command_list"],
             args => {
                 if(args.Length == 1)

@@ -29,7 +29,7 @@ public class Camera(float fovDegrees, float maxFogDist, float angle = 0f)
     public float fov
     {
         get => _fov;
-        set { 
+        set {
             _fov = value;
             fovFactor = MathF.Tan(_fov/2f);
             _plane = Vec2f.PlaneFromFovFactor(forward, fovFactor);
