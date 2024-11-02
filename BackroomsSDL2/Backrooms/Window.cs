@@ -9,14 +9,12 @@ public static class Window
 
 
     private static bool isRunning;
-    private static nint sdlWind;
-    private static nint sdlRend;
-
 
     public static event Tick tickDt;
     public static event Action tick;
 
 
+    public static nint sdlWind { get; private set; }
     public static float totalTime { get; private set; }
     public static float deltaTime { get; private set; }
     public static int fps { get; private set; }
@@ -50,6 +48,7 @@ public static class Window
             throw new("Cannot initialize window while it's already running");
 
         SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
+        SDL_SetHint(SDL_HINT_APP_NAME, title);
 
         if(SDL_Init(SDL_INIT_VIDEO) < 0)
             throw new($"Failed to initialize SDL: {SDL_GetError()}");
@@ -68,11 +67,9 @@ public static class Window
         if(sdlWind == nint.Zero)
             throw new($"Failed to create SDL window: {SDL_GetError()}");
 
-        sdlRend = SDL_CreateRenderer(sdlWind, -1, SDL_RendererFlags.SDL_RENDERER_ACCELERATED);
-        if(sdlRend == nint.Zero)
-            throw new($"Failed to create SDL renderer: {SDL_GetError()}");
+        Renderer.Init(sdlWind, size, new(screen.w, screen.h));
 
-        Renderer.Init(sdlRend, size, new(screen.w, screen.h));
+        Input.relativeMouse = true;
     }
 
     public static void Run()
@@ -89,6 +86,9 @@ public static class Window
         while(isRunning)
         {
             HandleEvents();
+
+            if(Input.KeyDown(Key.F1))
+                Input.relativeMouse ^= true;
 
             DateTime now = DateTime.UtcNow;
             deltaTime = (float)(now - lastFrame).TotalSeconds;
@@ -109,13 +109,11 @@ public static class Window
             tick?.Invoke();
             tickDt?.Invoke(deltaTime);
 
-            Raycaster.camera.angle += deltaTime;
-
             Renderer.Draw();
         }
 
         Renderer.DestroyTex();
-        SDL_DestroyRenderer(sdlRend);
+        SDL_DestroyRenderer(Renderer.sdlRend);
         SDL_DestroyWindow(sdlWind);
         SDL_Quit();
     }
@@ -123,7 +121,7 @@ public static class Window
 
     private static void HandleEvents()
     {
-        static int MouseButtonToKeyCode(byte mb)
+        static int mouseButtonToKeyCode(byte mb)
             => mb switch
             {
                 0 => (int)Key.Lmb,
@@ -131,6 +129,8 @@ public static class Window
                 2 => (int)Key.Rmb,
                 _ => 0
             };
+
+        Input.Internal.TickPrePolling();
 
         while(SDL_PollEvent(out SDL_Event evt) == 1)
             switch(evt.type)
@@ -155,16 +155,22 @@ public static class Window
                 }
                 case SDL_EventType.SDL_MOUSEBUTTONDOWN:
                 {
-                    Input.Internal.KeyDown(MouseButtonToKeyCode(evt.button.button));
+                    Input.Internal.KeyDown(mouseButtonToKeyCode(evt.button.button));
                     break;
                 }
                 case SDL_EventType.SDL_MOUSEBUTTONUP:
                 {
-                    Input.Internal.KeyUp(MouseButtonToKeyCode(evt.button.button));
+                    Input.Internal.KeyUp(mouseButtonToKeyCode(evt.button.button));
+                    break;
+                }
+                case SDL_EventType.SDL_MOUSEMOTION:
+                {
+                    SDL_MouseMotionEvent m = evt.motion;
+                    Input.Internal.MouseMove(new(m.x, m.y), new(m.xrel, m.yrel));
                     break;
                 }
             }
 
-        Input.Internal.Tick();
+        Input.Internal.TickPostPolling();
     }
 }

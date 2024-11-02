@@ -144,12 +144,14 @@ public class Map
             return newPt;
 
         // Only move along y-axis
-        Vec2f pt = new(oldPt.x, newPt.x);
-        if(!Intersects(pt, radius, out _)) return pt;
+        Vec2f pt = new(oldPt.x, newPt.y);
+        if(!Intersects(pt, radius, out _))
+            return pt;
 
         // Only move along x-axis
-        pt = new(newPt.x, oldPt.x);
-        if(!Intersects(pt, radius, out _)) return pt;
+        pt = new(newPt.x, oldPt.y);
+        if(!Intersects(pt, radius, out _))
+            return pt;
 
         // Use old point
         return oldPt;

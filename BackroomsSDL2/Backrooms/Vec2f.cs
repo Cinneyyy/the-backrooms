@@ -76,6 +76,11 @@ public struct Vec2f(float x, float y)
     public static Vec2f Lerp(Vec2f min, Vec2f max, float t)
         => new(float.Lerp(min.x, max.x, t), float.Lerp(min.y, max.y, t));
 
+    public static Vec2f Clamp(Vec2f v, Vec2f min, Vec2f max)
+        => new(
+            float.Clamp(v.x, min.x, max.x),
+            float.Clamp(v.y, min.y, max.y));
+
 
     // Vec2f x Vec2f
     public static Vec2f operator +(Vec2f a, Vec2f b) => new(a.x + b.x, a.y + b.y);

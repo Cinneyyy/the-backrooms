@@ -7,7 +7,6 @@ namespace Backrooms;
 public static unsafe class Renderer
 {
     private static nint rawTex, abstractTex;
-    private static Vec2i screen;
     private static SDL_Rect outputRect;
 
 
@@ -15,20 +14,16 @@ public static unsafe class Renderer
     public static int stride { get; private set; }
     public static nint sdlRend { get; private set; }
     public static Vec2i center { get; private set; }
+    public static float downscale { get; private set; }
+    public static float upscale { get; private set; }
+    public static Vec2i outputOffset { get; private set; }
+    public static Vec2i screen { get; private set; }
 
     private static Vec2i _res;
     public static Vec2i res
     {
         get => _res;
-        set
-        {
-            _res = value;
-            center = value/2;
-
-            DestroyTex();
-
-            Init(sdlRend, value, screen);
-        }
+        set => Resize(value);
     }
 
 
@@ -131,28 +126,34 @@ public static unsafe class Renderer
     }
 
 
-    internal static void Init(nint sdlRend, Vec2i res, Vec2i screen)
+    private static void Resize(Vec2i res)
     {
         _res = res;
         center = res/2;
-        Renderer.screen = screen;
-        Renderer.sdlRend = sdlRend;
+
+        DestroyTex();
+        SDL_RenderClear(sdlRend);
 
         float resRatio = (float)res.x / res.y;
         float screenRatio = (float)screen.x / screen.y;
 
         if(resRatio > screenRatio) // res is wider than screen
         {
-            Vec2i size = (res.asVec2f * ((float)screen.x / res.x)).floor;
+            upscale = (float)screen.x / res.x;
+            Vec2i size = (res.asVec2f * upscale).floor;
             int yOffset = (screen.y - size.y) / 2;
             outputRect = new() { x = 0, y = yOffset, w = size.x, h = size.y };
         }
         else // screen is wider than or as wide as res
         {
-            Vec2i size = (res.asVec2f * ((float)screen.y / res.y)).floor;
+            upscale = (float)screen.y / res.y;
+            Vec2i size = (res.asVec2f * upscale).floor;
             int xOffset = (screen.x - size.x) / 2;
             outputRect = new() { x = xOffset, y = 0, w = size.x, h = size.y };
         }
+
+        downscale = 1f / upscale;
+        outputOffset = new(outputRect.x, outputRect.y);
 
         rawTex = SDL_CreateTexture(sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, res.x, res.y);
         abstractTex = SDL_CreateTexture(sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, res.x, res.y);
@@ -160,7 +161,26 @@ public static unsafe class Renderer
         SDL_SetTextureScaleMode(rawTex, SDL_ScaleMode.SDL_ScaleModeNearest);
         SDL_SetTextureScaleMode(abstractTex, SDL_ScaleMode.SDL_ScaleModeNearest);
 
+        /*SDL_BlendMode blendMode = SDL_ComposeCustomBlendMode(
+            SDL_BlendFactor.SDL_BLENDFACTOR_SRC_COLOR,
+            SDL_BlendFactor.SDL_BLENDFACTOR_DST_COLOR,
+            SDL_BlendOperation.SDL_BLENDOPERATION_ADD,
+            SDL_BlendFactor.SDL_BLENDFACTOR_DST_ALPHA,
+            SDL_BlendFactor.SDL_BLENDFACTOR_ONE_MINUS_DST_ALPHA,
+            SDL_BlendOperation.SDL_BLENDOPERATION_MAXIMUM);*/
         SDL_SetTextureBlendMode(abstractTex, SDL_BlendMode.SDL_BLENDMODE_BLEND);
+    }
+
+
+    internal static void Init(nint sdlWind, Vec2i res, Vec2i screen)
+    {
+        sdlRend = SDL_CreateRenderer(sdlWind, -1, SDL_RendererFlags.SDL_RENDERER_ACCELERATED);
+        if(sdlRend == nint.Zero)
+            throw new($"Failed to create SDL renderer: {SDL_GetError()}");
+
+        Renderer.screen = screen;
+
+        Resize(res);
 
         Raycaster.Init();
     }
@@ -169,5 +189,6 @@ public static unsafe class Renderer
     {
         SDL_UnlockTexture(rawTex);
         SDL_DestroyTexture(rawTex);
+        SDL_DestroyTexture(abstractTex);
     }
 }

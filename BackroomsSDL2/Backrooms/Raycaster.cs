@@ -18,22 +18,20 @@ public static unsafe class Raycaster
     }
 
 
-    private const float DEFAULT_MAX_FOG_DIST = 20f;
-
-    public static Camera camera = new(90f.ToRad(), DEFAULT_MAX_FOG_DIST);
-    public static Map map = new(new Tile[0, 0]);
     public static float wallHeight = 1f;
     public static bool fastColorBlend = true;
-    public static FogSettings fog = new(DEFAULT_MAX_FOG_DIST * .925f);
-    public static LightingSettings lighting = new(new GridLightDistribution(5), false);
 
     private static Vec2i res, center;
 
 
-    private static uint* pixels => Renderer.pixelData;
-    private static int stride => Renderer.stride;
     public static float[] depthBuf { get; private set; }
     public static ushort[] heightBuf { get; private set; }
+    public static Map map => Scene.current.map;
+    public static Camera camera => Scene.current.cam;
+    public static FogSettings fog => Scene.current.fog;
+    public static LightingSettings lighting => Scene.current.lighting;
+    private static uint* pixels => Renderer.pixelData;
+    private static int stride => Renderer.stride;
 
 
     public static void PrepareDraw()
@@ -92,7 +90,7 @@ public static unsafe class Raycaster
         }
 
         float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
-        float normDist = float.Clamp(dist / camera.maxFogDist, 0f, 1f);
+        float normDist = float.Clamp(dist / camera.renderDist, 0f, 1f);
         Vec2f hitPos = camera.pos + dir * dist;
 
         if(depthBuf[x] < normDist || dist < 0f)
