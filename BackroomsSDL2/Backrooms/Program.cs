@@ -10,38 +10,28 @@ public class Program
     {
         Window.Init(new Vec2i(1920, 1080) / 4, "Backrooms Game");
 
-        Camera cam;
-        Scene.current = new()
+        Map.current = new(new byte[,]
         {
-            map = new(new byte[,]
+            { 1, 1, 1, 1, 1, 1 },
+            { 1, 0, 0, 0, 0, 1 },
+            { 1, 0, 1, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 1 },
+            { 1, 1, 1, 1, 1, 1 },
+        })
+        {
+            ceilTex = Resources.GetLockedTexture("ceiling"),
+            floorTex = Resources.GetLockedTexture("floor"),
+            lightTex = Resources.GetLockedTexture("light"),
+            textures = new()
             {
-                { 1, 1, 1, 1, 1, 1 },
-                { 1, 0, 0, 0, 0, 1 },
-                { 1, 0, 1, 0, 0, 1 },
-                { 1, 0, 0, 0, 0, 1 },
-                { 1, 0, 0, 0, 0, 1 },
-                { 1, 0, 0, 0, 0, 1 },
-                { 1, 1, 1, 1, 1, 1 },
-            })
-            {
-                ceilTex = Resources.GetLockedTexture("ceiling"),
-                floorTex = Resources.GetLockedTexture("floor"),
-                lightTex = Resources.GetLockedTexture("light"),
-                textures = new()
-                {
-                    [Tile.Wall] = Resources.GetLockedTexture("wall"),
-                    [Tile.Pillar] = Resources.GetLockedTexture("pillar")
-                }
-            },
-            cam = cam = new(90f.ToRad(), 0f),
-            camController = new(cam),
-            fog = new(0f),
-            lighting = new(new GridLightDistribution(5), false)
+                [Tile.Wall] = Resources.GetLockedTexture("wall"),
+                [Tile.Pillar] = Resources.GetLockedTexture("pillar")
+            }
         };
 
-        cam.pos = Raycaster.map.center.asVec2f;
-        cam.renderDist = 20f;
-        Scene.current.fog.maxDist = 20f * .925f;
+        Camera.pos = Map.current.center.asVec2f;
 
         Window.Run();
     }

@@ -6,6 +6,7 @@ using Backrooms.Extensions;
 
 namespace Backrooms;
 
+#pragma warning disable CA2211 // Non-constant fields should not be visible
 public class Map
 {
     public Map(byte[,] tiles)
@@ -39,6 +40,8 @@ public class Map
     public LockedTexture floorTex, ceilTex, lightTex;
     public float floorTexScale = 1f, ceilTexScale = 1f;
     public float floorLuminance = .5f, ceilLuminance = .5f;
+
+    public static Map current;
 
 
     public Dictionary<Tile, LockedTexture> textures { get; init; }

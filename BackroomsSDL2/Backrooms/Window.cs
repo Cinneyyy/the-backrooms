@@ -69,6 +69,8 @@ public static class Window
 
         Renderer.Init(sdlWind, size, new(screen.w, screen.h));
 
+        CameraMovement.Init();
+
         Input.relativeMouse = true;
     }
 
@@ -89,6 +91,8 @@ public static class Window
 
             if(Input.KeyDown(Key.F1))
                 Input.relativeMouse ^= true;
+            if(Input.KeyDown(Key.F2))
+                CameraMovement.noClip ^= true;
 
             DateTime now = DateTime.UtcNow;
             deltaTime = (float)(now - lastFrame).TotalSeconds;

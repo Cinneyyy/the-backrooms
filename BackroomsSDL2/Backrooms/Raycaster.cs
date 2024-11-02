@@ -26,10 +26,6 @@ public static unsafe class Raycaster
 
     public static float[] depthBuf { get; private set; }
     public static ushort[] heightBuf { get; private set; }
-    public static Map map => Scene.current.map;
-    public static Camera camera => Scene.current.cam;
-    public static FogSettings fog => Scene.current.fog;
-    public static LightingSettings lighting => Scene.current.lighting;
     private static uint* pixels => Renderer.pixelData;
     private static int stride => Renderer.stride;
 
@@ -47,16 +43,16 @@ public static unsafe class Raycaster
 
     private static void DrawColumn(int x)
     {
-        Vec2f dir = camera.forward + camera.plane * (2f*x / (res.x-1) - 1f);
-        Vec2i mPos = camera.pos.floor;
+        Vec2f dir = Camera.forward + Camera.plane * (2f*x / (res.x-1) - 1f);
+        Vec2i mPos = Camera.pos.floor;
 
         Vec2f deltaDist = new(
             dir.x == 0f ? float.MaxValue : MathF.Abs(1f / dir.x),
             dir.y == 0f ? float.MaxValue : MathF.Abs(1f / dir.y));
 
         Vec2f sideDist = new(
-            deltaDist.x * (dir.x < 0f ? (camera.pos.x - mPos.x) : (mPos.x + 1f - camera.pos.x)),
-            deltaDist.y * (dir.y < 0f ? (camera.pos.y - mPos.y) : (mPos.y + 1f - camera.pos.y)));
+            deltaDist.x * (dir.x < 0f ? (Camera.pos.x - mPos.x) : (mPos.x + 1f - Camera.pos.x)),
+            deltaDist.y * (dir.y < 0f ? (Camera.pos.y - mPos.y) : (mPos.y + 1f - Camera.pos.y)));
 
         Vec2i step = new(MathF.Sign(dir.x), MathF.Sign(dir.y));
 
@@ -85,13 +81,13 @@ public static unsafe class Raycaster
             if(steps++ >= max_steps) // this instead of !map.InBounds(...), because I want rendering outside of map to be cool
                 return;
 
-            else if(map.IsSolid(mPos))
+            else if(Map.current.IsSolid(mPos))
                 hit = true;
         }
 
         float dist = vert ? (sideDist.x - deltaDist.x) : (sideDist.y - deltaDist.y);
-        float normDist = float.Clamp(dist / camera.renderDist, 0f, 1f);
-        Vec2f hitPos = camera.pos + dir * dist;
+        float normDist = float.Clamp(dist / Camera.renderDist, 0f, 1f);
+        Vec2f hitPos = Camera.pos + dir * dist;
 
         if(depthBuf[x] < normDist || dist < 0f)
             return;
@@ -105,22 +101,22 @@ public static unsafe class Raycaster
 
         heightBuf[x] = (ushort)halfHeight;
 
-        float brightness = (vert ? .75f : .5f) * fog.GetDistFogNormalized(normDist);
-        if(lighting.enabled)
-            brightness = lighting.distribution.ComputeLighting(brightness, hitPos);
+        float brightness = (vert ? .75f : .5f) * Fog.GetDistFogNormalized(normDist);
+        if(Lights.enabled)
+            brightness = Lights.distribution.ComputeLighting(brightness, hitPos);
 
-        float wallX = (vert ? (camera.pos.y + dist * dir.y) : (camera.pos.x + dist * dir.x)) % 1f;
+        float wallX = (vert ? (Camera.pos.y + dist * dir.y) : (Camera.pos.x + dist * dir.x)) % 1f;
         if(side is Side.West or Side.South)
             wallX = 1f - wallX;
 
-        LockedTexture tex = map.TexAt(mPos);
+        LockedTexture tex = Map.current.TexAt(mPos);
         int texX = (wallX * (tex?.bounds.x ?? 0)).Floor();
         if(vert && dir.x > 0f || !vert && dir.y < 0f)
             texX = tex.size.x - texX - 1;
         float texStep = tex.size.y / height;
         float texPos = (y0 - center.y + halfHeight) * texStep;
 
-        int graffiti = map.graffitis[mPos.x, mPos.y];
+        int graffiti = Map.current.graffitis[mPos.x, mPos.y];
         bool hasGraffiti = graffiti != 0;
         LockedTexture gTex;
         int gTexX;
@@ -128,7 +124,7 @@ public static unsafe class Raycaster
 
         if(hasGraffiti)
         {
-            gTex = map.graffitiTextures[graffiti-1];
+            gTex = Map.current.graffitiTextures[graffiti-1];
             gTexX = (wallX * gTex.bounds.x).Floor();
             gTexStep = gTex.size.y / height;
             gTexPos = (y0 - center.y + halfHeight) * gTexStep;

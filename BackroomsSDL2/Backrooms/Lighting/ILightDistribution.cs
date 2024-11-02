@@ -17,6 +17,6 @@ public interface ILightDistribution
     public float ComputeLighting(float currBrightness, Vec2f hitPoint)
     {
         float sqrDist = ClosestLightSqrDist(hitPoint);
-        return float.Clamp(currBrightness * Raycaster.fog.GetDistFog(MathF.Sqrt(sqrDist)) * Raycaster.lighting.lightStrength / (1f + sqrDist), Raycaster.lighting.minBrightness, 1f);
+        return float.Clamp(currBrightness * Fog.GetDistFog(MathF.Sqrt(sqrDist)) * Lights.lightStrength / (1f + sqrDist), Lights.minBrightness, 1f);
     }
 }
