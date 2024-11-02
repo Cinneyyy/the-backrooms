@@ -28,10 +28,8 @@ public static class Resources
                 case ".png" or ".jpg":
                 {
                     texturePaths[name] = path;
-
-                    Texture tex = new(path);
-                    textures[name] = tex;
-                    lockedTextures[name] = tex.Lock();
+                    textures[name] = new(path);
+                    lockedTextures[name] = new(path);
                     break;
                 }
             }
@@ -60,7 +58,7 @@ public static class Resources
     public static Texture LoadTexture(string name)
         => new(texturePaths[name]);
     public static LockedTexture LoadLockedTexture(string name)
-        => GetTexture(name).Lock();
+        => new(texturePaths[name]);
 
     public static Font LoadFontFromPath(string path, int ptSize)
         => new(path, ptSize);

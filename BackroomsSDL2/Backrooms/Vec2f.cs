@@ -12,7 +12,7 @@ public struct Vec2f(float x, float y)
 
     public float x = x, y = y;
 
-    public static readonly Vec2f zero = new(0f), one = new(1f);
+    public static readonly Vec2f zero = new(0f), one = new(1f), half = new(.5f);
     public static readonly Vec2f up = new(0f, 1f), down = -up, right = new(1f, 0f), left = -right;
 
 
@@ -41,6 +41,15 @@ public struct Vec2f(float x, float y)
         x = this.x;
         y = this.y;
     }
+
+    public readonly Vec2f WithLength(float length)
+        => normalized * length;
+
+    public void SetLength(float length)
+        => this = WithLength(length);
+
+    public void Normalize()
+        => this = normalized;
 
 
     public static Vec2f PlaneFromFov(Vec2f dir, float fov)

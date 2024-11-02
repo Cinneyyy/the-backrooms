@@ -1,8 +1,6 @@
-using System;
-
 namespace Backrooms.Extensions;
 
-public static class ArrayExtensions
+public static class ArrayExtension
 {
     public static int SizeX<T>(this T[,] arr2d)
         => arr2d.GetLength(0);

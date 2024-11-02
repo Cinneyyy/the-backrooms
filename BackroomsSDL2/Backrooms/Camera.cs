@@ -3,13 +3,13 @@ using Backrooms.Extensions;
 
 namespace Backrooms;
 
-public class Camera(float fov, float maxFogDist, Vec2f pos = default, float angle = 0f)
+public class Camera(float fovRad, float maxFogDist, Vec2f pos = default, float angle = 0f)
 {
     public Vec2f pos = pos;
 
 
-    public float fovFactor { get; private set; } = MathF.Tan(fov / 2f);
-    public Vec2f plane { get; private set; } = Vec2f.PlaneFromFov(angle, fov);
+    public float fovFactor { get; private set; } = MathF.Tan(fovRad / 2f);
+    public Vec2f plane { get; private set; } = Vec2f.PlaneFromFov(angle, fovRad);
     public Vec2f forward { get; private set; } = Vec2f.FromAngle(angle);
     public Vec2f right { get; private set; } = Vec2f.FromAngle(angle - MathF.PI/2f);
 
@@ -20,7 +20,7 @@ public class Camera(float fov, float maxFogDist, Vec2f pos = default, float angl
         set
         {
             _maxFogDist = value;
-            Raycaster.fogMaxDist = value - 1f;
+            Raycaster.fog.maxDist = value - 1f;
         }
     }
 
@@ -37,7 +37,7 @@ public class Camera(float fov, float maxFogDist, Vec2f pos = default, float angl
         }
     }
 
-    private float _fov = fov;
+    private float _fov = fovRad;
     public float fov
     {
         get => _fov;

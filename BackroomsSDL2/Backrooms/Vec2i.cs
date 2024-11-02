@@ -1,4 +1,5 @@
 ﻿using System;
+using Backrooms.Extensions;
 
 namespace Backrooms;
 
@@ -11,9 +12,12 @@ public struct Vec2i(int x, int y)
 
     public static readonly Vec2i zero = new(0), one = new(1);
     public static readonly Vec2i up = new(0, 1), down = -up, right = new(1, 0), left = -right;
+    public static readonly Vec2i[] directions = [up, down, left, right];
 
 
     public readonly Vec2f asVec2f => new(this);
+    public readonly int sqrLength => x*x + y*y;
+    public readonly int length => MathF.Sqrt(x*x + y*y).Floor();
 
 
     public readonly override bool Equals(object obj)

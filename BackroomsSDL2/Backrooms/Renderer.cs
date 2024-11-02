@@ -1,11 +1,12 @@
-﻿using Backrooms.Assets;
+﻿using System.Runtime.CompilerServices;
+using Backrooms.Assets;
 
 namespace Backrooms;
 
 #pragma warning disable CA1806 // Do not ignore method results
 public static unsafe class Renderer
 {
-    private static nint sdlTex;
+    private static nint rawTex, abstractTex;
     private static Vec2i screen;
     private static SDL_Rect outputRect;
 
@@ -13,6 +14,7 @@ public static unsafe class Renderer
     public static uint* pixelData { get; private set; }
     public static int stride { get; private set; }
     public static nint sdlRend { get; private set; }
+    public static Vec2i center { get; private set; }
 
     private static Vec2i _res;
     public static Vec2i res
@@ -21,6 +23,7 @@ public static unsafe class Renderer
         set
         {
             _res = value;
+            center = value/2;
 
             DestroyTex();
 
@@ -31,8 +34,40 @@ public static unsafe class Renderer
 
     public static void Draw()
     {
+        #region Initialization
+        SDL_LockTexture(rawTex, nint.Zero, out nint _pixelData, out int _stride);
+        pixelData = (uint*)_pixelData;
+        stride = _stride / 4;
+
+        // TODO: remove once ceiling/floor rendering has been ported over
+        Unsafe.InitBlock(pixelData, 0, (uint)(4 * stride * res.y)); // Clear rawTex
+
+        SDL_SetRenderTarget(sdlRend, abstractTex); // Clear abstractTex
+        SDL_SetRenderDrawColor(sdlRend, 0, 0, 0, 0);
+        SDL_RenderClear(sdlRend);
+        #endregion
+
+        #region Rendering
+        Raycaster.PrepareDraw();
+        Raycaster.DrawWalls();
+
+        //LockedTexture tex = Raycaster.map.textures[Tile.Wall];
+        //for(int y = 0; y < tex.size.y; y++)
+        //{
+        //    uint* scan = pixelData + stride * y;
+        //    uint* texScan = tex.pixels + tex.stride * y;
+
+        //    for(int x = 0; x < tex.size.x; x++)
+        //        *(scan+x) = *(texScan+x);
+        //}
+        #endregion
+
         SDL_SetRenderTarget(sdlRend, nint.Zero);
-        SDL_RenderCopy(sdlRend, sdlTex, nint.Zero, ref outputRect);
+
+        SDL_UnlockTexture(rawTex);
+        SDL_RenderCopy(sdlRend, rawTex, nint.Zero, ref outputRect);
+        SDL_RenderCopy(sdlRend, abstractTex, nint.Zero, ref outputRect);
+
         SDL_RenderPresent(sdlRend);
     }
 
@@ -56,9 +91,17 @@ public static unsafe class Renderer
         SDL_DestroyTexture(tex);
     }
 
+    public static void RenderTex(Texture tex, SDL_Rect rect)
+        => RenderTex(tex.sdlTex, rect);
+    public static void RenderTex(Texture tex, Vec2i loc, Vec2i size)
+        => RenderTex(tex.sdlTex, loc, size);
+    public static void RenderTex(Texture tex, Vec2i loc)
+        => RenderTex(tex.sdlTex, loc);
     public static void RenderTex(nint tex, SDL_Rect rect)
     {
-        SDL_SetRenderTarget(sdlRend, sdlTex);
+        SDL_SetRenderTarget(sdlRend, abstractTex);
+        SDL_SetRenderDrawColor(sdlRend, 0, 0, 0, 0xff);
+        SDL_RenderFillRect(sdlRend, ref rect);
         SDL_RenderCopy(sdlRend, tex, nint.Zero, ref rect);
     }
     public static void RenderTex(nint tex, Vec2i loc, Vec2i size)
@@ -71,7 +114,9 @@ public static unsafe class Renderer
             h = size.y
         };
 
-        SDL_SetRenderTarget(sdlRend, sdlTex);
+        SDL_SetRenderTarget(sdlRend, abstractTex);
+        SDL_SetRenderDrawColor(sdlRend, 0, 0, 0, 0xff);
+        SDL_RenderFillRect(sdlRend, ref rect);
         SDL_RenderCopy(sdlRend, tex, nint.Zero, ref rect);
     }
     public static void RenderTex(nint tex, Vec2i loc)
@@ -79,7 +124,9 @@ public static unsafe class Renderer
         SDL_Rect rect = new() { x = loc.x, y = loc.y };
         SDL_QueryTexture(tex, out _, out _, out rect.w, out rect.h);
 
-        SDL_SetRenderTarget(sdlRend, sdlTex);
+        SDL_SetRenderTarget(sdlRend, abstractTex);
+        SDL_SetRenderDrawColor(sdlRend, 0, 0, 0, 0xff);
+        SDL_RenderFillRect(sdlRend, ref rect);
         SDL_RenderCopy(sdlRend, tex, nint.Zero, ref rect);
     }
 
@@ -87,6 +134,7 @@ public static unsafe class Renderer
     internal static void Init(nint sdlRend, Vec2i res, Vec2i screen)
     {
         _res = res;
+        center = res/2;
         Renderer.screen = screen;
         Renderer.sdlRend = sdlRend;
 
@@ -106,21 +154,20 @@ public static unsafe class Renderer
             outputRect = new() { x = xOffset, y = 0, w = size.x, h = size.y };
         }
 
-        sdlTex = SDL_CreateTexture(sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, res.x, res.y);
+        rawTex = SDL_CreateTexture(sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, res.x, res.y);
+        abstractTex = SDL_CreateTexture(sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, res.x, res.y);
 
-        SDL_SetTextureScaleMode(sdlTex, SDL_ScaleMode.SDL_ScaleModeNearest);
-        SDL_SetTextureBlendMode(sdlTex, SDL_BlendMode.SDL_BLENDMODE_NONE);
+        SDL_SetTextureScaleMode(rawTex, SDL_ScaleMode.SDL_ScaleModeNearest);
+        SDL_SetTextureScaleMode(abstractTex, SDL_ScaleMode.SDL_ScaleModeNearest);
 
-        SDL_LockTexture(sdlTex, nint.Zero, out nint pixelData, out int stride);
-        Renderer.pixelData = (uint*)pixelData;
-        Renderer.stride = stride;
+        SDL_SetTextureBlendMode(abstractTex, SDL_BlendMode.SDL_BLENDMODE_BLEND);
 
-        Raycaster.Init(res);
+        Raycaster.Init();
     }
 
     internal static void DestroyTex()
     {
-        SDL_UnlockTexture(sdlTex);
-        SDL_DestroyTexture(sdlTex);
+        SDL_UnlockTexture(rawTex);
+        SDL_DestroyTexture(rawTex);
     }
 }

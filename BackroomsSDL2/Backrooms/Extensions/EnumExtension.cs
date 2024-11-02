@@ -1,6 +1,6 @@
 namespace Backrooms.Extensions;
 
-public static class EnumExtensions
+public static class EnumExtension
 {
     public static bool IsAir(this Tile tile)
         => ((byte)tile & 1) == 0;

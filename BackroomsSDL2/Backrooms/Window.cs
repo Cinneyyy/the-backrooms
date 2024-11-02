@@ -73,12 +73,9 @@ public static class Window
             throw new($"Failed to create SDL renderer: {SDL_GetError()}");
 
         Renderer.Init(sdlRend, size, new(screen.w, screen.h));
-        SDL_SetRenderDrawBlendMode(sdlRend, SDL_BlendMode.SDL_BLENDMODE_NONE);
-
-        Run();
     }
 
-    private static void Run()
+    public static void Run()
     {
         isRunning = true;
 
@@ -112,6 +109,8 @@ public static class Window
             tick?.Invoke();
             tickDt?.Invoke(deltaTime);
 
+            Raycaster.camera.angle += deltaTime;
+
             Renderer.Draw();
         }
 
@@ -120,6 +119,7 @@ public static class Window
         SDL_DestroyWindow(sdlWind);
         SDL_Quit();
     }
+
 
     private static void HandleEvents()
     {

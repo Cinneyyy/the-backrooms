@@ -10,38 +10,42 @@ public unsafe class LockedTexture : IDisposable
     {
         nint surface = IMG_Load(path);
         SDL_Surface sdlSurface = Marshal.PtrToStructure<SDL_Surface>(surface);
-        SDL_PixelFormat format = Marshal.PtrToStructure<SDL_PixelFormat>(sdlSurface.format);
+        SDL_PixelFormat sdlFormat = Marshal.PtrToStructure<SDL_PixelFormat>(sdlSurface.format);
+        (size.x, size.y) = (sdlSurface.w, sdlSurface.h);
+        bounds = size - Vec2i.one;
 
-        if(format.format != SDL_PIXELFORMAT_RGBA8888)
-        {
-            nint convertedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, sdlSurface.flags);
-            sdlTex = SDL_CreateTextureFromSurface(Renderer.sdlRend, convertedSurface);
-            SDL_FreeSurface(convertedSurface);
-        }
-        else
-        {
-            sdlTex = SDL_CreateTextureFromSurface(Renderer.sdlRend, surface);
-        }
+        sdlTex = SDL_CreateTexture(Renderer.sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, size.x, size.y);
+
+        if(SDL_LockTexture(sdlTex, nint.Zero, out nint pixels, out stride) < 0)
+            throw new($"Failed to lock texture: {SDL_GetError()}");
+        this.pixels = (uint*)pixels;
+        stride /= 4;
+
+        if(SDL_ConvertPixels(size.x, size.y, sdlFormat.format, sdlSurface.pixels, sdlSurface.pitch, SDL_PIXELFORMAT_RGBA8888, pixels, stride * 4) < 0)
+            throw new(SDL_GetError());
 
         SDL_FreeSurface(surface);
-
-        SDL_QueryTexture(sdlTex, out _, out int access, out size.x, out size.y);
-        SDL_LockTexture(sdlTex, nint.Zero, out nint pixels, out stride);
-        this.pixels = (uint*)pixels;
-
-        Console.WriteLine((SDL_TextureAccess)access);
     }
 
     public LockedTexture(Texture texture)
     {
         size = texture.size;
-        sdlTex = SDL_CreateTexture(Renderer.sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, size.x, size.y);
+        bounds = texture.bounds;
+        sdlTex = SDL_CreateTexture(Renderer.sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, size.x, size.y);
+        if(SDL_LockTexture(sdlTex, nint.Zero, out nint pixels, out stride) < 0)
+            throw new($"Failed to lock texture: {SDL_GetError()}");
+        this.pixels = (uint*)pixels;
+        stride /= 4;
 
-        SDL_SetRenderTarget(Renderer.sdlRend, sdlTex);
+        nint targetTex = SDL_CreateTexture(Renderer.sdlRend, SDL_PIXELFORMAT_RGBA8888, (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, size.x, size.y);
+
+        SDL_SetRenderTarget(Renderer.sdlRend, targetTex);
         SDL_RenderCopy(Renderer.sdlRend, texture.sdlTex, nint.Zero, nint.Zero);
 
-        SDL_LockTexture(sdlTex, nint.Zero, out nint pixels, out stride);
-        this.pixels = (uint*)pixels;
+        SDL_Rect rect = new() { x = 0, y = 0, w = size.x, h = size.y };
+        SDL_RenderReadPixels(Renderer.sdlRend, ref rect, SDL_PIXELFORMAT_RGBA8888, pixels, stride);
+
+        SDL_DestroyTexture(targetTex);
     }
 
 
@@ -50,6 +54,7 @@ public unsafe class LockedTexture : IDisposable
 
 
     public readonly Vec2i size;
+    public readonly Vec2i bounds;
     public readonly uint* pixels;
     public readonly nint sdlTex;
     public readonly int stride;
@@ -77,6 +82,17 @@ public unsafe class LockedTexture : IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+        SDL_UnlockTexture(sdlTex);
         SDL_DestroyTexture(sdlTex);
+    }
+
+    public Texture Unlock(bool dispose)
+    {
+        Texture tex = new(this);
+
+        if(dispose)
+            Dispose();
+
+        return tex;
     }
 }

@@ -24,4 +24,20 @@ public static class MathExtension
         => degAngle * Deg2Rad;
     public static float ToDeg(this float radAngle)
         => radAngle * Rad2Deg;
+
+    public static uint Lerp(this float t, uint min, uint max)
+        => (uint)(min + (max - min) * t);
+    public static byte Lerp(this float t, byte min, byte max)
+        => (byte)(min + (max - min) * t);
+    public static int Lerp(this float t, int min, int max)
+        => (int)(min + (max - min) * t);
+
+    public static float Sqr(this float f)
+        => f*f;
+    public static uint Sqr(this uint i)
+        => i*i;
+    public static int Sqr(this int i)
+        => i*i;
+    public static int Sqr(this byte b)
+        => b*b;
 }
