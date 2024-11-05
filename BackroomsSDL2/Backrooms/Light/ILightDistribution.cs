@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Backrooms.Lighting;
+namespace Backrooms.Light;
 
 public interface ILightDistribution
 {
@@ -17,6 +17,6 @@ public interface ILightDistribution
     public float ComputeLighting(float currBrightness, Vec2f hitPoint)
     {
         float sqrDist = ClosestLightSqrDist(hitPoint);
-        return float.Clamp(currBrightness * Fog.GetDistFog(MathF.Sqrt(sqrDist)) * Lights.lightStrength / (1f + sqrDist), Lights.minBrightness, 1f);
+        return float.Clamp(currBrightness * Fog.GetDistFog(MathF.Sqrt(sqrDist)) * Lighting.lightStrength / (1f + sqrDist), Lighting.minBrightness, 1f);
     }
 }

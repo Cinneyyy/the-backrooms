@@ -8,7 +8,7 @@ public static class CameraMovement
     public static float hitRadius = .25f;
     public static bool canMove = true;
     public static float walkSpeed = 1.5f, runSpeed = 2.8f;
-    public static float sensitivity = 6.75f;
+    public static float sensitivity = 1500f;
     public static bool noClip;
 
 
@@ -52,8 +52,8 @@ public static class CameraMovement
         float moveSpeed = Input.KeyHelt(Key.LShift) ? runSpeed : walkSpeed;
         Vec2f newPos = pos + moveSpeed * dt * move;
 
-        pos = noClip ? newPos : Map.current.ResolveIntersectionIfNecessery(pos, newPos, hitRadius, out _);
+        pos = noClip ? newPos : Map.curr.ResolveIntersectionIfNecessery(pos, newPos, hitRadius, out _);
 
-        angle += sensitivity * Input.mouseDelta.x; // ANGLEFLIP
+        angle += sensitivity * Input.mouseDelta.x * dt; // ANGLEFLIP
     }
 }

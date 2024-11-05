@@ -38,10 +38,10 @@ public class Map
     public readonly int[,] graffitis;
     public LockedTexture[] graffitiTextures = [];
     public LockedTexture floorTex, ceilTex, lightTex;
-    public float floorTexScale = 1f, ceilTexScale = 1f;
+    public float floorTexScale = .1f, ceilTexScale = 1f;
     public float floorLuminance = .5f, ceilLuminance = .5f;
 
-    public static Map current;
+    public static Map curr;
 
 
     public Dictionary<Tile, LockedTexture> textures { get; init; }

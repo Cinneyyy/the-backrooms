@@ -1,4 +1,4 @@
-namespace Backrooms.Lighting;
+namespace Backrooms.Light;
 
 public class GridLightDistribution(int spacing) : ILightDistribution
 {

@@ -2,7 +2,8 @@ using System;
 using System.Threading.Tasks;
 using Backrooms.Assets;
 using Backrooms.Extensions;
-using Backrooms.Lighting;
+using Backrooms.Light;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Backrooms;
 
@@ -38,6 +39,13 @@ public static unsafe class Raycaster
 
     public static void DrawWalls()
         => Parallel.For(0, res.x, DrawColumn);
+
+    public static void DrawFloorAndCeil()
+    //=> Parallel.For(0, center.y, DrawRow);
+    {
+        for(int y = 0; y < center.y; y++)
+            DrawRow(y);
+    }
 
 
 
@@ -81,7 +89,7 @@ public static unsafe class Raycaster
             if(steps++ >= max_steps) // this instead of !map.InBounds(...), because I want rendering outside of map to be cool
                 return;
 
-            else if(Map.current.IsSolid(mPos))
+            else if(Map.curr.IsSolid(mPos))
                 hit = true;
         }
 
@@ -102,21 +110,21 @@ public static unsafe class Raycaster
         heightBuf[x] = (ushort)halfHeight;
 
         float brightness = (vert ? .75f : .5f) * Fog.GetDistFogNormalized(normDist);
-        if(Lights.enabled)
-            brightness = Lights.distribution.ComputeLighting(brightness, hitPos);
+        if(Lighting.enabled)
+            brightness = Lighting.distribution.ComputeLighting(brightness, hitPos);
 
         float wallX = (vert ? (Camera.pos.y + dist * dir.y) : (Camera.pos.x + dist * dir.x)) % 1f;
         if(side is Side.West or Side.South)
             wallX = 1f - wallX;
 
-        LockedTexture tex = Map.current.TexAt(mPos);
+        LockedTexture tex = Map.curr.TexAt(mPos);
         int texX = (wallX * (tex?.bounds.x ?? 0)).Floor();
         if(vert && dir.x > 0f || !vert && dir.y < 0f)
             texX = tex.size.x - texX - 1;
         float texStep = tex.size.y / height;
         float texPos = (y0 - center.y + halfHeight) * texStep;
 
-        int graffiti = Map.current.graffitis[mPos.x, mPos.y];
+        int graffiti = Map.curr.graffitis[mPos.x, mPos.y];
         bool hasGraffiti = graffiti != 0;
         LockedTexture gTex;
         int gTexX;
@@ -124,7 +132,7 @@ public static unsafe class Raycaster
 
         if(hasGraffiti)
         {
-            gTex = Map.current.graffitiTextures[graffiti-1];
+            gTex = Map.curr.graffitiTextures[graffiti-1];
             gTexX = (wallX * gTex.bounds.x).Floor();
             gTexStep = gTex.size.y / height;
             gTexPos = (y0 - center.y + halfHeight) * gTexStep;
@@ -165,6 +173,59 @@ public static unsafe class Raycaster
             texPos += texStep;
             scan += stride;
         }
+    }
+
+    private static void DrawRow(int y)
+    {
+        float rowDist = wallHeight * center.y / y;
+
+        if(float.IsInfinity(rowDist) || float.IsNaN(rowDist))
+            return;
+
+        Vec2f step = rowDist * 2 * Camera.plane / res.x;
+        Vec2f floor = Camera.pos + rowDist * (Camera.forward - Camera.plane);
+
+        uint* floorScan = pixels + stride * (center.y + y);
+        uint* ceilScan = pixels + stride * (center.y - 1 - y);
+        //for(int x = 0; x < res.x; x++)
+        Parallel.For(0, res.x, x =>
+        {
+            if(heightBuf[x] > y)
+            {
+                floor += step;
+                floorScan++;
+                ceilScan++;
+                //continue;
+                return;
+            }
+
+            Vec2i tile = floor.floor;
+            Vec2f texFrac = floor - tile;
+            Vec2i floorTex = (Map.curr.floorTex.size * texFrac * Map.curr.floorTexScale).floor & Map.curr.floorTex.bounds;
+
+            bool isLightTile = Lighting.distribution.IsLightTile(tile);
+            LockedTexture ceilingTex = isLightTile ? Map.curr.lightTex : Map.curr.ceilTex;
+            Vec2i ceilTex = new(
+                int.Clamp((ceilingTex.size.x * texFrac.x * Map.curr.ceilTexScale).Floor(), 0, ceilingTex.bounds.x),
+                int.Clamp((ceilingTex.size.y * texFrac.y * Map.curr.ceilTexScale).Floor(), 0, ceilingTex.bounds.y));
+
+            floor += step;
+
+            float tileDist = (Camera.pos - floor).length;
+            float fog = Fog.GetDistFog(tileDist);
+            if(Lighting.enabled)
+                fog = Lighting.distribution.ComputeLighting(fog, floor);
+
+            uint* floorCol = Map.curr.floorTex.pixels + floorTex.y * Map.curr.floorTex.stride + floorTex.x;
+            *floorScan++ = floorCol->MultiplyColor(Map.curr.floorLuminance * fog);
+
+            uint* ceilCol = ceilingTex.pixels + ceilTex.y * ceilingTex.stride + ceilTex.x;
+
+            if(Lighting.enabled && isLightTile && ceilCol->R() == 0xff && ceilCol->G() == 0xff && ceilCol->B() == 0xff && tileDist < 10f && Map.curr.IsAir(floor.floor))
+                *ceilScan++ = 0xffffffff;
+            else
+                *ceilScan++ = ceilCol->MultiplyColor(Map.curr.ceilLuminance * fog);
+        });
     }
 
 

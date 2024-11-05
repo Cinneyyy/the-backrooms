@@ -1,4 +1,5 @@
 ﻿using System;
+using Backrooms.Light;
 
 namespace Backrooms;
 
@@ -93,6 +94,8 @@ public static class Window
                 Input.relativeMouse ^= true;
             if(Input.KeyDown(Key.F2))
                 CameraMovement.noClip ^= true;
+            if(Input.KeyDown(Key.F4))
+                Lighting.enabled ^= true;
 
             DateTime now = DateTime.UtcNow;
             deltaTime = (float)(now - lastFrame).TotalSeconds;

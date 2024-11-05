@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Backrooms.Assets;
+using Backrooms.Debugging;
 
 namespace Backrooms;
 
@@ -34,8 +35,8 @@ public static unsafe class Renderer
         pixelData = (uint*)_pixelData;
         stride = _stride / 4;
 
-        // TODO: remove once ceiling/floor rendering has been ported over
-        Unsafe.InitBlock(pixelData, 0, (uint)(4 * stride * res.y)); // Clear rawTex
+        //// TODO: remove once ceiling/floor rendering has been ported over
+        //Unsafe.InitBlock(pixelData, 0, (uint)(4 * stride * res.y)); // Clear rawTex
 
         SDL_SetRenderTarget(sdlRend, abstractTex); // Clear abstractTex
         SDL_SetRenderDrawColor(sdlRend, 0, 0, 0, 0);
@@ -45,6 +46,9 @@ public static unsafe class Renderer
         #region Rendering
         Raycaster.PrepareDraw();
         Raycaster.DrawWalls();
+        Raycaster.DrawFloorAndCeil();
+
+        //DebugScreen.Draw();
 
         //LockedTexture tex = Raycaster.map.textures[Tile.Wall];
         //for(int y = 0; y < tex.size.y; y++)

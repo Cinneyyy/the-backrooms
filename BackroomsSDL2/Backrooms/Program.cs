@@ -1,6 +1,4 @@
 using Backrooms.Assets;
-using Backrooms.Extensions;
-using Backrooms.Lighting;
 
 namespace Backrooms;
 
@@ -8,17 +6,18 @@ public class Program
 {
     private static void Main(string[] args)
     {
-        Window.Init(new Vec2i(1920, 1080) / 4, "Backrooms Game");
+        Window.Init(new Vec2i(1920, 1080) / 6, "Backrooms Game");
 
-        Map.current = new(new byte[,]
+        Map.curr = new(new byte[,]
         {
-            { 1, 1, 1, 1, 1, 1 },
-            { 1, 0, 0, 0, 0, 1 },
-            { 1, 0, 1, 0, 0, 1 },
-            { 1, 0, 0, 0, 0, 1 },
-            { 1, 0, 0, 0, 0, 1 },
-            { 1, 0, 0, 0, 0, 1 },
-            { 1, 1, 1, 1, 1, 1 },
+            { 1, 1, 1, 1, 1, 1, 1 },
+            { 1, 0, 0, 0, 0, 0, 1 },
+            { 1, 0, 1, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 0, 1 },
+            { 1, 0, 0, 0, 0, 0, 1 },
+            { 1, 1, 1, 1, 1, 0, 1 },
         })
         {
             ceilTex = Resources.GetLockedTexture("ceiling"),
@@ -31,7 +30,7 @@ public class Program
             }
         };
 
-        Camera.pos = Map.current.center.asVec2f;
+        Camera.pos = Map.curr.size / 2f;
 
         Window.Run();
     }
