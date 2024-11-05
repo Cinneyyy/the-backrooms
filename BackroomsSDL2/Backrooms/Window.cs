@@ -91,6 +91,7 @@ public static class Window
 
         Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings));
         Camera.pos = Map.curr.spawnLocationF;
+        Map.curr.GenerateGraffitis(8192);
 
         while(isRunning)
         {
@@ -106,6 +107,7 @@ public static class Window
             {
                 Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings with { seed = RNG.signedInt }));
                 Camera.pos = Map.curr.spawnLocationF;
+                Map.curr.GenerateGraffitis(8192);
             }
             if(Input.KeyDown(Key.F12))
             {

@@ -42,10 +42,10 @@ public static class Resources
     }
 
 
-    private static readonly FrozenDictionary<string, string> fontPaths;
-    private static readonly FrozenDictionary<string, string> texturePaths;
-    private static readonly FrozenDictionary<string, Texture> textures;
-    private static readonly FrozenDictionary<string, LockedTexture> lockedTextures;
+    public static readonly FrozenDictionary<string, string> fontPaths;
+    public static readonly FrozenDictionary<string, string> texturePaths;
+    public static readonly FrozenDictionary<string, Texture> textures;
+    public static readonly FrozenDictionary<string, LockedTexture> lockedTextures;
 
 
     public static Texture GetTexture(string name)

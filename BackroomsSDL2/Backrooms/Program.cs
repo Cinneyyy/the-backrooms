@@ -1,3 +1,4 @@
+using System.Linq;
 using Backrooms.Assets;
 
 namespace Backrooms;
@@ -6,7 +7,7 @@ public class Program
 {
     private static void Main(string[] args)
     {
-        Window.Init(new Vec2i(1920, 1080) / 6, "Backrooms Game");
+        Window.Init(new Vec2i(1920, 1080) / 4, "Backrooms Game");
 
         Map.curr = new(new byte[,]
         {
@@ -27,7 +28,11 @@ public class Program
             {
                 [Tile.Wall] = Resources.GetLockedTexture("wall"),
                 [Tile.Pillar] = Resources.GetLockedTexture("pillar")
-            }
+            },
+            graffitiTextures = Resources.lockedTextures
+                .Where(kvp => kvp.Key.StartsWith("gr_"))
+                .Select(kvp => kvp.Value)
+                .ToArray()
         };
 
         Camera.pos = Map.curr.size / 2f;
