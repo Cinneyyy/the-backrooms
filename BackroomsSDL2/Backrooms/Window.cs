@@ -1,5 +1,8 @@
 ﻿using System;
+using System.IO;
+using Backrooms.Debugging;
 using Backrooms.Light;
+using Backrooms.MapGeneration;
 
 namespace Backrooms;
 
@@ -86,6 +89,9 @@ public static class Window
         int frameCount = 0;
         const float fps_time_frame = 1f;
 
+        Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings));
+        Camera.pos = Map.curr.spawnLocationF;
+
         while(isRunning)
         {
             HandleEvents();
@@ -96,6 +102,21 @@ public static class Window
                 CameraMovement.noClip ^= true;
             if(Input.KeyDown(Key.F4))
                 Lighting.enabled ^= true;
+            if(Input.KeyDown(Key.F5))
+            {
+                Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings with { seed = RNG.signedInt }));
+                Camera.pos = Map.curr.spawnLocationF;
+            }
+            if(Input.KeyDown(Key.F12))
+            {
+                (nint surface, nint tex) = Atlas.DrawFullToSurface();
+
+                Directory.CreateDirectory("screenshots");
+                IMG_SavePNG(surface, $"screenshots/{DateTime.Now:yyyy-MM-dd HH-mm-ss}.png");
+
+                SDL_FreeSurface(surface);
+                SDL_DestroyTexture(tex);
+            }
 
             DateTime now = DateTime.UtcNow;
             deltaTime = (float)(now - lastFrame).TotalSeconds;

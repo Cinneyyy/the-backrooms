@@ -30,4 +30,9 @@ public static class ColorExtension
     public static byte G(this uint col) => (byte)(col >> 16);
     public static byte B(this uint col) => (byte)(col >> 8);
     public static byte A(this uint col) => (byte)col;
+
+    public static uint AddAlpha(this uint col)
+        => (col << 8) | 0xff;
+    public static uint AddAlpha(this uint col, uint alpha)
+        => (col << 8) | alpha;
 }

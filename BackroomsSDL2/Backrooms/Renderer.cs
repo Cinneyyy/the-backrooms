@@ -35,7 +35,6 @@ public static unsafe class Renderer
         pixelData = (uint*)_pixelData;
         stride = _stride / 4;
 
-        //// TODO: remove once ceiling/floor rendering has been ported over
         //Unsafe.InitBlock(pixelData, 0, (uint)(4 * stride * res.y)); // Clear rawTex
 
         SDL_SetRenderTarget(sdlRend, abstractTex); // Clear abstractTex
@@ -47,6 +46,9 @@ public static unsafe class Renderer
         Raycaster.PrepareDraw();
         Raycaster.DrawWalls();
         Raycaster.DrawFloorAndCeil();
+
+        if(Input.KeyHelt(Key.Tab))
+            Atlas.Draw();
 
         //DebugScreen.Draw();
 

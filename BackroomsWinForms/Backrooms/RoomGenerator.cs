@@ -59,7 +59,7 @@ public class RoomGenerator : IEnumerable
             visited.Add(startCell);
             List<Vec2i> frontier = [ startCell ];
 
-            while((float)visited.Count / (columns * rows) < mazeFill)
+            while(visited.Count < mazeFill * (columns * rows))
             {
                 if(frontier is [])
                     break;
@@ -83,7 +83,7 @@ public class RoomGenerator : IEnumerable
                 if(cell.y < rows - 2 && !visited.Contains(c = new(cell.x, cell.y + 2)))
                     neighbors.Add(c);
 
-                int attempts = frontierAttempts[Rand(frontierAttempts.Length)];
+                int attempts = frontierAttempts.SelectRandom();
                 for(int j = 0; j < attempts && neighbors is not []; j++)
                 {
                     Vec2i nextCell = neighbors[Rand(neighbors.Count)];

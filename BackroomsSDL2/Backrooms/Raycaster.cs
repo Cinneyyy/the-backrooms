@@ -41,11 +41,7 @@ public static unsafe class Raycaster
         => Parallel.For(0, res.x, DrawColumn);
 
     public static void DrawFloorAndCeil()
-    //=> Parallel.For(0, center.y, DrawRow);
-    {
-        for(int y = 0; y < center.y; y++)
-            DrawRow(y);
-    }
+        => Parallel.For(0, center.y, DrawRow);
 
 
 
@@ -187,16 +183,14 @@ public static unsafe class Raycaster
 
         uint* floorScan = pixels + stride * (center.y + y);
         uint* ceilScan = pixels + stride * (center.y - 1 - y);
-        //for(int x = 0; x < res.x; x++)
-        Parallel.For(0, res.x, x =>
+        for(int x = 0; x < res.x; x++)
         {
             if(heightBuf[x] > y)
             {
                 floor += step;
                 floorScan++;
                 ceilScan++;
-                //continue;
-                return;
+                continue;
             }
 
             Vec2i tile = floor.floor;
@@ -225,7 +219,7 @@ public static unsafe class Raycaster
                 *ceilScan++ = 0xffffffff;
             else
                 *ceilScan++ = ceilCol->MultiplyColor(Map.curr.ceilLuminance * fog);
-        });
+        }
     }
 
 

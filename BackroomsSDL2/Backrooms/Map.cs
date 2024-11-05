@@ -20,6 +20,15 @@ public class Map
         for(int x = 0; x < size.x; x++)
             for(int y = 0; y < size.y; y++)
                 this.tiles[x, y] = (Tile)tiles[x, y];
+
+        int offset = 0;
+        do
+        {
+            spawnLocation = new(center.x + offset, center.y);
+            offset++;
+        }
+        while(this[spawnLocation].IsSolid());
+        spawnLocationF = spawnLocation + Vec2f.half;
     }
 
     public Map(Tile[,] tiles)
@@ -29,13 +38,18 @@ public class Map
         center = size / 2;
         graffitis = new int[size.x, size.y];
         textures = Enum.GetValues<Tile>().ToDictionary(t => t, t => default(LockedTexture));
+
+        int offset = 0;
+        do
+        {
+            spawnLocation = new(center.x + offset, center.y);
+            offset++;
+        }
+        while(this[spawnLocation].IsSolid());
+        spawnLocationF = spawnLocation + Vec2f.half;
     }
 
 
-    public readonly Vec2i size;
-    public readonly Vec2i center;
-    public readonly Tile[,] tiles;
-    public readonly int[,] graffitis;
     public LockedTexture[] graffitiTextures = [];
     public LockedTexture floorTex, ceilTex, lightTex;
     public float floorTexScale = .1f, ceilTexScale = 1f;
@@ -44,12 +58,18 @@ public class Map
     public static Map curr;
 
 
+    public int[,] graffitis { get; private set; }
+    public Vec2i size { get; private set; }
+    public Vec2i center { get; private set; }
+    public Vec2i spawnLocation { get; private set; }
+    public Vec2f spawnLocationF { get; private set; }
+    public Tile[,] tiles { get; private set; }
     public Dictionary<Tile, LockedTexture> textures { get; init; }
 
 
     public Tile this[int x, int y]
     {
-        get => InBounds(x, y) ? tiles[x, y] : Tile.Air;
+        get => InBounds(x, y) ? tiles[x, y] : Tile.Void;
         set
         {
             if(InBounds(x, y))
@@ -59,7 +79,7 @@ public class Map
 
     public Tile this[Vec2i cell]
     {
-        get => InBounds(cell) ? tiles[cell.x, cell.y] : Tile.Air;
+        get => InBounds(cell) ? tiles[cell.x, cell.y] : Tile.Void;
         set
         {
             if(InBounds(cell))
@@ -67,6 +87,23 @@ public class Map
         }
     }
 
+
+    public void SetTiles(Tile[,] tiles)
+    {
+        this.tiles = tiles;
+        size = tiles.Size();
+        center = size / 2;
+        graffitis = new int[size.x, size.y];
+
+        int offset = 0;
+        do
+        {
+            spawnLocation = new(center.x + offset, center.y);
+            offset++;
+        }
+        while(this[spawnLocation].IsSolid());
+        spawnLocationF = spawnLocation + Vec2f.half;
+    }
 
     public bool InBounds(float x, float y)
         => x >= 0f && y >= 0f && x < size.x && y < size.y;
@@ -103,7 +140,7 @@ public class Map
     public bool Intersects(Vec2f pt, out Tile tile)
     {
         tile = this[pt.floor];
-        return tile.isSolid();
+        return tile.IsSolid();
     }
     public bool Intersects(Vec2f pt, float radius, out Tile tile)
     {
@@ -125,7 +162,7 @@ public class Map
         if(offset == Vec2i.zero)
         {
             tile = this[t + offset];
-            return tile.isSolid();
+            return tile.IsSolid();
         }
 
         Tile collA = this[t.x + offset.x, t.y],
@@ -133,11 +170,11 @@ public class Map
              collC = this[t + offset];
 
         tile =
-            collA.isSolid() ? collA
-            : collB.isSolid() ? collB
-            : collC.isSolid() ? collB
+            collA.IsSolid() ? collA
+            : collB.IsSolid() ? collB
+            : collC.IsSolid() ? collB
             : this[t];
-        return tile.isSolid();
+        return tile.IsSolid();
     }
 
     public Vec2f ResolveIntersectionIfNecessery(Vec2f oldPt, Vec2f newPt, float radius, out bool intersecting)
@@ -162,7 +199,7 @@ public class Map
 
     public bool LineOfSight(Vec2f a, Vec2f b)
     {
-        if(this[a.floor].isSolid() || this[b.floor].isSolid())
+        if(this[a.floor].IsSolid() || this[b.floor].IsSolid())
             return false;
 
         const float step_size = .1f;
@@ -176,7 +213,7 @@ public class Map
             curr += step;
             Vec2i tile = curr.floor;
 
-            if(this[tile].isSolid())
+            if(this[tile].IsSolid())
                 return false;
         }
 
@@ -194,9 +231,9 @@ public class Map
         .Where(InBounds);
 
     public bool IsSolid(int x, int y)
-        => this[x, y].isSolid();
+        => this[x, y].IsSolid();
     public bool IsSolid(Vec2i cell)
-        => this[cell].isSolid();
+        => this[cell].IsSolid();
 
     public bool isAir(int x, int y)
         => this[x, y].IsAir();
