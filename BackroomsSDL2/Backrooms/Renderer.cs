@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Backrooms.Assets;
+﻿using Backrooms.Assets;
 using Backrooms.Debugging;
 
 namespace Backrooms;
@@ -35,7 +34,7 @@ public static unsafe class Renderer
         pixelData = (uint*)_pixelData;
         stride = _stride / 4;
 
-        //Unsafe.InitBlock(pixelData, 0, (uint)(4 * stride * res.y)); // Clear rawTex
+        //System.Runtime.CompilerServices.Unsafe.InitBlock(pixelData, 0, (uint)(4 * stride * res.y)); // Clear rawTex
 
         SDL_SetRenderTarget(sdlRend, abstractTex); // Clear abstractTex
         SDL_SetRenderDrawColor(sdlRend, 0, 0, 0, 0);
@@ -50,17 +49,7 @@ public static unsafe class Renderer
         if(Input.KeyHelt(Key.Tab))
             Atlas.Draw();
 
-        //DebugScreen.Draw();
-
-        //LockedTexture tex = Raycaster.map.textures[Tile.Wall];
-        //for(int y = 0; y < tex.size.y; y++)
-        //{
-        //    uint* scan = pixelData + stride * y;
-        //    uint* texScan = tex.pixels + tex.stride * y;
-
-        //    for(int x = 0; x < tex.size.x; x++)
-        //        *(scan+x) = *(texScan+x);
-        //}
+        DebugScreen.Draw();
         #endregion
 
         SDL_SetRenderTarget(sdlRend, nint.Zero);

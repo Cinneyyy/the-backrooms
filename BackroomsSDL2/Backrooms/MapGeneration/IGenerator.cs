@@ -2,5 +2,5 @@
 
 public interface IGenerator<TSettings> where TSettings : struct
 {
-    Tile[,] Generate(Vec2i size, TSettings settings);
+    Tile[,] Generate(Vec2i size, TSettings settings, out Vec2i center);
 }

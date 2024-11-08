@@ -9,13 +9,13 @@ namespace Backrooms;
 #pragma warning disable CA1806 // Do not ignore method results
 public static class Window
 {
-    public delegate void Tick(float dt);
+    public delegate void TickEvent(float dt);
 
 
     private static bool isRunning;
 
-    public static event Tick tickDt;
-    public static event Action tick;
+    public static event Action tick, pulse;
+    public static event TickEvent tickDt;
 
 
     public static nint sdlWind { get; private set; }
@@ -89,7 +89,9 @@ public static class Window
         int frameCount = 0;
         const float fps_time_frame = 1f;
 
-        Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings));
+        DateTime lastPulse = DateTime.UtcNow;
+
+        Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings, out Vec2i spawnLocation), spawnLocation);
         Camera.pos = Map.curr.spawnLocationF;
         Map.curr.GenerateGraffitis(8192);
 
@@ -105,7 +107,7 @@ public static class Window
                 Lighting.enabled ^= true;
             if(Input.KeyDown(Key.F5))
             {
-                Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings with { seed = RNG.signedInt }));
+                Map.curr.SetTiles(new SeededGenerator().Generate(new(256), SeededGenerator.Settings.defaultSettings with { seed = RNG.signedInt }, out spawnLocation), spawnLocation);
                 Camera.pos = Map.curr.spawnLocationF;
                 Map.curr.GenerateGraffitis(8192);
             }
@@ -132,8 +134,13 @@ public static class Window
                 fps = (int)(frameCount / fps_time_frame);
                 frameCount = 0;
                 fpsTimer = 0f;
+            }
 
-                Console.WriteLine(fps);
+            double deltaPulseTime = (now - lastPulse).TotalSeconds;
+            if(deltaPulseTime >= 1f)
+            {
+                lastPulse = now.AddSeconds(-deltaPulseTime + 1d);
+                pulse?.Invoke();
             }
 
             tick?.Invoke();

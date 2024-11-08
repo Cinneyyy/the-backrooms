@@ -1,13 +1,14 @@
 using System.Collections.Generic;
+using System.Linq;
 using Backrooms.Extensions;
 
 namespace Backrooms.MapGeneration;
 
 public class SeededGenerator : IGenerator<SeededGenerator.Settings>
 {
-    public readonly record struct Settings(int seed, int hallwayCount, float hallwayFill, float hallwayCollResolveChance, Range roomCount, Range roomSize, Range pillarRoomCount, Range pillarRoomSize, Range pillarSpacing, float staggeredPillarChance, Range staggeredPillarStep, int frontierAttempts, bool sealOff)
+    public readonly record struct Settings(int seed, int hallwayCount, float hallwayFill, float hallwayCollResolveChance, Range roomCount, Range roomSize, Range pillarRoomCount, Range pillarRoomSize, Range pillarSpacing, float staggeredPillarChance, Range staggeredPillarStep, int frontierAttempts, bool sealOff, bool removeInaccessible)
     {
-        public static readonly Settings defaultSettings = new(0, 1000, .5f, .6f, new(10, 20), new(10, 30), new(10, 20), new(20, 60), new(2, 4), .5f, new(2, 4), 1, true);
+        public static readonly Settings defaultSettings = new(0, 1000, .5f, .6f, new(10, 20), new(10, 30), new(10, 20), new(20, 60), new(2, 4), .5f, new(2, 4), 1, true, true);
     }
 
 
@@ -16,15 +17,12 @@ public class SeededGenerator : IGenerator<SeededGenerator.Settings>
     private Tile[,] tiles;
 
 
-    public Tile[,] Generate(Vec2i size, Settings settings)
+    public Tile[,] Generate(Vec2i size, Settings settings, out Vec2i spawnLocation)
     {
         this.settings = settings;
         this.size = size;
         tiles = new Tile[size.x, size.y];
-
-        for(int x = 0; x < size.x; x++)
-            for(int y = 0; y < size.y; y++)
-                tiles[x, y] = Tile.Wall;
+        tiles.Populate(Tile.Wall);
 
         RNG.SetSeed(settings.seed);
 
@@ -46,6 +44,17 @@ public class SeededGenerator : IGenerator<SeededGenerator.Settings>
                 tiles[size.x-1, y] = Tile.Wall;
             }
         }
+
+        int offset = 0;
+        do
+        {
+            spawnLocation = new(size.x/2 + offset, size.y/2);
+            offset++;
+        }
+        while(tiles[spawnLocation.x, spawnLocation.y].IsSolid());
+
+        if(settings.removeInaccessible)
+            RemoveInaccessibleAreas(spawnLocation);
 
         return tiles;
     }
@@ -146,5 +155,31 @@ public class SeededGenerator : IGenerator<SeededGenerator.Settings>
                         tiles[x + loc.x, y + loc.y] = Tile.Pillar;
             }
         }
+    }
+
+    private void RemoveInaccessibleAreas(Vec2i spawnLoc)
+    {
+        bool[,] accessibleTiles = new bool[size.x, size.y];
+        bool[,] checkedTiles = new bool[size.x, size.y];
+        checkedTiles[spawnLoc.x, spawnLoc.y] = true;
+        Stack<Vec2i> frontiers = new([spawnLoc]);
+
+        while(frontiers.TryPop(out Vec2i tile))
+        {
+            accessibleTiles[tile.x, tile.y] = true;
+
+            foreach(Vec2i n in Vec2i.directions
+                .Select(d => tile + d)
+                .Where(t => t.x >= 0 && t.y >= 0 && t.x < size.x && t.y < size.y)
+                .Where(t => tiles[t.x, t.y].IsAir()))
+            {
+                if(!checkedTiles[n.x, n.y])
+                    frontiers.Push(n);
+
+                checkedTiles[n.x, n.y] = true;
+            }
+        }
+
+        tiles.Populate((x, y) => accessibleTiles[x, y] || tiles[x, y].IsSolid() ? tiles[x, y] : Tile.Wall);
     }
 }

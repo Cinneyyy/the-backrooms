@@ -21,7 +21,13 @@ public static unsafe class Atlas
         {
             for(int x = 0; x < size.x; x++)
             {
-                *(scan + x) = cell == cam ? 0xff0000ffu : MapColor(Map.curr[cell]);
+                *(scan + x) = cell switch
+                {
+                    _ when cell == cam => 0xff0000ffu,
+                    _ when Map.curr[cell] == Tile.Void => *(scan + x),
+                    _ => MapColor(Map.curr[cell])
+                };
+
                 cell.x++;
             }
 

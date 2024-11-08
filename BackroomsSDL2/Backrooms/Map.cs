@@ -9,7 +9,7 @@ namespace Backrooms;
 #pragma warning disable CA2211 // Non-constant fields should not be visible
 public class Map
 {
-    public Map(byte[,] tiles)
+    public Map(byte[,] tiles, Vec2i? spawnLocation)
     {
         size = tiles.Size();
         center = size / 2;
@@ -21,17 +21,22 @@ public class Map
             for(int y = 0; y < size.y; y++)
                 this.tiles[x, y] = (Tile)tiles[x, y];
 
-        int offset = 0;
-        do
+        if(!spawnLocation.HasValue)
         {
-            spawnLocation = new(center.x + offset, center.y);
-            offset++;
+            int offset = 0;
+            do
+            {
+                this.spawnLocation = new(center.x + offset, center.y);
+                offset++;
+            }
+            while(this[this.spawnLocation].IsSolid());
         }
-        while(this[spawnLocation].IsSolid());
-        spawnLocationF = spawnLocation + Vec2f.half;
+        else
+            this.spawnLocation = spawnLocation.Value;
+        spawnLocationF = this.spawnLocation + Vec2f.half;
     }
 
-    public Map(Tile[,] tiles)
+    public Map(Tile[,] tiles, Vec2i? spawnLocation)
     {
         this.tiles = tiles;
         size = tiles.Size();
@@ -39,14 +44,19 @@ public class Map
         graffitis = new int[size.x, size.y];
         textures = Enum.GetValues<Tile>().ToDictionary(t => t, t => default(LockedTexture));
 
-        int offset = 0;
-        do
+        if(!spawnLocation.HasValue)
         {
-            spawnLocation = new(center.x + offset, center.y);
-            offset++;
+            int offset = 0;
+            do
+            {
+                this.spawnLocation = new(center.x + offset, center.y);
+                offset++;
+            }
+            while(this[this.spawnLocation].IsSolid());
         }
-        while(this[spawnLocation].IsSolid());
-        spawnLocationF = spawnLocation + Vec2f.half;
+        else
+            this.spawnLocation = spawnLocation.Value;
+        spawnLocationF = this.spawnLocation + Vec2f.half;
     }
 
 
@@ -88,21 +98,26 @@ public class Map
     }
 
 
-    public void SetTiles(Tile[,] tiles)
+    public void SetTiles(Tile[,] tiles, Vec2i? spawnLocation)
     {
         this.tiles = tiles;
         size = tiles.Size();
         center = size / 2;
         graffitis = new int[size.x, size.y];
 
-        int offset = 0;
-        do
+        if(!spawnLocation.HasValue)
         {
-            spawnLocation = new(center.x + offset, center.y);
-            offset++;
+            int offset = 0;
+            do
+            {
+                this.spawnLocation = new(center.x + offset, center.y);
+                offset++;
+            }
+            while(this[this.spawnLocation].IsSolid());
         }
-        while(this[spawnLocation].IsSolid());
-        spawnLocationF = spawnLocation + Vec2f.half;
+        else
+            this.spawnLocation = spawnLocation.Value;
+        spawnLocationF = this.spawnLocation + Vec2f.half;
     }
 
     public bool InBounds(float x, float y)

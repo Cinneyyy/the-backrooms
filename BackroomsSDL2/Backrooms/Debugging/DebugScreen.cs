@@ -10,10 +10,11 @@ public static class DebugScreen
 
 
     public static string GetDisplayStr()
-        => $"FPS: {Window.fps}\n" +
-           $"Map size / center: {Map.curr.size} / {Map.curr.center}\n" +
-           $"Pos / Tile: {Camera.pos} / {Camera.pos.floor}\n" +
-           $"Facing: {Camera.angle.ToDeg():0}°\n";
+        => "FPS: " + Window.fps;
+        //=> $"FPS: {Window.fps}\n" +
+        //   $"Map size / center: {Map.curr.size} / {Map.curr.center}\n" +
+        //   $"Pos / Tile: {Camera.pos} / {Camera.pos.floor}\n" +
+        //   $"Facing: {Camera.angle.ToDeg():0}°\n";
 
     public static void Draw()
         => Renderer.DrawAndRenderText(GetDisplayStr(), font, color, Vec2i.zero);
