@@ -1,5 +1,8 @@
 using System.Linq;
+using System.Threading;
 using Backrooms.Assets;
+
+using SDL2;
 
 namespace Backrooms;
 
@@ -7,7 +10,7 @@ public class Program
 {
     private static void Main(string[] args)
     {
-        Window.Init(new Vec2i(1920, 1080) / 6, "Backrooms Game");
+        Window.Init(new Vec2i(1920, 1080) / 6, "Backrooms Game", 0);
 
         Map.curr = new(new byte[,]
         {

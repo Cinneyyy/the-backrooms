@@ -5,9 +5,10 @@ namespace Backrooms.Serialization;
 
 public static class BinarySerializer
 {
-    public static byte[] Serialize<T>(T instance, CompressionLevel compression = CompressionLevel.Optimal) where T :
+    public static byte[] Serialize<T>(T instance, CompressionLevel compression = CompressionLevel.Optimal)
     {
         using MemoryStream stream = new();
         using BinaryWriter writer = new(stream);
+        return [];
     }
 }

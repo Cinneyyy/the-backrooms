@@ -84,7 +84,6 @@ public static unsafe class Raycaster
 
             if(steps++ >= max_steps) // this instead of !map.InBounds(...), because I want rendering outside of map to be cool
                 return;
-
             else if(Map.curr.IsSolid(mPos))
                 hit = true;
         }

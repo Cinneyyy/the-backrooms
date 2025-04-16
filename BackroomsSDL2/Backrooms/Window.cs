@@ -46,7 +46,7 @@ public static class Window
     }
 
 
-    public static void Init(Vec2i size, string title)
+    public static void Init(Vec2i size, string title, int screenIndex)
     {
         if(isRunning)
             throw new("Cannot initialize window while it's already running");
@@ -66,8 +66,8 @@ public static class Window
         _size = size;
         _title = title;
 
-        SDL_GetDisplayBounds(0, out SDL_Rect screen);
-        sdlWind = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen.w, screen.h, SDL_WindowFlags.SDL_WINDOW_BORDERLESS);
+        SDL_GetDisplayBounds(screenIndex, out SDL_Rect screen);
+        sdlWind = SDL_CreateWindow(title, screen.x, screen.y, screen.w, screen.h, SDL_WindowFlags.SDL_WINDOW_BORDERLESS);
         if(sdlWind == nint.Zero)
             throw new($"Failed to create SDL window: {SDL_GetError()}");
 
