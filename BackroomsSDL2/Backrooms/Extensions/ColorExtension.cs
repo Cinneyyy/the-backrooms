@@ -25,6 +25,8 @@ public static class ColorExtension
 
     public static uint MultiplyColor(this uint col, float fac)
         => JoinColor(col.R() * fac, col.G() * fac, col.B() * fac, col.A());
+    public static uint MultiplyColor(this uint col, float r, float g, float b)
+        => JoinColor(col.R() * r, col.G() * g, col.B() * b, col.A());
 
     public static byte R(this uint col) => (byte)(col >> 24);
     public static byte G(this uint col) => (byte)(col >> 16);

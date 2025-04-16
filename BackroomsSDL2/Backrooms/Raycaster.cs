@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Backrooms.Assets;
 using Backrooms.Extensions;
 using Backrooms.Light;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Backrooms;
 
@@ -12,15 +11,16 @@ public static unsafe class Raycaster
 {
     public enum Side : byte
     {
-        North,
-        East,
-        South,
-        West
+        North = 0,
+        South = 2,
+        West = 1,
+        East = 3
     }
 
 
     public static float wallHeight = 1f;
     public static bool fastColorBlend = true;
+    public static (float r, float g, float b) lightCol = (0, 0, 1);
 
     private static Vec2i res, center;
 
@@ -84,6 +84,7 @@ public static unsafe class Raycaster
 
             if(steps++ >= max_steps) // this instead of !map.InBounds(...), because I want rendering outside of map to be cool
                 return;
+
             else if(Map.curr.IsSolid(mPos))
                 hit = true;
         }
@@ -105,8 +106,12 @@ public static unsafe class Raycaster
         heightBuf[x] = (ushort)halfHeight;
 
         float brightness = (vert ? .75f : .5f) * Fog.GetDistFogNormalized(normDist);
+        float br = brightness, bg = brightness, bb = brightness;
         if(Lighting.enabled)
+        {
             brightness = Lighting.distribution.ComputeLighting(brightness, hitPos);
+            (br, bg, bb) = Lighting.distribution.ComputeLightingRgb((br, bg, bb), lightCol, hitPos);
+        }
 
         float wallX = (vert ? (Camera.pos.y + dist * dir.y) : (Camera.pos.x + dist * dir.x)) % 1f;
         if(side is Side.West or Side.South)
@@ -150,7 +155,8 @@ public static unsafe class Raycaster
                 {
 
                     if(gAlpha == 0xff)
-                        *scan = gTexScan->MultiplyColor(brightness);
+                        *scan = gTexScan->MultiplyColor(br, bg, bb);
+                        //*scan = gTexScan->MultiplyColor(brightness);
                     else
                         *scan = fastColorBlend
                             ? ColorExtension.BlendColorsCrude(*scan, *gTexScan, gAlpha/255f)
@@ -162,7 +168,8 @@ public static unsafe class Raycaster
             }
 
             uint* texScan = tex.pixels + ((int)texPos & tex.bounds.y) * tex.stride + texX;
-            *scan = texScan->MultiplyColor(brightness);
+            *scan = texScan->MultiplyColor(br, bg, bb);
+            //*scan = texScan->MultiplyColor(brightness);
             //*scan = ColorExtension.JoinColor(255f * x / res.x, 255f * y / res.y, 0f, 0xff);
 
             texPos += texStep;
@@ -206,18 +213,24 @@ public static unsafe class Raycaster
 
             float tileDist = (Camera.pos - floor).length;
             float fog = Fog.GetDistFog(tileDist);
+            float fr = fog, fg = fog, fb = fog;
             if(Lighting.enabled)
+            {
                 fog = Lighting.distribution.ComputeLighting(fog, floor);
+                (fr, fg, fb) = Lighting.distribution.ComputeLightingRgb((fr, fg, fb), lightCol, floor);
+            }
 
             uint* floorCol = Map.curr.floorTex.pixels + floorTex.y * Map.curr.floorTex.stride + floorTex.x;
-            *floorScan++ = floorCol->MultiplyColor(Map.curr.floorLuminance * fog);
+            *floorScan++ = floorCol->MultiplyColor(Map.curr.floorLuminance * fr, Map.curr.floorLuminance * fg, Map.curr.floorLuminance * fb);
+            //*floorScan++ = floorCol->MultiplyColor(Map.curr.floorLuminance * fog);
 
             uint* ceilCol = ceilingTex.pixels + ceilTex.y * ceilingTex.stride + ceilTex.x;
 
             if(Lighting.enabled && isLightTile && ceilCol->R() == 0xff && ceilCol->G() == 0xff && ceilCol->B() == 0xff && tileDist < 10f && Map.curr.IsAir(floor.floor))
                 *ceilScan++ = 0xffffffff;
             else
-                *ceilScan++ = ceilCol->MultiplyColor(Map.curr.ceilLuminance * fog);
+                *ceilScan++ = ceilCol->MultiplyColor(Map.curr.ceilLuminance * fr, Map.curr.ceilLuminance * fg, Map.curr.ceilLuminance * fb);
+                //*ceilScan++ = ceilCol->MultiplyColor(Map.curr.ceilLuminance * fog);
         }
     }
 
